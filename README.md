@@ -11,8 +11,9 @@ Take the time to read and understand [its readme](/coveo-example-library/README.
 
 ## For developers
 
+All projects in this repository are backed by [poetry](https://python-poetry.org/).
 A dev environment is provided at `/pyproject.toml` which aggregates all the projects into one convenient virtual environment. 
-Refer to the [poetry documentation](https://python-poetry.org/) if you're new to poetry.
+Refer to poetry's documentation if you're new to poetry.
 
 You can also use each project's individual environment, which has the added benefit of making sure
 that all dependencies were correctly declared in the `pyproject.toml` file.

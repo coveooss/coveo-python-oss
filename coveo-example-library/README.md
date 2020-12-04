@@ -45,9 +45,13 @@ Every project must provide one. It is located in the project folder.
 ## tests
 
 The library has tests that are understood by pytest.
-The test folder name must be library import name prefixed with "tests_" and contain an `__init__.py` file: 
+The test folder name is the library's import name prefixed with "tests_" and contain an `__init__.py` file: 
 
     /coveo-example-library/tests_coveo_example_library/__init__.py
+
+Why: If all projects used a `tests` folder, IDEs may get confused trying to inspect symbols.
+Pycharm for instance will not import a 2nd folder of the same name; only the first one is found.
+Different names ensure that these mechanisms don't conflict.
 
 
 ## type annotations
