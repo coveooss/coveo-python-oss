@@ -1,16 +1,20 @@
 [tool.poetry]
-name = "coveo-example-library"
-version = "0.0.1"
-description = "coveo-python-oss example library"
+name = "coveo-functools"
+version = "1.0.0"
+description = "Function-related tools."
 authors = ["Jonathan Piché <jpiche@coveo.com>"]
 
 
 [tool.poetry.dependencies]
 python = ">=3.8"
 
+inflection = "*"
+typing_extensions = "*"
+
 
 [tool.poetry.dev-dependencies]
-coveo-testing = { path = "../coveo-testing", develop = true }
+attrs = "*"
+coveo-testing = { path = "../coveo-testing/", develop = true }
 
 
 [build-system]
