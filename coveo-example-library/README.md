@@ -1,4 +1,4 @@
-# example library
+# coveo-example-library
 
 This library serves as an example of the project structure used by all python projects in this repo.
 The conventions and rules are explained below.

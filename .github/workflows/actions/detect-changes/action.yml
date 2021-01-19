@@ -1,0 +1,24 @@
+name: detect-changes
+description: Detects if there were changes in a folder between the current commit and origin/main.
+
+inputs:
+  folder:
+    description: The folder name relative to the repo root. Should end with a trailing slash.
+    required: true
+
+outputs:
+  changes-detected: ${{ steps.check-changes.outputs.changes-detected }}
+
+runs:
+  using: 'composite'
+  steps:
+    - id: check-changes
+      shell: bash
+      run: |
+        if git diff --name-only origin/main HEAD | grep '^${{ inputs.folder }}/'; then
+            echo "Changes with main branch detected."
+            echo "::set-output name=changes_detected::true"
+        else
+            echo "No changes detected, or main branch."
+            echo "::set-output name=changes_detected::false"
+        fi
