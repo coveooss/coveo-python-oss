@@ -3,29 +3,24 @@ name: coveo-example-library
 on: [push]
 
 jobs:
-  checkout:
-    name: checkout repository
-    runs-on: ubuntu-20.04
-
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-
   check-if-changed:
-    name: detect changes in project folder ${{ github.workflow }}
+    name: detect changes
     runs-on: ubuntu-20.04
-    needs: checkout
     if: github.ref != 'refs/heads/main'
 
     outputs:
       changes-detected: ${{ steps.detect-changes.outputs.changes-detected }}
 
     steps:
-      - uses: format('actions/detect-changes@{0}', github.sha)
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - uses: actions/detect-changes@./
         id: detect-changes
         with:
           folder: ${{ github.workflow }}/
+
 
   pyprojectci:
     name: pyproject ci
