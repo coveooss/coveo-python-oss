@@ -16,7 +16,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: actions/detect-changes
+      - uses: actions/detect-changes@${{ github.sha }}
         id: detect-changes
         with:
           folder: ${{ github.workflow }}/
