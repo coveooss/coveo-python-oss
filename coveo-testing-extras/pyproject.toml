@@ -1,0 +1,28 @@
+[tool.poetry]
+name = "coveo-testing-extras"
+version = "1.0.0"
+description = "Additional utilities for testing."
+authors = ["Jonathan piché <jpiche@coveo.com>"]
+
+
+[tool.poetry.dependencies]
+python = ">=3.8"
+
+coveo-functools = "*"
+coveo-settings = "*"
+coveo-systools = "*"
+coveo-testing = "*"
+docker = "*"
+
+
+[tool.poetry.dev-dependencies]
+coveo-functools = { path = "../coveo-functools/", develop = true }
+coveo-settings = { path = "../coveo-settings/", develop = true }
+coveo-systools = { path = "../coveo-systools/", develop = true }
+coveo-testing = { path = "../coveo-testing/", develop = true }
+typing_extensions = "*"
+
+
+[build-system]
+requires = ["poetry_core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
