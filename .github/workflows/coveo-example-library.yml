@@ -3,6 +3,7 @@ on:
   push:
     paths:
       - 'coveo-example-library/**'
+      - '.github/workflows/**'
   workflow_dispatch: {}
 
 jobs:
@@ -19,6 +20,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
+      - run: git config user.name "GitHub Actions"
+      - run: git config user.email "actions@users.noreply.github.com"
 
       - name: Setup python ${{ matrix.python-version }}
         uses: actions/setup-python@v2

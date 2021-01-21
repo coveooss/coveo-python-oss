@@ -45,5 +45,5 @@ runs:
       run: |
         TAG_NAME=${{ inputs.project-name }}.${{ steps.get-next-version.outputs.next-version }}
         echo "This release will be tagged as $TAG_NAME"
-        # git tag --annotate --message="Automated tagging system" $TAG_NAME ${{ github.ref }}
-        # git push origin $TAG_NAME
+        git tag --annotate --message="Automated tagging system" $TAG_NAME ${{ github.ref }}
+        git push origin $TAG_NAME
