@@ -38,7 +38,7 @@ jobs:
   publish:
     name: Publish to pypi.org
     runs-on: ubuntu-20.04
-    if: github.ref == 'refs/heads/main'
+    # if: github.ref == 'refs/heads/main'
     needs: pyprojectci
 
     steps:
@@ -51,7 +51,6 @@ jobs:
           python-version: 3.9
 
       - name: Publish to pypi
-        #if: github.ref == 'refs/heads/main'
         uses: ./.github/workflows/actions/publish-to-pypi
         with:
           project-name: ${{ github.workflow }}
