@@ -1,0 +1,53 @@
+name: coveo-pypi-cli
+on:
+  push:
+    paths:
+      - 'coveo-pypi-cli/**'
+  workflow_dispatch: {}
+
+jobs:
+  pyprojectci:
+    name: pyproject ci
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [3.8, 3.9]
+        os: [ubuntu-20.04, windows-2019, macos-10.15]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Setup python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Run pyproject ci
+        uses: ./.github/workflows/actions/pyproject-ci
+        with:
+          project-name: ${{ github.workflow }}
+
+  publish:
+    name: Publish to pypi.org
+    runs-on: ubuntu-20.04
+    if: github.ref == 'refs/heads/main'
+    needs: pyprojectci
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Setup python 3.9
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+
+      - name: Publish to pypi
+        if: github.ref == 'refs/heads/main'
+        uses: ./.github/workflows/actions/publish-to-pypi
+        with:
+          project-name: ${{ github.workflow }}
+          pypi-token: ${{ secrets.PYPI_TOKEN_COVEO_EXAMPLE_LIBRARY }}
