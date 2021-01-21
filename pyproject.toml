@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "coveo-python-oss"
+version = "0.0.1"
+description = "coveo-python-oss virtual environment boostrap for developers"
+authors = ["Jonathan Piché <jpiche@coveo.com>"]
+
+
+[tool.poetry.dependencies]
+python = ">=3.8"
+
+coveo-example-library = { path = 'coveo-example-library/', develop = true }
+
+
+[build-system]
+requires = ["poetry_core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

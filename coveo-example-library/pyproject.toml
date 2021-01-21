@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "coveo-example-library"
+version = "0.0.1"
+description = "coveo-python-oss example library"
+authors = ["Jonathan Piché <jpiche@coveo.com>"]
+
+
+[tool.poetry.dependencies]
+python = ">=3.8"
+
+
+[tool.poetry.dev-dependencies]
+pytest = "*"
+
+
+[build-system]
+requires = ["poetry_core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
