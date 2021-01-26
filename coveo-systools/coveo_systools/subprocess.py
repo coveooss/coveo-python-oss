@@ -40,7 +40,12 @@ class DetailedCalledProcessError(subprocess.CalledProcessError):
             raise DetailedCalledProcessError from last_error
     """
 
-    __attributes_to_use_from_wrapped_exception: Final[Tuple[str, ...]] = ("stdout", "stderr", "returncode", "cmd")
+    __attributes_to_use_from_wrapped_exception: Final[Tuple[str, ...]] = (
+        "stdout",
+        "stderr",
+        "returncode",
+        "cmd",
+    )
     __wrapped_exception: Optional[BaseException] = None
 
     def __init__(self, **metadata: Any) -> None:
@@ -97,7 +102,9 @@ class DetailedCalledProcessError(subprocess.CalledProcessError):
             exception = self.__cause__ or self.__context__
 
             if exception is None:
-                log.error(f"{type(self).__name__} if unable to obtain exception cause or context. Using placebo.")
+                log.error(
+                    f"{type(self).__name__} if unable to obtain exception cause or context. Using placebo."
+                )
                 exception = subprocess.CalledProcessError(1, "placebo-assert-exception-is-not-none")
 
             self.__wrapped_exception = exception
@@ -107,7 +114,9 @@ class DetailedCalledProcessError(subprocess.CalledProcessError):
 
     @staticmethod
     def _decode(
-        value: Union[bytes, str, None], *, decode_errors: Optional[Literal["ignore", "replace"]] = "ignore"
+        value: Union[bytes, str, None],
+        *,
+        decode_errors: Optional[Literal["ignore", "replace"]] = "ignore",
     ) -> Optional[str]:
         """Handles str/bytes/None conversion to simplify code + strips whitespace."""
         if value is None:
@@ -159,7 +168,9 @@ def check_run(
     """
     if verbose:
         print(f"input arguments: {command}")
-    converted_command = [arg for arg in map(cast_command_line_argument_to_string, command) if arg and arg.strip()]
+    converted_command = [
+        arg for arg in map(cast_command_line_argument_to_string, command) if arg and arg.strip()
+    ]
     if verbose:
         print(f'calling: {" ".join(converted_command)}')
 
@@ -191,7 +202,13 @@ def check_output(
     *command: Any, working_directory: Union[Path, str] = ".", verbose: bool = False, **kwargs: Any
 ) -> Optional[str]:
     """Proxy for subprocess.check_output"""
-    return check_run(*command, working_directory=working_directory, capture_output=True, verbose=verbose, **kwargs)
+    return check_run(
+        *command,
+        working_directory=working_directory,
+        capture_output=True,
+        verbose=verbose,
+        **kwargs,
+    )
 
 
 @dispatch()

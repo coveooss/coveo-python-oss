@@ -30,10 +30,16 @@ class ContinuousIntegrationConfig:
         self.disabled = disabled  # a master switch used by pyproject to skip this project.
         self.mypy: Optional[MypyRunner] = self._flexfactory(MypyRunner, mypy)
         self.mypy = None  # disabled until mypy>=0.800; see IDXINFRA-590
-        self.check_outdated: Optional[CheckOutdatedRunner] = self._flexfactory(CheckOutdatedRunner, check_outdated)
+        self.check_outdated: Optional[CheckOutdatedRunner] = self._flexfactory(
+            CheckOutdatedRunner, check_outdated
+        )
         self.pytest: Optional[PytestRunner] = self._flexfactory(PytestRunner, pytest)
-        self.poetry_check: Optional[PoetryCheckRunner] = self._flexfactory(PoetryCheckRunner, poetry_check)
-        self.offline_build: Optional[OfflineInstallRunner] = self._flexfactory(OfflineInstallRunner, offline_build)
+        self.poetry_check: Optional[PoetryCheckRunner] = self._flexfactory(
+            PoetryCheckRunner, poetry_check
+        )
+        self.offline_build: Optional[OfflineInstallRunner] = self._flexfactory(
+            OfflineInstallRunner, offline_build
+        )
 
     def _flexfactory(self, cls: Type[T], config: Optional[CIConfig]) -> Optional[T]:
         """handles the true form of the config. like mypy = true """
@@ -45,4 +51,6 @@ class ContinuousIntegrationConfig:
 
     @property
     def runners(self) -> Iterator[ContinuousIntegrationRunner]:
-        return filter(lambda runner: isinstance(runner, ContinuousIntegrationRunner), self.__dict__.values())
+        return filter(
+            lambda runner: isinstance(runner, ContinuousIntegrationRunner), self.__dict__.values()
+        )

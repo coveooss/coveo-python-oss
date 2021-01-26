@@ -15,7 +15,19 @@ from pathlib import Path
 from pprint import pformat
 from traceback import format_exception
 from types import TracebackType
-from typing import Any, Generator, Dict, Optional, ClassVar, Tuple, Type, Iterable, Union, TYPE_CHECKING, Callable
+from typing import (
+    Any,
+    Generator,
+    Dict,
+    Optional,
+    ClassVar,
+    Tuple,
+    Type,
+    Iterable,
+    Union,
+    TYPE_CHECKING,
+    Callable,
+)
 
 if TYPE_CHECKING:
     from typing_extensions import Final, Protocol
@@ -72,10 +84,14 @@ def _convert_to_strings(*objects: Any) -> Generator[str, None, None]:
         elif hasattr(obj, "__str__"):
             yield str(obj)
         else:
-            yield pformat(obj)  # this is like json.dumps() but prettified and won't break on unknown types.
+            yield pformat(
+                obj
+            )  # this is like json.dumps() but prettified and won't break on unknown types.
 
 
-def _prettify_exception(value: BaseException = None, traceback: TracebackType = None) -> Generator[Any, None, None]:
+def _prettify_exception(
+    value: BaseException = None, traceback: TracebackType = None
+) -> Generator[Any, None, None]:
     """Yields pretty lines detailing an exception."""
     if not value or traceback:
         _, _val, _tb = sys.exc_info()
@@ -96,7 +112,9 @@ def _prettify_exception(value: BaseException = None, traceback: TracebackType = 
         if value.suggestions is not None:
             suggestions = list(value.suggestions)
             if len(suggestions) > 1:
-                yield echo.suggest.prettify("The following hints may help diagnose the issue:", pad_after=False)
+                yield echo.suggest.prettify(
+                    "The following hints may help diagnose the issue:", pad_after=False
+                )
                 yield from map(echo.normal.copy(item=True).prettify, suggestions)
             elif suggestions:
                 yield echo.suggest.prettify(suggestions[0])
@@ -110,7 +128,9 @@ def _prettify_exception(value: BaseException = None, traceback: TracebackType = 
     yield ""
 
 
-def _pretty_excepthook(type_: Type[BaseException], value: BaseException, traceback: TracebackType) -> None:
+def _pretty_excepthook(
+    type_: Type[BaseException], value: BaseException, traceback: TracebackType
+) -> None:
     """The actual function that replaces sys.excepthook."""
     # restore the original hook so not to paint ourselves in a corner
     sys.excepthook = sys.__excepthook__
@@ -153,7 +173,11 @@ class ExitWithFailure(Exception):
     """
 
     def __init__(
-        self, *, failures: Union[Iterable, str] = None, suggestions: Union[Iterable, str] = None, exit_code: int = 1
+        self,
+        *,
+        failures: Union[Iterable, str] = None,
+        suggestions: Union[Iterable, str] = None,
+        exit_code: int = 1,
     ) -> None:
         """
         Each individual object will be formatted as a bullet point.
@@ -323,7 +347,9 @@ class Styles:
 
     # success and error are header-like and should be used sparingly
     # error and error_details will end up in stderr
-    success: Pretty = Pretty(fg=_Green, emoji="heavy_check_mark", pad_before=True, pad_after=True, default="Success!")
+    success: Pretty = Pretty(
+        fg=_Green, emoji="heavy_check_mark", pad_before=True, pad_after=True, default="Success!"
+    )
     error: Pretty = Pretty(fg=_Red, err=True, emoji="collision", pad_before=True, pad_after=True)
     error_details: Pretty = Pretty(fg=_Red, err=True, dim=True)
 

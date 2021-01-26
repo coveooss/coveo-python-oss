@@ -23,16 +23,22 @@ log = logging.getLogger(__name__)
 DOCKER_TIMEOUT = 30  # note: urllib timeout is not supported by the docker client.
 REQUIRED_DOCKER_VERSION = LooseVersion("1.18")
 
-DOCKER_STATIC_IP = StringSetting("tests.docker.static.ip", fallback="localhost" if (WINDOWS or WSL) else None)
+DOCKER_STATIC_IP = StringSetting(
+    "tests.docker.static.ip", fallback="localhost" if (WINDOWS or WSL) else None
+)
 
 # In static IP setups, we will  `--publish`  the ports and use the dynamic ports that docker attributed.
 # In docker-in-docker setups, you don't need to `--publish` since you can simply ping the container ip.
 DOCKER_PUBLISH_PORTS = BoolSetting("tests.docker.publish.ports", fallback=DOCKER_STATIC_IP.is_set)
 
 # If we published, we use them by default. Some setups may want to disable this explicitly.
-DOCKER_USE_PUBLISHED_PORTS = BoolSetting("tests.docker.use.published.ports", fallback=bool(DOCKER_PUBLISH_PORTS))
+DOCKER_USE_PUBLISHED_PORTS = BoolSetting(
+    "tests.docker.use.published.ports", fallback=bool(DOCKER_PUBLISH_PORTS)
+)
 
-LogList = List[Tuple[str, str]]  # tuples contain log type and message e.g.: ('rabbitmq stderr', 'it crashed')
+LogList = List[
+    Tuple[str, str]
+]  # tuples contain log type and message e.g.: ('rabbitmq stderr', 'it crashed')
 
 
 class ECRLogoutException(Exception):
@@ -61,7 +67,9 @@ def get_docker_client() -> DockerClient:
 
     docker_version = _get_docker_host_version(client)
     if docker_version < REQUIRED_DOCKER_VERSION:
-        raise Exception(f'Docker version is "{docker_version}". Version "{REQUIRED_DOCKER_VERSION}" is required')
+        raise Exception(
+            f'Docker version is "{docker_version}". Version "{REQUIRED_DOCKER_VERSION}" is required'
+        )
 
     return client
 
@@ -119,7 +127,9 @@ class TemporaryDockerContainerResource(TemporaryResource):
         match = re.search(r"\.ecr\.(?P<region>.+)\.amazonaws\.com", self.image_name)
         return match.group("region") if match else None
 
-    def get_published_port(self, internal_port: int, protocol: str = "tcp", host_ip: str = "0.0.0.0") -> int:
+    def get_published_port(
+        self, internal_port: int, protocol: str = "tcp", host_ip: str = "0.0.0.0"
+    ) -> int:
         """
         Returns the external port that is mapped to the internal port for requests bound to the given host ip.
         Note: docker uses host ip 0.0.0.0 (all) unless you specified otherwise.
@@ -198,7 +208,9 @@ class TemporaryDockerContainerResource(TemporaryResource):
     def create_container(self) -> None:
         """ Create the docker container. """
         log.info('Creating container from image "%s".', self.image_name)
-        self._container = self.client.containers.create(self.image_name, **self.create_container_arguments())
+        self._container = self.client.containers.create(
+            self.image_name, **self.create_container_arguments()
+        )
         log.info('Created docker. Id="%s". Name="%s".', self.container.id, self.container.name)
 
     def _get_main_uri(self, ip_address: str) -> str:

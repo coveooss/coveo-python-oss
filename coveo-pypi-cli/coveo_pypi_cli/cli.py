@@ -31,7 +31,9 @@ def raise_if_exists(package: str, version: str) -> None:
 def versions(package: str) -> None:
     """Prints the (unsorted) versions of a package."""
     groups: Dict[str, List[LooseVersion]] = defaultdict(list)
-    for loose_version in obtain_versions_from_pypi(package, version_class=LooseVersion, oldest_first=True):
+    for loose_version in obtain_versions_from_pypi(
+        package, version_class=LooseVersion, oldest_first=True
+    ):
         version = str(loose_version)
         if "." not in version:
             groups["uncanny"].append(loose_version)
@@ -50,7 +52,9 @@ def versions(package: str) -> None:
 @click.option("--minimum-version", default="0.0.1")
 def next_version(package: str, prerelease: bool = False, minimum_version: str = "0.0.1") -> None:
     """Returns the version number for this release."""
-    echo.passthrough(compute_next_version(package, prerelease=prerelease, minimum_version=minimum_version))
+    echo.passthrough(
+        compute_next_version(package, prerelease=prerelease, minimum_version=minimum_version)
+    )
 
 
 @pypi.command()

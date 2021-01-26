@@ -152,7 +152,9 @@ def test_until_raise_on_exception() -> None:
 def test_until_suppress_exception_tuple() -> None:
     with pytest.raises(wait.TimeoutExpired):
         wait.until(
-            lambda: _raise(NotImplementedError), handle_exceptions=(NotImplementedError,), **_timeout
+            lambda: _raise(NotImplementedError),
+            handle_exceptions=(NotImplementedError,),
+            **_timeout
         )  # type: ignore
 
 
@@ -206,7 +208,9 @@ def test_until_custom_exception() -> None:
 
 def _verify_backoff_output(backoff: Backoff, expected_results: List[float]) -> None:
     """ Checks that the output of a backoff matches a list, bypassing jitter. """
-    assert sorted(backoff._stages) == sorted(set(expected_results))  # expected results includes max retries
+    assert sorted(backoff._stages) == sorted(
+        set(expected_results)
+    )  # expected results includes max retries
     assert tuple(sorted(backoff._stages)) == backoff._stages
 
     try:
@@ -229,14 +233,29 @@ def _verify_backoff_output(backoff: Backoff, expected_results: List[float]) -> N
 @parametrize(
     "backoff,expected_results",
     [
-        (Backoff(first_wait=1, max_backoff=5, max_backoff_attempts=5, growth=2), [1, 2, 4, 5, 5, 5, 5, 5]),
-        (Backoff(first_wait=2, max_backoff=20, max_backoff_attempts=3, growth=2), [2, 4, 8, 16, 20, 20, 20]),
+        (
+            Backoff(first_wait=1, max_backoff=5, max_backoff_attempts=5, growth=2),
+            [1, 2, 4, 5, 5, 5, 5, 5],
+        ),
+        (
+            Backoff(first_wait=2, max_backoff=20, max_backoff_attempts=3, growth=2),
+            [2, 4, 8, 16, 20, 20, 20],
+        ),
         # floats
-        (Backoff(first_wait=1, max_backoff=3, max_backoff_attempts=1, growth=1.5), [1, 1.5, 2.25, 3]),
+        (
+            Backoff(first_wait=1, max_backoff=3, max_backoff_attempts=1, growth=1.5),
+            [1, 1.5, 2.25, 3],
+        ),
         # ensure growth with small floats
-        (Backoff(first_wait=0.2, max_backoff=0.21, max_backoff_attempts=3, growth=1.1), [0.2, 0.21, 0.21, 0.21]),
+        (
+            Backoff(first_wait=0.2, max_backoff=0.21, max_backoff_attempts=3, growth=1.1),
+            [0.2, 0.21, 0.21, 0.21],
+        ),
         # safeguard, first_wait will be 0.2, backoff 0.8, attempts 2, growth 2:
-        (Backoff(first_wait=0, max_backoff=-0.8, max_backoff_attempts=-2, growth=1), [0.2, 0.4, 0.8, 0.8]),
+        (
+            Backoff(first_wait=0, max_backoff=-0.8, max_backoff_attempts=-2, growth=1),
+            [0.2, 0.4, 0.8, 0.8],
+        ),
         # safeguard, first_wait and growth will be absolute
         (Backoff(first_wait=-1, max_backoff=4, max_backoff_attempts=1, growth=-2), [1, 2, 4]),
     ],
@@ -257,9 +276,15 @@ def test_backoff(backoff: Backoff, expected_results: List[float]) -> None:
         # not enough results to cover max_backoff_attempts
         (Backoff(first_wait=1, max_backoff=8, max_backoff_attempts=5, growth=2), [1, 2, 4, 8, 8]),
         # too many results
-        (Backoff(first_wait=1, max_backoff=8, max_backoff_attempts=2, growth=2), [1, 2, 4, 8, 8, 8]),
+        (
+            Backoff(first_wait=1, max_backoff=8, max_backoff_attempts=2, growth=2),
+            [1, 2, 4, 8, 8, 8],
+        ),
         # just plain wrong, unnecessary and evil
-        (Backoff(first_wait=0, max_backoff=0, max_backoff_attempts=0, growth=0), [1, 2, 4, 8, 8, 8]),
+        (
+            Backoff(first_wait=0, max_backoff=0, max_backoff_attempts=0, growth=0),
+            [1, 2, 4, 8, 8, 8],
+        ),
     ],
 )
 @UnitTest
@@ -287,7 +312,9 @@ def test_verify_backoff_endless() -> None:
     Verifies that Backoff supports endless iteration.
     """
     target_maximum = 10
-    backoff = Backoff(first_wait=target_maximum, max_backoff=target_maximum, max_backoff_attempts=None, growth=10)
+    backoff = Backoff(
+        first_wait=target_maximum, max_backoff=target_maximum, max_backoff_attempts=None, growth=10
+    )
 
     for _ in range(1000):  # Ok ok not endless, but "endless"
         try:

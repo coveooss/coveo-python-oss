@@ -33,13 +33,17 @@ def _echo_updated(updated: Set[Path]) -> None:
             echo.noise(updated_path, item=True)
 
 
-def _pull_dev_requirements(dry_run: bool = False, verbose: bool = False) -> Generator[Path, None, None]:
+def _pull_dev_requirements(
+    dry_run: bool = False, verbose: bool = False
+) -> Generator[Path, None, None]:
     """Writes the dev-dependencies of pydev projects' local dependencies into pydev's pyproject.toml file."""
     dry_run_text = "(dry run) " if dry_run else ""
     for pydev_project in PyDev.find_pyprojects(verbose=verbose):
         echo.step(f"Analyzing dev requirements for {pydev_project}")
         if pydev_project.pull_dev_requirements(dry_run=dry_run):
-            echo.outcome(f"{dry_run_text}Updated {pydev_project.package.name} with new dev requirements.")
+            echo.outcome(
+                f"{dry_run_text}Updated {pydev_project.package.name} with new dev requirements."
+            )
             if not dry_run:
                 echo.outcome("Lock file and virtual environment updated !!thumbs_up!!\n")
             yield pydev_project.toml_path
@@ -77,7 +81,8 @@ def check_outdated(verbose: bool = False) -> None:
 
     if outdated:
         raise ExitWithFailure(
-            failures=outdated, suggestions='Run "poetry run pyproject fix-outdated" to update all outdated files.'
+            failures=outdated,
+            suggestions='Run "poetry run pyproject fix-outdated" to update all outdated files.',
         ) from RequirementsOutdated(f"Found {len(outdated)} outdated file(s).")
 
     echo.success("Check complete! All files are up-to-date.")
@@ -132,7 +137,10 @@ def bump(verbose: bool = False) -> None:
 @click.option("--python", default=None)
 @click.option("--verbose", is_flag=True, default=False)
 def build(
-    project_name: str, directory: Union[str, Path] = None, python: Union[str, Path] = None, verbose: bool = False
+    project_name: str,
+    directory: Union[str, Path] = None,
+    python: Union[str, Path] = None,
+    verbose: bool = False,
 ) -> None:
     """
     Store all dependencies of a python project into a local directory, according to its poetry.lock,
@@ -149,7 +157,9 @@ def build(
         raise ExitWithFailure from exception
 
     python_environments = (
-        [PythonEnvironment(python)] if python else project.virtual_environments(create_default_if_missing=True)
+        [PythonEnvironment(python)]
+        if python
+        else project.virtual_environments(create_default_if_missing=True)
     )
 
     if not directory:
@@ -194,7 +204,9 @@ def fresh_eggs(project_name: str = None, install: bool = True, verbose: bool = F
         try:
             pydev = PyDev(Path("."))
         except NotPyDevProject:
-            echo.suggest("The environment was not refreshed. You may want to call 'poetry install'.")
+            echo.suggest(
+                "The environment was not refreshed. You may want to call 'poetry install'."
+            )
         else:
             echo.step(f"Refreshing {pydev} environment...")
             pydev.install()
@@ -213,7 +225,9 @@ def pull_dev_requirements(dry_run: bool = False, verbose: bool = False) -> None:
         raise ExitWithFailure from exception
 
 
-def _beautify_mypy_output(project: PythonProject, output: Iterable[str], *, full_paths: bool = False) -> None:
+def _beautify_mypy_output(
+    project: PythonProject, output: Iterable[str], *, full_paths: bool = False
+) -> None:
     """Main use: guide IDEs by showing full paths to the files vs the current working directory.
     Bonus: highlight errors in red and display a slightly shortened version of the error output."""
     pattern = re.compile(
@@ -224,8 +238,14 @@ def _beautify_mypy_output(project: PythonProject, output: Iterable[str], *, full
         match = pattern.fullmatch(line)
         if match:
             adjusted_path = project.project_path / Path(match["path"])
-            adjusted_path = adjusted_path.resolve() if full_paths else adjusted_path.relative_to(Path(".").resolve())
-            echo.error_details(f'{adjusted_path}:{match["line"]}:{match["column"]} {match["detail"]}')
+            adjusted_path = (
+                adjusted_path.resolve()
+                if full_paths
+                else adjusted_path.relative_to(Path(".").resolve())
+            )
+            echo.error_details(
+                f'{adjusted_path}:{match["line"]}:{match["column"]} {match["detail"]}'
+            )
         else:
             echo.noise(line)
 
@@ -236,12 +256,17 @@ def _beautify_mypy_output(project: PythonProject, output: Iterable[str], *, full
 @click.option("--exact-match/--no-exact-match", default=False)
 @click.option("--verbose", is_flag=True, default=False)
 def mypy(
-    project_name: str = None, exact_match: bool = False, verbose: bool = False, extra_mypy_option: List[str] = None
+    project_name: str = None,
+    exact_match: bool = False,
+    verbose: bool = False,
+    extra_mypy_option: List[str] = None,
 ) -> None:
     """Launches mypy over the repo.
     extra-mypy-options: values must look like --switch or --config=value
     """
-    projects = PythonProject.find_pyprojects(query=project_name, exact_match=exact_match, verbose=verbose)
+    projects = PythonProject.find_pyprojects(
+        query=project_name, exact_match=exact_match, verbose=verbose
+    )
 
     echo.step("Type checking in progress...")
     failed: List[ContinuousIntegrationRunner] = []
@@ -252,7 +277,10 @@ def mypy(
             if project.ci.mypy:
                 for environment in project.virtual_environments(create_default_if_missing=True):
                     try:
-                        if project.ci.mypy.launch(environment, *extra_mypy_option) is RunnerStatus.Success:
+                        if (
+                            project.ci.mypy.launch(environment, *extra_mypy_option)
+                            is RunnerStatus.Success
+                        ):
                             echo.success("mypy passed: ", project)
                         else:
                             failed.append(project.ci.mypy)
@@ -267,7 +295,9 @@ def mypy(
             runner.echo_last_failures()
         for exception in exceptions:
             echo.error(exception, pad_after=True, pad_before=True)
-        raise ExitWithFailure(failures=failed) from CheckFailed(f"{len(failed)} project(s) failed type checking.")
+        raise ExitWithFailure(failures=failed) from CheckFailed(
+            f"{len(failed)} project(s) failed type checking."
+        )
 
     echo.success("All projects passed type checking.")
 
@@ -282,11 +312,15 @@ def locate(project_name: str, verbose: bool = False) -> None:
     except PythonProjectNotFound as exception:
         # check for partial matches to guide the user
         partial_matches = (
-            project.package.name for project in PythonProject.find_pyprojects(query=project_name, verbose=verbose)
+            project.package.name
+            for project in PythonProject.find_pyprojects(query=project_name, verbose=verbose)
         )
         try:
             raise ExitWithFailure(
-                suggestions=("Exact match required but partial matches were found:", *partial_matches)
+                suggestions=(
+                    "Exact match required but partial matches were found:",
+                    *partial_matches,
+                )
             ) from exception
         except PythonProjectNotFound:
             # we can't find a single project to suggest; raise the original exception.
@@ -301,7 +335,9 @@ def refresh(project_name: str = None, exact_match: bool = False, verbose: bool =
     echo.step("Refreshing python project environments...")
     pydev_projects = []
     try:
-        for project in PythonProject.find_pyprojects(query=project_name, exact_match=exact_match, verbose=verbose):
+        for project in PythonProject.find_pyprojects(
+            query=project_name, exact_match=exact_match, verbose=verbose
+        ):
             if project.options.pydev:
                 pydev_projects.append(project)
                 continue  # do these at the end
@@ -327,7 +363,9 @@ def refresh(project_name: str = None, exact_match: bool = False, verbose: bool =
 def ci(project_name: str = None, exact_match: bool = False, verbose: bool = False) -> None:
     failures = []
     try:
-        for project in PythonProject.find_pyprojects(query=project_name, exact_match=exact_match, verbose=verbose):
+        for project in PythonProject.find_pyprojects(
+            query=project_name, exact_match=exact_match, verbose=verbose
+        ):
             echo.step(project.package.name, pad_after=False)
             if not project.launch_continuous_integration():
                 failures.append(project)
@@ -335,6 +373,8 @@ def ci(project_name: str = None, exact_match: bool = False, verbose: bool = Fals
         raise ExitWithFailure from exception
 
     if failures:
-        raise ExitWithFailure(failures=failures) from CheckFailed(f"{len(failures)} project(s) failed ci steps.")
+        raise ExitWithFailure(failures=failures) from CheckFailed(
+            f"{len(failures)} project(s) failed ci steps."
+        )
 
     echo.success()

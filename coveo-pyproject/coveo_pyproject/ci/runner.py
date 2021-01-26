@@ -74,13 +74,21 @@ class ContinuousIntegrationRunner:
             report_folder.mkdir()
 
         return report_folder / ".".join(
-            ("ci", environment.pretty_python_version, self.name, self._pyproject.package.name, "xml")
+            (
+                "ci",
+                environment.pretty_python_version,
+                self.name,
+                self._pyproject.package.name,
+                "xml",
+            )
         )
 
     def _output_generic_report(self, environment: PythonEnvironment) -> None:
         test_case = TestCase(self.name, classname=f"ci.{self._pyproject.package.name}")
         if self.status is RunnerStatus.Error:
-            test_case.add_error_info("An error occurred, the test was unable to complete.", self.last_output())
+            test_case.add_error_info(
+                "An error occurred, the test was unable to complete.", self.last_output()
+            )
         elif self.status is RunnerStatus.CheckFailed:
             test_case.add_failure_info("The test completed; errors were found.", self.last_output())
         generate_report(self._pyproject.package.name, self.report_path(environment), [test_case])

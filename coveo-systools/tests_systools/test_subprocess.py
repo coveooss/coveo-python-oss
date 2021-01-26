@@ -14,7 +14,9 @@ from coveo_systools.subprocess import (
 )
 
 
-def _forge_test_exception(original_exception: CalledProcessError, **kwargs) -> DetailedCalledProcessError:
+def _forge_test_exception(
+    original_exception: CalledProcessError, **kwargs
+) -> DetailedCalledProcessError:
     """forge a DetailedCalledProcessError exception using python's exception handlers."""
     try:
         raise DetailedCalledProcessError(**kwargs) from original_exception
@@ -97,7 +99,9 @@ def test_detailed_subprocess_exception_precedence() -> None:
 
 
 @UnitTest
-@parametrize(["argument", "expected"], (("string", "string"), (0, "0"), (0.0, "0.0"), (Path("."), ".")))
+@parametrize(
+    ["argument", "expected"], (("string", "string"), (0, "0"), (0.0, "0.0"), (Path("."), "."))
+)
 def test_command_line_argument_conversion(argument: Any, expected: str) -> None:
     """tests the supported command line arg conversion types"""
     assert cast_command_line_argument_to_string(argument) == expected

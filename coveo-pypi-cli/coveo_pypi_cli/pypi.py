@@ -54,12 +54,15 @@ def obtain_versions_from_pypi(
 def obtain_latest_release_from_pypi(package: str) -> Optional[StrictVersion]:
     """Obtains the latest non-prerelease version from pypi."""
     official_releases = filter(
-        lambda version: not version.prerelease, obtain_versions_from_pypi(package, version_class=StrictVersionHelper)
+        lambda version: not version.prerelease,
+        obtain_versions_from_pypi(package, version_class=StrictVersionHelper),
     )
     return next(official_releases, None)
 
 
-def compute_next_version(package: str, *, prerelease: bool, minimum_version: str = "0.0.1") -> StrictVersionHelper:
+def compute_next_version(
+    package: str, *, prerelease: bool, minimum_version: str = "0.0.1"
+) -> StrictVersionHelper:
     """
     Given a package, compute the next version based on what's in pypi. e.g.:
         - If 1.0.0 is the latest release version, it becomes 1.0.1 or 1.0.1a1

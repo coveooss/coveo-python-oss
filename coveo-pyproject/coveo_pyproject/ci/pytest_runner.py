@@ -10,7 +10,11 @@ class PytestRunner(ContinuousIntegrationRunner):
     outputs_own_report = True
 
     def __init__(
-        self, *, marker_expression: str = None, doctest_modules: bool = True, _pyproject: PythonProjectAPI
+        self,
+        *,
+        marker_expression: str = None,
+        doctest_modules: bool = True,
+        _pyproject: PythonProjectAPI,
     ) -> None:
         super().__init__(_pyproject=_pyproject)
         self.marker_expression = marker_expression
@@ -21,7 +25,10 @@ class PytestRunner(ContinuousIntegrationRunner):
             self._pyproject.install()
 
         command = environment.build_command(
-            PythonTool.Pytest, "--durations=5", "--tb=short", f"--junitxml={self.report_path(environment)}"
+            PythonTool.Pytest,
+            "--durations=5",
+            "--tb=short",
+            f"--junitxml={self.report_path(environment)}",
         )
 
         if self.marker_expression:
@@ -30,7 +37,10 @@ class PytestRunner(ContinuousIntegrationRunner):
             command.append("--doctest-modules")
 
         check_output(
-            *command, *extra_args, working_directory=self._pyproject.project_path, verbose=self._pyproject.verbose
+            *command,
+            *extra_args,
+            working_directory=self._pyproject.project_path,
+            verbose=self._pyproject.verbose,
         )
 
         return RunnerStatus.Success

@@ -42,7 +42,10 @@ class SetLoggingLevel:
 
     # noinspection PyUnusedLocal
     def __exit__(
-        self, _exc_type: Optional[type], _exc_val: Optional[Exception], _exc_tb: Optional[TracebackType]
+        self,
+        _exc_type: Optional[type],
+        _exc_val: Optional[Exception],
+        _exc_tb: Optional[TracebackType],
     ) -> None:
         """
         Restore the logging level to its original value.
@@ -74,7 +77,10 @@ def intercept_logging(logger: logging.Logger, level: int = None) -> Generator[St
 
 @contextmanager
 def assert_logging(
-    logger: logging.Logger, present: StringCollection = None, absent: StringCollection = None, level: int = None
+    logger: logging.Logger,
+    present: StringCollection = None,
+    absent: StringCollection = None,
+    level: int = None,
 ) -> Generator[None, None, None]:
     """
     Context manager that attaches to a logger and ensures the presence of specific strings when the context is left.

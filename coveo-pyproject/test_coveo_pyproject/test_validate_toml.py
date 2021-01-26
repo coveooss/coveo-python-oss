@@ -10,7 +10,9 @@ from coveo_pyproject.utils import _load_toml_from_content
 DUMMY_TEST_PATH = Path("/some/dummy/path.toml")
 
 
-def _retrieve_exception(fn: Callable = _load_toml_from_content, *args: Any, **kwargs: Any) -> Exception:
+def _retrieve_exception(
+    fn: Callable = _load_toml_from_content, *args: Any, **kwargs: Any
+) -> Exception:
     try:
         fn(*args, **kwargs)
     except Exception as exception:

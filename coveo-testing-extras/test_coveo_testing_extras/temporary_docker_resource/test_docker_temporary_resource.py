@@ -84,7 +84,9 @@ def mock_docker_client() -> Generator[None, None, None]:
 
 
 @DockerTest
-def test_docker_temporary_resource_get_port(webserver_mock_container: TemporaryWebServerMockContainer) -> None:
+def test_docker_temporary_resource_get_port(
+    webserver_mock_container: TemporaryWebServerMockContainer,
+) -> None:
     port = webserver_mock_container.get_published_port(80)
     assert requests.get(webserver_mock_container.uri).text.strip() == "Hello!"
     if DOCKER_USE_PUBLISHED_PORTS:

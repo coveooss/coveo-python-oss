@@ -62,7 +62,9 @@ def test_flexcase_dataclass() -> None:
 @UnitTest
 def test_flexcase_type_errors() -> None:
     with pytest.raises(TypeError):
-        flexcase(FlexMockClass().to_delegate, strip_extra=False)(arg1=1, arg2=True, too_many_args=True)
+        flexcase(FlexMockClass().to_delegate, strip_extra=False)(
+            arg1=1, arg2=True, too_many_args=True
+        )
 
     with pytest.raises(TypeError):
         flexcase(FlexMockClass().to_delegate)(arg1=1)  # missing arg2
@@ -93,4 +95,8 @@ def test_unflex() -> None:
     mock = FlexMockClass()
     dirty = {"ArG2": False, "a__rg1": 2, "_Extra": None}
     assert unflex(mock.to_delegate, dirty) == {"arg1": 2, "arg2": False}
-    assert unflex(mock.to_delegate, dirty, strip_extra=False) == {"arg1": 2, "arg2": False, "_Extra": None}
+    assert unflex(mock.to_delegate, dirty, strip_extra=False) == {
+        "arg1": 2,
+        "arg2": False,
+        "_Extra": None,
+    }

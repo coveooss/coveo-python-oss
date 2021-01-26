@@ -35,7 +35,10 @@ def test_test_id_sequence(unique_test_id: TestId, request: SubRequest) -> None:
 @UnitTest
 def test_test_id_fixture_within_parametrize(expected_sequence: int, unique_test_id: TestId) -> None:
     assert unique_test_id.sequence == 0
-    assert unique_test_id.friendly_name == f"test_test_id_fixture_within_parametrize[{expected_sequence}]"
+    assert (
+        unique_test_id.friendly_name
+        == f"test_test_id_fixture_within_parametrize[{expected_sequence}]"
+    )
 
 
 @UnitTest

@@ -26,7 +26,9 @@ class PackageAPI(Protocol):
 
     name: str
     version: VersionAPI
-    source_type: Optional[Union[Literal["directory"], str]]  # there are others; we only care about directory :shrug:
+    source_type: Optional[
+        Union[Literal["directory"], str]
+    ]  # there are others; we only care about directory :shrug:
     source_url: Optional[str]
     pretty_name: str
 
@@ -91,7 +93,9 @@ class PoetryAPI:
         self.version: Final[str] = version
         self.description: Final[str] = description
         self.dependencies: Final[Mapping[str, Dependency]] = dependencies_factory(dependencies)
-        self.dev_dependencies: Final[Mapping[str, Dependency]] = dependencies_factory(dev_dependencies)
+        self.dev_dependencies: Final[Mapping[str, Dependency]] = dependencies_factory(
+            dev_dependencies
+        )
         # extra will contain all other properties of the package, mainly for dev/debug purposes.
         self.extra: Final[Mapping[str, Any]] = extra
 
@@ -102,7 +106,9 @@ class PoetryAPI:
         return {**self.dependencies, **self.dev_dependencies}
 
 
-def dependencies_factory(dependencies: Mapping[str, Union[str, dict]] = None) -> Dict[str, Dependency]:
+def dependencies_factory(
+    dependencies: Mapping[str, Union[str, dict]] = None
+) -> Dict[str, Dependency]:
     """ Transforms a poetry dependency section (such as tool.poetry.dev-dependencies) into Dependency instances. """
     return (
         {name: Dependency.factory(name, dependency) for name, dependency in dependencies.items()}

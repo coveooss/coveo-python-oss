@@ -56,7 +56,9 @@ class TestId:
     def _isolate_and_sanitize_id_part(cls, string: str) -> str:
         """ Return a new string that doesn't contain invalid characters or the name tokenization delimiter """
         replacement = "-"
-        assert replacement != cls.DELIMITER, "Use a replacement character that's different from the delimiter."
+        assert (
+            replacement != cls.DELIMITER
+        ), "Use a replacement character that's different from the delimiter."
         # remove delimiter from pattern so that it disappears from the string
         replace_pattern = r"[^a-zA-Z0-9_.-]".replace(cls.DELIMITER, "")
         return re.sub(replace_pattern, replacement, string)

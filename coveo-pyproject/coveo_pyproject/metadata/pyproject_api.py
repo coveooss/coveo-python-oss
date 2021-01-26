@@ -28,7 +28,9 @@ class PythonProjectAPI(Protocol):
     def __init__(self, project_path: Path, *, verbose: bool = False) -> None:
         ...
 
-    def virtual_environments(self, *, create_default_if_missing: bool = False) -> List["PythonEnvironment"]:
+    def virtual_environments(
+        self, *, create_default_if_missing: bool = False
+    ) -> List["PythonEnvironment"]:
         ...
 
     def install(self, remove_untracked: bool = True) -> None:

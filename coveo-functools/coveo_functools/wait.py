@@ -86,7 +86,9 @@ def until(
 
         if not infinite:
             elapsed = datetime.now() - call_timestamp
-            sleep_time = max(zero, retry_ms - elapsed)  # sleep time is reduced by call time because why not.
+            sleep_time = max(
+                zero, retry_ms - elapsed
+            )  # sleep time is reduced by call time because why not.
             timeout_s -= elapsed + sleep_time
 
         if timeout_s >= zero:  # don't sleep if timeout already drained out
@@ -157,7 +159,9 @@ class Backoff(Iterator):
                        specifying firstwait/maxbackoff/growth.
         """
         self.stage: int = 0
-        self._stages = stages or tuple(self.generate_backoff_stages(first_wait, growth, max_backoff))
+        self._stages = stages or tuple(
+            self.generate_backoff_stages(first_wait, growth, max_backoff)
+        )
         if not self._stages or (0 in self._stages):
             raise ValueError("Backoff received wrong values.")
 
@@ -187,7 +191,9 @@ class Backoff(Iterator):
         return self._stages[next_stage] / self._stages[-1]
 
     @staticmethod
-    def generate_backoff_stages(first_wait: float, growth: float, max_backoff: float) -> Generator[float, None, None]:
+    def generate_backoff_stages(
+        first_wait: float, growth: float, max_backoff: float
+    ) -> Generator[float, None, None]:
         """Generate the stages (wait seconds) of this backoff strategy."""
         # Any invalid value is adjusted to sane defaults. This is a safeguard in case one of the values comes from
         # the environment or command line to prevent infinite backoff.

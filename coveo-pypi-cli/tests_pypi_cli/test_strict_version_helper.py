@@ -48,7 +48,13 @@ def test_strict_version_helper_from_strict_version() -> None:
 @UnitTest
 @parametrize(
     ("lower", "higher"),
-    (("0.0.1", "0.0.2"), ("0.0.1", "0.1.1"), ("0.0.1", "1.0.1"), ("0.0.1a1", "0.0.1"), ("0.0.1a1", "0.0.1a2")),
+    (
+        ("0.0.1", "0.0.2"),
+        ("0.0.1", "0.1.1"),
+        ("0.0.1", "1.0.1"),
+        ("0.0.1a1", "0.0.1"),
+        ("0.0.1a1", "0.0.1a2"),
+    ),
 )
 def test_strict_version_helper_compare(lower: str, higher: str) -> None:
     assert StrictVersionHelper(lower) < StrictVersionHelper(higher)

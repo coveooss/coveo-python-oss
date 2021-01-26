@@ -46,7 +46,10 @@ class OfflineInstallRunner(ContinuousIntegrationRunner):
                         "--target",
                         temporary_folder / "pip-install-test",
                         "--pre"
-                        if any(p.allow_prereleases for p in self._pyproject.package.dependencies.values())
+                        if any(
+                            p.allow_prereleases
+                            for p in self._pyproject.package.dependencies.values()
+                        )
                         else "",
                     )
                 )

@@ -36,7 +36,11 @@ def snake_case(string: str, bad_casing: Iterable[str] = ()) -> str:
         boundary = -2 if sub[-1].isupper() else -1
         return sub[:boundary].title() + sub[boundary:]
 
-    prepared = re.sub(pattern=re.compile(r"([A-Z]{2,}[a-z]?(?=$|[^a-z]))"), repl=_replace_caps_clusters, string=string)
+    prepared = re.sub(
+        pattern=re.compile(r"([A-Z]{2,}[a-z]?(?=$|[^a-z]))"),
+        repl=_replace_caps_clusters,
+        string=string,
+    )
 
     # check if we can find any of the words and fix their casing
     for word in bad_casing:
@@ -117,7 +121,9 @@ def flexcase(
     return _FlexcaseDecorator(strip_extra=strip_extra, allowed_extras=allowed_extras)(fn)
 
 
-def unflex(fn: Callable, dirty_kwargs: Mapping[str, Any], strip_extra: bool = True) -> Dict[str, Any]:
+def unflex(
+    fn: Callable, dirty_kwargs: Mapping[str, Any], strip_extra: bool = True
+) -> Dict[str, Any]:
     """Opposite of flexcase; return a clean version of dirty_kwargs with correct case and extra kwargs stripped out."""
     flex: _FlexcaseDecorator = _FlexcaseDecorator(strip_extra=strip_extra)
     return flex.unflex(flex.create_lookup(fn), dirty_kwargs)

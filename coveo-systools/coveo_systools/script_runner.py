@@ -21,7 +21,9 @@ def launch_module_entrypoint(module_name: str, entrypoint: str = None, *args: An
         raise Exception("No entrypoint was provided.")
 
     # obtain the entry point metadata for the desired command
-    console_scripts: Dict[str, pkg_resources.EntryPoint] = pkg_resources.get_entry_map(module_name)["console_scripts"]
+    console_scripts: Dict[str, pkg_resources.EntryPoint] = pkg_resources.get_entry_map(module_name)[
+        "console_scripts"
+    ]
     if entrypoint not in console_scripts:
         raise Exception(f"{entrypoint}: unknown command name.")
     entry_point = console_scripts[entrypoint]

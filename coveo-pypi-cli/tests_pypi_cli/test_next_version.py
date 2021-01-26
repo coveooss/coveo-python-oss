@@ -69,7 +69,9 @@ def test_iter_sort_empty() -> None:
     (
         pytest.param([], None, "0.0.1", "a1", id="empty"),
         pytest.param([], "2.0", "2.0.0", "a1", id="empty w/minimum"),  # empty set
-        pytest.param([StrictVersion("0.0.1")], "0.4", "0.4.0", "a1", id="simple case"),  # simple case
+        pytest.param(
+            [StrictVersion("0.0.1")], "0.4", "0.4.0", "a1", id="simple case"
+        ),  # simple case
         pytest.param(
             [  # only pre-releases
                 StrictVersion("0.0.1a0"),
@@ -169,12 +171,20 @@ def test_iter_sort_empty() -> None:
     ),
 )
 def test_next_version(
-    releases: Sequence[StrictVersion], minimum_version: str, expected_next_version: str, expected_next_prerelease: str
+    releases: Sequence[StrictVersion],
+    minimum_version: str,
+    expected_next_version: str,
+    expected_next_prerelease: str,
 ) -> None:
     kwargs = {"minimum_version": minimum_version} if minimum_version is not None else {}
     with requests_mock.Mocker() as http_mock:
-        http_mock.get(re.compile(PYPI_MATCHER), json={"releases": {str(release): None for release in releases}})
-        assert compute_next_version("mocked", prerelease=False, **kwargs) == StrictVersionHelper(expected_next_version)
-        assert str(compute_next_version("mocked", prerelease=True, **kwargs)) == StrictVersionHelper(
-            expected_next_version + expected_next_prerelease
+        http_mock.get(
+            re.compile(PYPI_MATCHER),
+            json={"releases": {str(release): None for release in releases}},
         )
+        assert compute_next_version("mocked", prerelease=False, **kwargs) == StrictVersionHelper(
+            expected_next_version
+        )
+        assert str(
+            compute_next_version("mocked", prerelease=True, **kwargs)
+        ) == StrictVersionHelper(expected_next_version + expected_next_prerelease)

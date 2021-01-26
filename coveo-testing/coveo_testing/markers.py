@@ -4,7 +4,9 @@ from _pytest.mark import MarkDecorator
 
 UnitTest = pytest.mark.unit_test  # :sofast:
 Integration = pytest.mark.integration  # interacts with the product
-Interactive = pytest.mark.interactive  # it won't work OOTB / manual steps / eye-based validations...
+Interactive = (
+    pytest.mark.interactive
+)  # it won't work OOTB / manual steps / eye-based validations...
 
 # Registering the markers removes pytest warnings.
 AUTO_REGISTER_TEST_MARKERS = [UnitTest, Integration, Interactive]

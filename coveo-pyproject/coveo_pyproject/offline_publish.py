@@ -21,7 +21,9 @@ _DEFAULT_PIP_OPTIONS = (
 )
 
 
-def offline_publish(project: PythonProjectAPI, wheelhouse: Path, environment: PythonEnvironment) -> None:
+def offline_publish(
+    project: PythonProjectAPI, wheelhouse: Path, environment: PythonEnvironment
+) -> None:
     """
     Store the project and all its locked dependencies into a folder, so that it can be installed offline using pip.
 
@@ -42,18 +44,25 @@ class _OfflinePublish:
         pip wheel -r requirements.txt --target target_path --find-links target_path
     """
 
-    def __init__(self, project: PythonProjectAPI, wheelhouse: Path, environment: PythonEnvironment) -> None:
+    def __init__(
+        self, project: PythonProjectAPI, wheelhouse: Path, environment: PythonEnvironment
+    ) -> None:
         self.project = project
         self.environment = environment
         self.wheelhouse = wheelhouse
-        self._check_call = functools.partial(check_call if self.verbose else check_output, verbose=self.verbose)
+        self._check_call = functools.partial(
+            check_call if self.verbose else check_output, verbose=self.verbose
+        )
 
         self._valid_packages: Optional[Set[str]] = None
         self._local_projects: Set[str] = {
-            name for (name, package) in self.project.package.all_dependencies.items() if package.path
+            name
+            for (name, package) in self.project.package.all_dependencies.items()
+            if package.path
         }
         self._locked_packages: Dict[str, Package] = {
-            package.name: package for package in self.project.poetry.locker.locked_repository().packages
+            package.name: package
+            for package in self.project.poetry.locker.locked_repository().packages
         }
 
     @property
@@ -66,7 +75,9 @@ class _OfflinePublish:
             if self.environment in self.project.virtual_environments():
                 pip_freeze_environment = self.environment
             else:
-                pip_freeze_environment = self.project.virtual_environments(create_default_if_missing=True).pop()
+                pip_freeze_environment = self.project.virtual_environments(
+                    create_default_if_missing=True
+                ).pop()
                 echo.warning(
                     f"The executable {self.environment} is not part of this project. "
                     f'To fix this, run "poetry env use {self.environment.python_executable}". '
@@ -106,10 +117,13 @@ class _OfflinePublish:
         project = project or self.project
         for dependency in project.options.build_dependencies.values():
             dep = (
-                dependency.name if dependency.version == "*" else f"{dependency.name}{dependency.version}"
+                dependency.name
+                if dependency.version == "*"
+                else f"{dependency.name}{dependency.version}"
             )  # such as setuptools>=42
             self._check_call(
-                *self.environment.build_command(PythonTool.Pip, "wheel", dep), working_directory=self.wheelhouse
+                *self.environment.build_command(PythonTool.Pip, "wheel", dep),
+                working_directory=self.wheelhouse,
             )
 
     def _store_dependencies_in_wheelhouse(self) -> None:

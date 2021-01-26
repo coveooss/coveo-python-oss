@@ -31,21 +31,29 @@ class PythonProject(PythonProjectAPI):
 
     def __init__(self, project_path: Path, *, verbose: bool = False) -> None:
         self.verbose = verbose
-        self.project_path: Path = (project_path if project_path.is_dir() else project_path.parent).absolute()
+        self.project_path: Path = (
+            project_path if project_path.is_dir() else project_path.parent
+        ).absolute()
         self.toml_path: Path = self.project_path / PythonFile.PyProjectToml
         self.lock_path: Path = self.project_path / PythonFile.PoetryLock
 
         toml_content = load_toml_from_path(self.toml_path)
 
-        self.package: PoetryAPI = flexfactory(PoetryAPI, **dict_lookup(toml_content, "tool", "poetry"), _pyproject=self)
+        self.package: PoetryAPI = flexfactory(
+            PoetryAPI, **dict_lookup(toml_content, "tool", "poetry"), _pyproject=self
+        )
         self.egg_path: Path = self.project_path / f"{self.package.safe_name}.egg-info"
 
         self.options: CoveoPackage = flexfactory(
-            CoveoPackage, **dict_lookup(toml_content, "tool", "coveo", "pyproject", default={}), _pyproject=self
+            CoveoPackage,
+            **dict_lookup(toml_content, "tool", "coveo", "pyproject", default={}),
+            _pyproject=self,
         )
 
         self.ci: ContinuousIntegrationConfig = flexfactory(
-            ContinuousIntegrationConfig, **dict_lookup(toml_content, "tool", "coveo", "ci", default={}), _pyproject=self
+            ContinuousIntegrationConfig,
+            **dict_lookup(toml_content, "tool", "coveo", "ci", default={}),
+            _pyproject=self,
         )
 
         # these are the actual poetry apis
@@ -71,7 +79,9 @@ class PythonProject(PythonProjectAPI):
     def find_pyproject(
         cls: Type[T_PythonProject], project_name: str, path: Path = None, *, verbose: bool = False
     ) -> T_PythonProject:
-        project = next(cls.find_pyprojects(path, query=project_name, exact_match=True, verbose=verbose), None)
+        project = next(
+            cls.find_pyprojects(path, query=project_name, exact_match=True, verbose=verbose), None
+        )
         if not project:
             raise PythonProjectNotFound(f"{project_name} cannot be found in {path}")
         return project
@@ -108,14 +118,19 @@ class PythonProject(PythonProjectAPI):
             if (
                 not query
                 or (exact_match and project.package.name == query)
-                or (not exact_match and query.replace("-", "_").lower() in project.package.safe_name.lower())
+                or (
+                    not exact_match
+                    and query.replace("-", "_").lower() in project.package.safe_name.lower()
+                )
             ):
                 count_projects += 1
                 yield project
 
         if count_projects == 0:
             raise PythonProjectNotFound(
-                f"Cannot find any project that could match {query}" if query else "No python projects were found."
+                f"Cannot find any project that could match {query}"
+                if query
+                else "No python projects were found."
             )
 
     @property
@@ -125,7 +140,9 @@ class PythonProject(PythonProjectAPI):
             return False
         return not self.poetry.locker.is_fresh()
 
-    def virtual_environments(self, *, create_default_if_missing: bool = False) -> List[PythonEnvironment]:
+    def virtual_environments(
+        self, *, create_default_if_missing: bool = False
+    ) -> List[PythonEnvironment]:
         """The project's virtual environments.
 
         create_default_if_missing: When no environments are found, create an empty environment using what poetry
@@ -133,9 +150,9 @@ class PythonProject(PythonProjectAPI):
             the current project installed. No other dependencies will be installed.
         """
         environments = []
-        for str_path in self.poetry_run("env", "list", "--full-path", capture_output=True, breakout_of_venv=True).split(
-            "\n"
-        ):
+        for str_path in self.poetry_run(
+            "env", "list", "--full-path", capture_output=True, breakout_of_venv=True
+        ).split("\n"):
             if str_path.strip():
                 path = Path(str_path.replace("(Activated)", "").strip())
                 environments.append(PythonEnvironment(path))
@@ -152,7 +169,10 @@ class PythonProject(PythonProjectAPI):
         Typically False; serves the rare cases where pyproject is installed inside the environment.
         """
         current_executable = Path(sys.executable)
-        return any(environment.python_executable == current_executable for environment in self.virtual_environments())
+        return any(
+            environment.python_executable == current_executable
+            for environment in self.virtual_environments()
+        )
 
     def bump(self) -> bool:
         """Bump (update) all dependencies to the lock file. Return True if changed."""
@@ -174,11 +194,15 @@ class PythonProject(PythonProjectAPI):
         wheel_match = wheel_pattern.search(poetry_output)
 
         if not wheel_match:
-            raise PythonProjectException(f"Unable able to find a wheel filename in poetry's output:\n{poetry_output}")
+            raise PythonProjectException(
+                f"Unable able to find a wheel filename in poetry's output:\n{poetry_output}"
+            )
 
         assert wheel_match["distribution"] == self.package.safe_name
         assert wheel_match["version"] == str(self.package.version)
-        wheel = self.project_path / "dist" / Path(wheel_match.group())  # group() gives the complete match
+        wheel = (
+            self.project_path / "dist" / Path(wheel_match.group())
+        )  # group() gives the complete match
         assert wheel.exists(), f"{wheel} cannot be found."
 
         if target_path is None:
@@ -202,17 +226,22 @@ class PythonProject(PythonProjectAPI):
         for runner in self.ci.runners:
             for environment in self.virtual_environments(create_default_if_missing=True):
                 try:
-                    echo.normal(f"{runner} ({environment.pretty_python_version})", emoji="hourglass")
+                    echo.normal(
+                        f"{runner} ({environment.pretty_python_version})", emoji="hourglass"
+                    )
                     status = runner.launch(environment)
                     if status is not RunnerStatus.Success:
                         echo.warning(
-                            f"{self.package.name}: {runner} reported issues:", pad_before=False, pad_after=False
+                            f"{self.package.name}: {runner} reported issues:",
+                            pad_before=False,
+                            pad_after=False,
                         )
                         runner.echo_last_failures()
 
                 except DetailedCalledProcessError as exception:
                     echo.error(
-                        f"The ci runner {runner} failed to complete " f"due to an environment or configuration error."
+                        f"The ci runner {runner} failed to complete "
+                        f"due to an environment or configuration error."
                     )
                     exceptions.append(exception)
 
@@ -251,7 +280,9 @@ class PythonProject(PythonProjectAPI):
             return True
         return False
 
-    def poetry_run(self, *commands: Any, capture_output: bool = False, breakout_of_venv: bool = True) -> Optional[str]:
+    def poetry_run(
+        self, *commands: Any, capture_output: bool = False, breakout_of_venv: bool = True
+    ) -> Optional[str]:
         """internal run-a-poetry-command."""
         # we use the poetry executable from our dependencies, not from the project's environment!
         poetry_env = coveo_pyproject_environment

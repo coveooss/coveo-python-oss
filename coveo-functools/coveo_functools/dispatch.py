@@ -30,7 +30,9 @@ class _Dispatch:
         dispatcher = _singledispatch(func)
         signature = inspect.signature(func)
         switch_keyword = (
-            list(signature.parameters.keys())[self.switch_pos] if isinstance(self.switch_pos, int) else self.switch_pos
+            list(signature.parameters.keys())[self.switch_pos]
+            if isinstance(self.switch_pos, int)
+            else self.switch_pos
         )
 
         def _wrapper(*args: Any, **kw: Any) -> T:

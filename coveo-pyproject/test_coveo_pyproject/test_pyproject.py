@@ -41,7 +41,10 @@ def test_pyproject_dependencies(pyproject_mock: PythonProject, package_name: str
 @UnitTest
 def test_pyproject_locker(pyproject_mock: PythonProject) -> None:
     locked_requests: Package = next(
-        filter(lambda package: package.name == "requests", pyproject_mock.poetry.locker.locked_repository().packages)
+        filter(
+            lambda package: package.name == "requests",
+            pyproject_mock.poetry.locker.locked_repository().packages,
+        )
     )
     assert str(locked_requests.version) == "2.20.0"
 
@@ -61,10 +64,19 @@ def test_pyproject_publish(pyproject_mock: PythonProject, tmpdir: PathLike) -> N
     with pushd(Path(tmpdir)):
         # note: local directories are found from working folder or git root
         offline_publish(
-            pyproject_mock, publish_location, pyproject_mock.virtual_environments(create_default_if_missing=True)[0]
+            pyproject_mock,
+            publish_location,
+            pyproject_mock.virtual_environments(create_default_if_missing=True)[0],
         )
     assert publish_location.exists()
 
     # note: the package names in the filenames end up as underscores, not dashes.
-    for required_file in ("setuptools", "setuptools_scm", "requests", "wheel", "mock_pyproject_dependency", "black"):
+    for required_file in (
+        "setuptools",
+        "setuptools_scm",
+        "requests",
+        "wheel",
+        "mock_pyproject_dependency",
+        "black",
+    ):
         assert any(publish_location.rglob(f"{required_file}-*")), f"Cannot find {required_file}"

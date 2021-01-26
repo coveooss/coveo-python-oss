@@ -284,7 +284,9 @@ class DictSetting(Setting[dict]):  # pylint: disable=inherit-non-class
 
 
 @contextmanager
-def mock_config_value(setting: Setting, value: Optional[ConfigValue]) -> Generator[None, None, None]:
+def mock_config_value(
+    setting: Setting, value: Optional[ConfigValue]
+) -> Generator[None, None, None]:
     """ Mocks a setting value during a block of code so that value getters are ignored. """
     with patch.object(setting, "_get_value", return_value=value):
         yield

@@ -75,7 +75,9 @@ def find_paths(
         yield from search_from.rglob(str(path_to_find))
 
 
-def find_application(name: str, *, path: str = None, raise_if_not_found: bool = False) -> Optional[Path]:
+def find_application(
+    name: str, *, path: str = None, raise_if_not_found: bool = False
+) -> Optional[Path]:
     """Finds an application using the shell (e.g.: which).
 
     path: https://docs.python.org/3/library/shutil.html#shutil.which
@@ -106,7 +108,9 @@ def _find_repo_root(path: Path) -> Path:
     if git:
         try:
             with pushd(path):
-                return Path(check_output(git, "rev-parse", "--show-toplevel", stderr=subprocess.STDOUT))
+                return Path(
+                    check_output(git, "rev-parse", "--show-toplevel", stderr=subprocess.STDOUT)
+                )
         except DetailedCalledProcessError as exception:
             git_error = exception
 
@@ -115,7 +119,9 @@ def _find_repo_root(path: Path) -> Path:
         assert git_evidence.is_dir()
         return git_evidence.parent
 
-    raise CannotFindRepoRoot("Cannot find a .git folder in order to locate repo's root.") from git_error
+    raise CannotFindRepoRoot(
+        "Cannot find a .git folder in order to locate repo's root."
+    ) from git_error
 
 
 def find_repo_root(path: Union[Path, str] = ".", *, default: Union[str, Path] = None) -> Path:
@@ -153,7 +159,9 @@ def _safe_text_write_dry_run(target: Path, content: str, *, only_if_changed: boo
     return True
 
 
-def safe_text_write(target: Path, content: str, *, only_if_changed: bool = False, dry_run: bool = False) -> bool:
+def safe_text_write(
+    target: Path, content: str, *, only_if_changed: bool = False, dry_run: bool = False
+) -> bool:
     """Writes a text file to a temporary location then replaces target.
     Returns True if the file ("would be" if dry_run else "was") overwritten."""
     if dry_run:
