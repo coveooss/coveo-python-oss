@@ -21,7 +21,7 @@ class MockDataClass(MockDataClassBase):
 class MockClass:
     # noinspection PyMethodMayBeStatic
     def mock_method(self, _: str) -> bytes:
-        return b''
+        return b""
 
 
 @UnitTest

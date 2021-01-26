@@ -3,7 +3,8 @@ import re
 # 7-bit and 8-bit C1 ANSI sequences  (note: this is a bytes regex, not str)
 # We use this to filter out ANSI codes from console outputs
 # Source: https://stackoverflow.com/a/14693789/1741414
-ANSI_ESCAPE_8BIT = re.compile(br'''
+ANSI_ESCAPE_8BIT = re.compile(
+    br"""
     (?: # either 7-bit C1, two bytes, ESC Fe (omitting CSI)
         \x1B
         [@-Z\\-_]
@@ -19,9 +20,11 @@ ANSI_ESCAPE_8BIT = re.compile(br'''
         [ -/]*  # Intermediate bytes
         [@-~]   # Final byte
     )
-''', re.VERBOSE)
+""",
+    re.VERBOSE,
+)
 
 
 def filter_ansi(stream: bytes) -> bytes:
     """Removes ANSI sequences from a stream."""
-    return bytes(ANSI_ESCAPE_8BIT.sub(b'', stream))
+    return bytes(ANSI_ESCAPE_8BIT.sub(b"", stream))

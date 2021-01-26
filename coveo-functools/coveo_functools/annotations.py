@@ -26,4 +26,4 @@ def find_annotations(thing: Union[Type, Callable], globalns: Dict[str, Any] = No
 
 
 def find_return_annotation(method: Callable, globalns: Dict[str, Any] = None) -> Type:
-    return find_annotations(method, globalns)['return']
+    return find_annotations(method, globalns)["return"]

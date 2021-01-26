@@ -19,13 +19,14 @@ class TestId:
     - Multiprocess test executors would use different pids.
     - Jenkins executors provide different executor labels.
     """
-    DELIMITER: Final[str] = '.'
+
+    DELIMITER: Final[str] = "."
     HOST: Final[str] = platform.node()
     PID: Final[int] = os.getpid()
     TIMESTAMP: Final[datetime] = datetime.now()
     # this exists on jenkins. using it ensures that running parallel tests on shared resources (like docker sockets)
     # cannot create the same id.
-    EXECUTOR: Final[str] = os.environ.get('EXECUTOR_NUMBER', 'default')
+    EXECUTOR: Final[str] = os.environ.get("EXECUTOR_NUMBER", "default")
 
     # each friendly name keeps a count.
     _sequence_count: ClassVar[Dict[str, Iterator[int]]] = {}
@@ -35,24 +36,29 @@ class TestId:
         self.friendly_name: str = friendly_name
         with self._threading_lock:
             self.sequence = next(self._sequence_count.setdefault(friendly_name, itertools.count()))
-        parts = tuple(map(self._isolate_and_sanitize_id_part, (
-            self.friendly_name,
-            self.TIMESTAMP.strftime('%m%d%H%M%S'),
-            str(self.PID),
-            self.HOST,
-            self.EXECUTOR,
-            str(self.sequence)
-        )))
-        assert self.DELIMITER not in ''.join(parts)
+        parts = tuple(
+            map(
+                self._isolate_and_sanitize_id_part,
+                (
+                    self.friendly_name,
+                    self.TIMESTAMP.strftime("%m%d%H%M%S"),
+                    str(self.PID),
+                    self.HOST,
+                    self.EXECUTOR,
+                    str(self.sequence),
+                ),
+            )
+        )
+        assert self.DELIMITER not in "".join(parts)
         self.id = self.DELIMITER.join(parts)
 
     @classmethod
     def _isolate_and_sanitize_id_part(cls, string: str) -> str:
         """ Return a new string that doesn't contain invalid characters or the name tokenization delimiter """
-        replacement = '-'
+        replacement = "-"
         assert replacement != cls.DELIMITER, "Use a replacement character that's different from the delimiter."
         # remove delimiter from pattern so that it disappears from the string
-        replace_pattern = r"[^a-zA-Z0-9_.-]".replace(cls.DELIMITER, '')
+        replace_pattern = r"[^a-zA-Z0-9_.-]".replace(cls.DELIMITER, "")
         return re.sub(replace_pattern, replacement, string)
 
     def __str__(self) -> str:

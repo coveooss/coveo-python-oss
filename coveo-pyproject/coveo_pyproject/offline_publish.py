@@ -13,10 +13,11 @@ from coveo_pyproject.metadata.pyproject_api import PythonProjectAPI
 
 
 _DEFAULT_PIP_OPTIONS = (
-    '--disable-pip-version-check',
-    '--no-input',
-    '--exists-action', 'i',
-    '--pre',
+    "--disable-pip-version-check",
+    "--no-input",
+    "--exists-action",
+    "i",
+    "--pre",
 )
 
 
@@ -40,6 +41,7 @@ class _OfflinePublish:
         poetry export --format requirements.txt --no-dev --output requirements.txt
         pip wheel -r requirements.txt --target target_path --find-links target_path
     """
+
     def __init__(self, project: PythonProjectAPI, wheelhouse: Path, environment: PythonEnvironment) -> None:
         self.project = project
         self.environment = environment
@@ -48,12 +50,10 @@ class _OfflinePublish:
 
         self._valid_packages: Optional[Set[str]] = None
         self._local_projects: Set[str] = {
-            name for (name, package) in self.project.package.all_dependencies.items()
-            if package.path
+            name for (name, package) in self.project.package.all_dependencies.items() if package.path
         }
         self._locked_packages: Dict[str, Package] = {
-            package.name: package
-            for package in self.project.poetry.locker.locked_repository().packages
+            package.name: package for package in self.project.poetry.locker.locked_repository().packages
         }
 
     @property
@@ -68,19 +68,22 @@ class _OfflinePublish:
             else:
                 pip_freeze_environment = self.project.virtual_environments(create_default_if_missing=True).pop()
                 echo.warning(
-                    f'The executable {self.environment} is not part of this project. '
+                    f"The executable {self.environment} is not part of this project. "
                     f'To fix this, run "poetry env use {self.environment.python_executable}". '
                 )
-            echo.noise(f'Inspecting packages in {pip_freeze_environment}')
-            pip_freeze = cast(List[Dict[str, str]], json.loads(check_output(
-                *pip_freeze_environment.build_command(
-                    PythonTool.Pip, 'list',
-                    '--format', 'json',
-                    *_DEFAULT_PIP_OPTIONS
+            echo.noise(f"Inspecting packages in {pip_freeze_environment}")
+            pip_freeze = cast(
+                List[Dict[str, str]],
+                json.loads(
+                    check_output(
+                        *pip_freeze_environment.build_command(
+                            PythonTool.Pip, "list", "--format", "json", *_DEFAULT_PIP_OPTIONS
+                        ),
+                        verbose=self.verbose,
+                    )
                 ),
-                verbose=self.verbose
-            )))
-            self._valid_packages = {freezed['name'].lower() for freezed in pip_freeze}
+            )
+            self._valid_packages = {freezed["name"].lower() for freezed in pip_freeze}
         assert self._valid_packages is not None
         return self._valid_packages
 
@@ -95,18 +98,19 @@ class _OfflinePublish:
         self._store_dependencies_in_wheelhouse()
 
         # validate the wheelhouse; this will exit in error if something's amiss or result in a noop if all is right.
-        self._validate_package(f'{self.project.package.name}=={self.project.package.version}')
+        self._validate_package(f"{self.project.package.name}=={self.project.package.version}")
 
     def _store_setup_dependencies_in_wheelhouse(self, project: PythonProjectAPI = None) -> None:
-        """ store the build dependencies in the wheelhouse, like setuptools.
-        Eventually pip/poetry will play better and this won't be necessary anymore """
+        """store the build dependencies in the wheelhouse, like setuptools.
+        Eventually pip/poetry will play better and this won't be necessary anymore"""
         project = project or self.project
         for dependency in project.options.build_dependencies.values():
-            dep = dependency.name if dependency.version == '*' \
-                else f'{dependency.name}{dependency.version}'  # such as setuptools>=42
+            dep = (
+                dependency.name if dependency.version == "*" else f"{dependency.name}{dependency.version}"
+            )  # such as setuptools>=42
             self._check_call(
-                *self.environment.build_command(PythonTool.Pip, 'wheel', dep),
-                working_directory=self.wheelhouse)
+                *self.environment.build_command(PythonTool.Pip, "wheel", dep), working_directory=self.wheelhouse
+            )
 
     def _store_dependencies_in_wheelhouse(self) -> None:
         """ Store the dependency wheels in the wheelhouse. """
@@ -137,30 +141,37 @@ class _OfflinePublish:
             return
 
         command = self.environment.build_command(
-            PythonTool.Pip, 'wheel',
-            *(f'{requirement.name}=={requirement.version}' for requirement in packages),
-            '--wheel-dir', self.wheelhouse,
-            '--no-deps',
-            '--no-cache-dir',
-            *_DEFAULT_PIP_OPTIONS
+            PythonTool.Pip,
+            "wheel",
+            *(f"{requirement.name}=={requirement.version}" for requirement in packages),
+            "--wheel-dir",
+            self.wheelhouse,
+            "--no-deps",
+            "--no-cache-dir",
+            *_DEFAULT_PIP_OPTIONS,
         )
 
         if index_urls:
-            command += '--index-url', index_urls.pop()
+            command += "--index-url", index_urls.pop()
             for extra_url in index_urls:
-                command += '--extra-index-url', extra_url
+                command += "--extra-index-url", extra_url
 
         self._check_call(*command)
 
     def _validate_package(self, package_specification: str) -> None:
-        """ Validates that a package and all its dependencies can be resolved from the wheelhouse.
-         Package specification can be a name like `coveo-functools` or a constraint like `coveo-functools>=0.2.1` """
+        """Validates that a package and all its dependencies can be resolved from the wheelhouse.
+        Package specification can be a name like `coveo-functools` or a constraint like `coveo-functools>=0.2.1`"""
         self._check_call(
             *self.environment.build_command(
-                PythonTool.Pip, 'wheel', package_specification,
-                '--find-links', self.wheelhouse,
-                '--wheel-dir', self.wheelhouse,
-                '--no-index',
-                *_DEFAULT_PIP_OPTIONS),
-            working_directory=self.wheelhouse
+                PythonTool.Pip,
+                "wheel",
+                package_specification,
+                "--find-links",
+                self.wheelhouse,
+                "--wheel-dir",
+                self.wheelhouse,
+                "--no-index",
+                *_DEFAULT_PIP_OPTIONS,
+            ),
+            working_directory=self.wheelhouse,
         )

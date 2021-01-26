@@ -21,16 +21,16 @@ from coveo_testing.temporary_resource.base import TemporaryResource
 log = logging.getLogger(__name__)
 
 DOCKER_TIMEOUT = 30  # note: urllib timeout is not supported by the docker client.
-REQUIRED_DOCKER_VERSION = LooseVersion('1.18')
+REQUIRED_DOCKER_VERSION = LooseVersion("1.18")
 
-DOCKER_STATIC_IP = StringSetting('tests.docker.static.ip', fallback='localhost' if (WINDOWS or WSL) else None)
+DOCKER_STATIC_IP = StringSetting("tests.docker.static.ip", fallback="localhost" if (WINDOWS or WSL) else None)
 
 # In static IP setups, we will  `--publish`  the ports and use the dynamic ports that docker attributed.
 # In docker-in-docker setups, you don't need to `--publish` since you can simply ping the container ip.
-DOCKER_PUBLISH_PORTS = BoolSetting('tests.docker.publish.ports', fallback=DOCKER_STATIC_IP.is_set)
+DOCKER_PUBLISH_PORTS = BoolSetting("tests.docker.publish.ports", fallback=DOCKER_STATIC_IP.is_set)
 
 # If we published, we use them by default. Some setups may want to disable this explicitly.
-DOCKER_USE_PUBLISHED_PORTS = BoolSetting('tests.docker.use.published.ports', fallback=bool(DOCKER_PUBLISH_PORTS))
+DOCKER_USE_PUBLISHED_PORTS = BoolSetting("tests.docker.use.published.ports", fallback=bool(DOCKER_PUBLISH_PORTS))
 
 LogList = List[Tuple[str, str]]  # tuples contain log type and message e.g.: ('rabbitmq stderr', 'it crashed')
 
@@ -48,7 +48,7 @@ class NoSuchContainer(Exception):
 
 
 def _get_docker_host_version(client: DockerClient) -> LooseVersion:
-    return LooseVersion(client.version()['ApiVersion'])
+    return LooseVersion(client.version()["ApiVersion"])
 
 
 def get_docker_client() -> DockerClient:
@@ -57,7 +57,7 @@ def get_docker_client() -> DockerClient:
     try:
         client: DockerClient = docker.from_env(timeout=DOCKER_TIMEOUT)
     except Exception as exception:
-        raise Exception('Error while connecting to the docker daemon.') from exception
+        raise Exception("Error while connecting to the docker daemon.") from exception
 
     docker_version = _get_docker_host_version(client)
     if docker_version < REQUIRED_DOCKER_VERSION:
@@ -68,6 +68,7 @@ def get_docker_client() -> DockerClient:
 
 class TemporaryDockerContainerResource(TemporaryResource):
     """ Class providing helper functions to manage a temporary Docker container during unit tests. """
+
     def __init__(self, image_name: str, friendly_name: str) -> None:
         """
         :param image_name: The image name and tag, separated with ":"
@@ -116,9 +117,9 @@ class TemporaryDockerContainerResource(TemporaryResource):
     def ecr_region(self) -> Optional[str]:
         """ If the image name points to an ECR registry, return the region name, else None. """
         match = re.search(r"\.ecr\.(?P<region>.+)\.amazonaws\.com", self.image_name)
-        return match.group('region') if match else None
+        return match.group("region") if match else None
 
-    def get_published_port(self, internal_port: int, protocol: str = 'tcp', host_ip: str = '0.0.0.0') -> int:
+    def get_published_port(self, internal_port: int, protocol: str = "tcp", host_ip: str = "0.0.0.0") -> int:
         """
         Returns the external port that is mapped to the internal port for requests bound to the given host ip.
         Note: docker uses host ip 0.0.0.0 (all) unless you specified otherwise.
@@ -127,19 +128,19 @@ class TemporaryDockerContainerResource(TemporaryResource):
             # this setup doesn't use mapped dynamic ports
             return internal_port
 
-        port_id = f'{internal_port}/{protocol}'
+        port_id = f"{internal_port}/{protocol}"
 
         try:
             port_mappings: List[Dict[str, str]] = self.container.ports[port_id]
         except KeyError:
-            raise NoSuchPort(f'{port_id} cannot be found.')
+            raise NoSuchPort(f"{port_id} cannot be found.")
 
         if not port_mappings:
-            raise NoSuchPort(f'{port_id} exists but is not exposed.')
+            raise NoSuchPort(f"{port_id} exists but is not exposed.")
 
         for port_mapping in port_mappings:
-            if port_mapping['HostIp'] == host_ip:
-                return int(port_mapping['HostPort'])
+            if port_mapping["HostIp"] == host_ip:
+                return int(port_mapping["HostPort"])
 
         raise NoSuchPort(f'Cannot find a {port_id} bound to {host_ip} in "{port_mappings}"')
 
@@ -153,14 +154,14 @@ class TemporaryDockerContainerResource(TemporaryResource):
             self.create_container()
 
         assert self._container
-        log.info('Starting %s container.', self.container.name)
+        log.info("Starting %s container.", self.container.name)
         self.container.start()
         log.info(self.container.attrs)
 
         self._uri = self._get_main_uri(self._get_ip_address())
         assert isinstance(self.uri, str) and self.uri
 
-        log.info('Waiting for %s to start.', self.container.name)
+        log.info("Waiting for %s to start.", self.container.name)
         self.wait_for_container_running()
 
         log.info('%s container is started. URI="%s"', self.container.name, self.uri)
@@ -169,7 +170,7 @@ class TemporaryDockerContainerResource(TemporaryResource):
 
     def delete_resource(self) -> None:
         """ Remove the container. """
-        log.info('delete_object')
+        log.info("delete_object")
         self._extracted_logs = self.get_logs()
         self.container.remove(force=True)
         self._container = None
@@ -183,8 +184,8 @@ class TemporaryDockerContainerResource(TemporaryResource):
         else:
             self.container.reload()
             docker_info = self.container.attrs
-            if docker_info and 'NetworkSettings' in docker_info:
-                ip_address = docker_info['NetworkSettings']['IPAddress']
+            if docker_info and "NetworkSettings" in docker_info:
+                ip_address = docker_info["NetworkSettings"]["IPAddress"]
             else:
                 ip_address = urlsplit(self.client.api.base_url).hostname
         assert isinstance(ip_address, str) and ip_address
@@ -192,10 +193,7 @@ class TemporaryDockerContainerResource(TemporaryResource):
 
     def create_container_arguments(self) -> Dict[str, Any]:
         """ Returns the arguments to create the docker container. """
-        return dict(
-            name=str(self.container_id),
-            publish_all_ports=bool(DOCKER_PUBLISH_PORTS)
-        )
+        return dict(name=str(self.container_id), publish_all_ports=bool(DOCKER_PUBLISH_PORTS))
 
     def create_container(self) -> None:
         """ Create the docker container. """
@@ -212,7 +210,7 @@ class TemporaryDockerContainerResource(TemporaryResource):
 
     def wait_for_container_running(self, timeout: int = 30) -> None:
         """ Wait for the docker to start. """
-        wait.until(lambda: self.container.status == 'running', timeout_s=timeout)
+        wait.until(lambda: self.container.status == "running", timeout_s=timeout)
 
     def obtain_image(self) -> None:
         """ By default, pull the docker image from the registry. Override to specify a build process. """
@@ -227,7 +225,7 @@ class TemporaryDockerContainerResource(TemporaryResource):
     @property
     def uri(self) -> str:
         """ Return The main URI used to talk to the server that resides in the container. """
-        assert self._uri, 'URI not set. Have you called create_resource?'
+        assert self._uri, "URI not set. Have you called create_resource?"
         return self._uri
 
     @property
@@ -244,20 +242,20 @@ class TemporaryDockerContainerResource(TemporaryResource):
         """
         logs: LogList = []
         try:
-            log_filename = f'{self.container.name} stderr'
+            log_filename = f"{self.container.name} stderr"
             logs.append((log_filename, self.container.logs(stdout=False)))
             if not errors_only:
-                log_filename = f'{self.container.name} stdout'
+                log_filename = f"{self.container.name} stdout"
                 logs.append((log_filename, self.container.logs(stderr=False)))
         except Exception as exception:
             if self._extracted_logs:
                 logs = self._extracted_logs
-            logs.append(('stderr', str(exception)))
+            logs.append(("stderr", str(exception)))
 
         return logs
 
     def __str__(self) -> str:
         """ Pretty-print for debuggers etc """
         with suppress(Exception):
-            return f'{self.uri} [{self.image_name}]'
+            return f"{self.uri} [{self.image_name}]"
         return super().__str__()

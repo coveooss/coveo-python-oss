@@ -6,6 +6,7 @@ from typing import Union, Optional
 
 class StrictVersionHelper(StrictVersion):
     """internal helper 'coz tuple juggling is no fun!"""
+
     def __init__(self, vstring: Union[Version, str] = None) -> None:
         super().__init__(str(vstring) if vstring else None)
 
@@ -67,7 +68,7 @@ class StrictVersionHelper(StrictVersion):
         else:
             # 1.4.4 bumps to 1.4.5a1
             self.patch += int(patch)  # either 1 or 0
-            self.prerelease = ('a', 1)
+            self.prerelease = ("a", 1)
 
-    def __copy__(self) -> 'StrictVersionHelper':
+    def __copy__(self) -> "StrictVersionHelper":
         return StrictVersionHelper(self)

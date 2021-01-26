@@ -35,13 +35,14 @@ class MethodTest:
 
 @UnitTest
 def test_dispatch_decorate_method() -> None:
-    assert MethodTest().test('test') == 'test'
+    assert MethodTest().test("test") == "test"
 
 
 @UnitTest
 def test_dispatch_detect_function() -> None:
     def i_am_a_function() -> None:
         ...
+
     assert dispatch_test(i_am_a_function) is FunctionType
 
 
@@ -50,6 +51,7 @@ def test_dispatch_detect_method() -> None:
     class Mock:
         def i_am_a_method(self) -> None:
             ...
+
     assert dispatch_test(Mock().i_am_a_method) is MethodType
 
 
@@ -64,13 +66,14 @@ def test_dispatch_register_warning() -> None:
 
 
 @UnitTest
-@parametrize('switch_pos', [1, 'arg2'])
+@parametrize("switch_pos", [1, "arg2"])
 def test_dispatch_arg_called_with_kwarg(switch_pos: Union[int, str]) -> None:
     """Bug fix: specifying an int as switch pos prevented kw-usage."""
+
     @dispatch(switch_pos=switch_pos)
     def fn(arg1: str, arg2: Any) -> str:
-        return 'yup'
+        return "yup"
 
-    assert fn('', 2) == 'yup'
-    assert fn(arg2=2, arg1='') == 'yup'
-    assert fn('', arg2=2) == 'yup'
+    assert fn("", 2) == "yup"
+    assert fn(arg2=2, arg1="") == "yup"
+    assert fn("", arg2=2) == "yup"

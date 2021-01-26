@@ -14,7 +14,7 @@ from coveo_testing.temporary_resource.unique_id import TestId, unique_test_id
 
 @UnitTest
 def test_test_id(unique_test_id: TestId, request: SubRequest) -> None:
-    this_test_name = 'test_test_id'
+    this_test_name = "test_test_id"
     assert this_test_name == request.node.name
     assert unique_test_id.friendly_name == this_test_name
 
@@ -31,11 +31,11 @@ def test_test_id_sequence(unique_test_id: TestId, request: SubRequest) -> None:
     assert TestId(request.node.name).sequence == 2
 
 
-@parametrize('expected_sequence', (0, 1, 2, 3))
+@parametrize("expected_sequence", (0, 1, 2, 3))
 @UnitTest
 def test_test_id_fixture_within_parametrize(expected_sequence: int, unique_test_id: TestId) -> None:
     assert unique_test_id.sequence == 0
-    assert unique_test_id.friendly_name == f'test_test_id_fixture_within_parametrize[{expected_sequence}]'
+    assert unique_test_id.friendly_name == f"test_test_id_fixture_within_parametrize[{expected_sequence}]"
 
 
 @UnitTest
@@ -70,4 +70,4 @@ def test_test_id_threads(request: SubRequest) -> None:
         queue.task_done()
     queue.join()
 
-    assert len(sequences) == len(set(sequences)) == sequence_count, 'Duplicates found'
+    assert len(sequences) == len(set(sequences)) == sequence_count, "Duplicates found"

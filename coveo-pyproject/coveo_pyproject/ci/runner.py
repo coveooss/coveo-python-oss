@@ -40,8 +40,8 @@ class ContinuousIntegrationRunner:
             if exception.returncode not in self.check_failed_exit_codes:
                 self.status = RunnerStatus.Error
                 raise
-            self._last_output.extend(exception.decode_output().split('\n'))
-            self._last_output.extend(exception.decode_stderr().split('\n'))
+            self._last_output.extend(exception.decode_output().split("\n"))
+            self._last_output.extend(exception.decode_stderr().split("\n"))
             self.status = RunnerStatus.CheckFailed
 
         if not self.outputs_own_report:
@@ -65,24 +65,20 @@ class ContinuousIntegrationRunner:
         echo.error(self.last_output())
 
     def last_output(self) -> str:
-        return '\n'.join(self._last_output)
+        return "\n".join(self._last_output)
 
     def report_path(self, environment: PythonEnvironment) -> Path:
         """The report path for the current invocation. e.g.: ci.py3.6.2.mypy.coveo-functools.xml"""
-        report_folder = self._pyproject.project_path / '.ci'
+        report_folder = self._pyproject.project_path / ".ci"
         if not report_folder.exists():
             report_folder.mkdir()
 
-        return report_folder / '.'.join((
-            'ci',
-            environment.pretty_python_version,
-            self.name,
-            self._pyproject.package.name,
-            'xml'
-        ))
+        return report_folder / ".".join(
+            ("ci", environment.pretty_python_version, self.name, self._pyproject.package.name, "xml")
+        )
 
     def _output_generic_report(self, environment: PythonEnvironment) -> None:
-        test_case = TestCase(self.name, classname=f'ci.{self._pyproject.package.name}')
+        test_case = TestCase(self.name, classname=f"ci.{self._pyproject.package.name}")
         if self.status is RunnerStatus.Error:
             test_case.add_error_info("An error occurred, the test was unable to complete.", self.last_output())
         elif self.status is RunnerStatus.CheckFailed:

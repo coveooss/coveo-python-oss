@@ -16,4 +16,4 @@ def _load_toml_from_content(toml_content: str, toml_path: Path) -> MutableMappin
         return toml.loads(toml_content)
     except TomlDecodeError as ex:
         lineno, colno = ex.lineno, ex.colno  # type: ignore
-        raise ExitWithFailure(suggestions=f'{toml_path}:{lineno}:{colno} parse error') from ex
+        raise ExitWithFailure(suggestions=f"{toml_path}:{lineno}:{colno} parse error") from ex

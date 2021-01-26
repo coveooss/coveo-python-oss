@@ -46,6 +46,7 @@ def test_flexcase_decorator_function() -> None:
 @UnitTest
 def test_flexcase_dataclass() -> None:
     """Ensure we can use flexcase over dataclass constructors."""
+
     @attr.s(auto_attribs=True)
     class MockClass:
         test: int
@@ -90,6 +91,6 @@ def test_flexcase_delegate() -> None:
 @UnitTest
 def test_unflex() -> None:
     mock = FlexMockClass()
-    dirty = {'ArG2': False, 'a__rg1': 2, '_Extra': None}
-    assert unflex(mock.to_delegate, dirty) == {'arg1': 2, 'arg2': False}
-    assert unflex(mock.to_delegate, dirty, strip_extra=False) == {'arg1': 2, 'arg2': False, '_Extra': None}
+    dirty = {"ArG2": False, "a__rg1": 2, "_Extra": None}
+    assert unflex(mock.to_delegate, dirty) == {"arg1": 2, "arg2": False}
+    assert unflex(mock.to_delegate, dirty, strip_extra=False) == {"arg1": 2, "arg2": False, "_Extra": None}

@@ -89,14 +89,14 @@ def test_intercept_logging_excludes_less_severe_levels() -> None:
 
 
 @UnitTest
-@parametrize('presence', ('present', 'absent'))
+@parametrize("presence", ("present", "absent"))
 def test_assert_logging_present_absent(presence: str) -> None:
     """ Test the assert_logging function success using simple strings. """
     to_assert = to_log = str(uuid4())
 
-    if presence == 'present':
+    if presence == "present":
         # add some garbage around the string, it will find it as a substring
-        to_log = f'zz{to_log}zz'
+        to_log = f"zz{to_log}zz"
     else:
         # remove one character from the string so that the match fails 1 character short
         to_log = to_log[:-1]
@@ -106,14 +106,14 @@ def test_assert_logging_present_absent(presence: str) -> None:
 
 
 @UnitTest
-@parametrize('presence', ('present', 'absent'))
+@parametrize("presence", ("present", "absent"))
 def test_assert_logging_present_absent_failure(presence: str) -> None:
     """ Test the assert_logging function failure using simple strings. """
     to_assert = to_log = str(uuid4())
 
-    if presence == 'absent':
+    if presence == "absent":
         # add some garbage around the logged string, it will fail even as a substring
-        to_log = f'zz{to_log}zz'
+        to_log = f"zz{to_log}zz"
     else:
         # remove one character from the logged string so that it cannot find the full string
         to_log = to_log[:-1]
@@ -129,18 +129,22 @@ def test_assert_logging_from_now() -> None:
     past = str(uuid4())
     log.info(past)
     with assert_logging(log, absent=past):
-        log.info('whatever')
+        log.info("whatever")
 
 
 @UnitTest
-@parametrize(['present', 'absent'], (
-    pytest.param(_get_test_strings(2), tuple(), id='present'),
-    pytest.param(tuple(), _get_test_strings(2), id='absent'),
-    pytest.param(_get_test_strings(2), _get_test_strings(2), id='present+absent')
-))
-@parametrize('test_function_name', ('success', 'fail_present', 'fail_absent'))
-def test_assert_logging_multiple_present_absent(present: Tuple[str, ...], absent: Tuple[str, ...],
-                                                test_function_name: str) -> None:
+@parametrize(
+    ["present", "absent"],
+    (
+        pytest.param(_get_test_strings(2), tuple(), id="present"),
+        pytest.param(tuple(), _get_test_strings(2), id="absent"),
+        pytest.param(_get_test_strings(2), _get_test_strings(2), id="present+absent"),
+    ),
+)
+@parametrize("test_function_name", ("success", "fail_present", "fail_absent"))
+def test_assert_logging_multiple_present_absent(
+    present: Tuple[str, ...], absent: Tuple[str, ...], test_function_name: str
+) -> None:
     """test mixing absent and present together in success+failure scenarios."""
 
     def success() -> Iterable[str]:
@@ -161,7 +165,7 @@ def test_assert_logging_multiple_present_absent(present: Tuple[str, ...], absent
         yield absent[0]
 
     log_generator_function = locals()[test_function_name]
-    with _to_raise_or_not_to_raise(raises=test_function_name.startswith('fail')):
+    with _to_raise_or_not_to_raise(raises=test_function_name.startswith("fail")):
         with assert_logging(log, present=present, absent=absent):
             for line in log_generator_function():
                 log.info(line)

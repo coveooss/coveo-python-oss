@@ -11,7 +11,7 @@ from coveo_pyproject.offline_publish import offline_publish
 
 
 class CheckOutdatedRunner(ContinuousIntegrationRunner):
-    name: str = 'check-outdated'
+    name: str = "check-outdated"
 
     def _launch(self, environment: PythonEnvironment, *extra_args: str) -> RunnerStatus:
         if self._pyproject.lock_is_outdated:
@@ -21,11 +21,11 @@ class CheckOutdatedRunner(ContinuousIntegrationRunner):
 
 
 class OfflineInstallRunner(ContinuousIntegrationRunner):
-    name: str = 'poetry-build'
+    name: str = "poetry-build"
 
     def _launch(self, environment: PythonEnvironment, *extra_args: str) -> RunnerStatus:
         temporary_folder = Path(tempfile.mkdtemp())
-        offline_install_location = temporary_folder / 'wheels'
+        offline_install_location = temporary_folder / "wheels"
 
         try:
             # publish the offline wheels
@@ -34,13 +34,22 @@ class OfflineInstallRunner(ContinuousIntegrationRunner):
             # make sure pip install finds everything it needs from the offline location.
             # move out to a controlled file structure so that no folder imports are possible
             with pushd(temporary_folder):
-                check_output(*environment.build_command(
-                    PythonTool.Pip, 'install', self._pyproject.package.name,
-                    '--no-cache',
-                    '--no-index',
-                    '--find-links', offline_install_location,
-                    '--target', temporary_folder / 'pip-install-test',
-                    '--pre' if any(p.allow_prereleases for p in self._pyproject.package.dependencies.values()) else ''))
+                check_output(
+                    *environment.build_command(
+                        PythonTool.Pip,
+                        "install",
+                        self._pyproject.package.name,
+                        "--no-cache",
+                        "--no-index",
+                        "--find-links",
+                        offline_install_location,
+                        "--target",
+                        temporary_folder / "pip-install-test",
+                        "--pre"
+                        if any(p.allow_prereleases for p in self._pyproject.package.dependencies.values())
+                        else "",
+                    )
+                )
         finally:
             shutil.rmtree(temporary_folder)
 

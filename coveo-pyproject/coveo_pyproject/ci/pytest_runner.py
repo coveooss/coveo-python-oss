@@ -5,12 +5,13 @@ from coveo_systools.subprocess import check_output
 
 
 class PytestRunner(ContinuousIntegrationRunner):
-    name: str = 'pytest'
+    name: str = "pytest"
     check_failed_exit_codes = [1]
     outputs_own_report = True
 
-    def __init__(self, *, marker_expression: str = None, doctest_modules: bool = True,
-                 _pyproject: PythonProjectAPI) -> None:
+    def __init__(
+        self, *, marker_expression: str = None, doctest_modules: bool = True, _pyproject: PythonProjectAPI
+    ) -> None:
         super().__init__(_pyproject=_pyproject)
         self.marker_expression = marker_expression
         self.doctest_modules: bool = doctest_modules
@@ -20,19 +21,16 @@ class PytestRunner(ContinuousIntegrationRunner):
             self._pyproject.install()
 
         command = environment.build_command(
-            PythonTool.Pytest,
-            '--durations=5',
-            '--tb=short',
-            f'--junitxml={self.report_path(environment)}'
+            PythonTool.Pytest, "--durations=5", "--tb=short", f"--junitxml={self.report_path(environment)}"
         )
 
         if self.marker_expression:
-            command.extend(('-m', self.marker_expression))
+            command.extend(("-m", self.marker_expression))
         if self.doctest_modules:
-            command.append('--doctest-modules')
+            command.append("--doctest-modules")
 
-        check_output(*command, *extra_args,
-                     working_directory=self._pyproject.project_path,
-                     verbose=self._pyproject.verbose)
+        check_output(
+            *command, *extra_args, working_directory=self._pyproject.project_path, verbose=self._pyproject.verbose
+        )
 
         return RunnerStatus.Success

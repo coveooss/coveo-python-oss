@@ -1,7 +1,7 @@
 from typing import cast, Mapping, Any, TypeVar
 
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 _NOT_SPECIFIED = cast(T, object())  # type: ignore
 

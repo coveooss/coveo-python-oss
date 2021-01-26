@@ -41,8 +41,9 @@ class SetLoggingLevel:
         self._logger.setLevel(self._logging_level)
 
     # noinspection PyUnusedLocal
-    def __exit__(self, _exc_type: Optional[type], _exc_val: Optional[Exception],
-                 _exc_tb: Optional[TracebackType]) -> None:
+    def __exit__(
+        self, _exc_type: Optional[type], _exc_val: Optional[Exception], _exc_tb: Optional[TracebackType]
+    ) -> None:
         """
         Restore the logging level to its original value.
         """
@@ -72,10 +73,9 @@ def intercept_logging(logger: logging.Logger, level: int = None) -> Generator[St
 
 
 @contextmanager
-def assert_logging(logger: logging.Logger,
-                   present: StringCollection = None,
-                   absent: StringCollection = None,
-                   level: int = None) -> Generator[None, None, None]:
+def assert_logging(
+    logger: logging.Logger, present: StringCollection = None, absent: StringCollection = None, level: int = None
+) -> Generator[None, None, None]:
     """
     Context manager that attaches to a logger and ensures the presence of specific strings when the context is left.
     An assert will be raised as soon as a string from `intercepts` is missing from the logs.
@@ -98,7 +98,7 @@ def assert_logging(logger: logging.Logger,
         finally:
             logs = stream.getvalue()
             if present:
-                assert logs.strip(), 'log output was silent'
+                assert logs.strip(), "log output was silent"
                 for line in present:
                     assert line in logs, f'String "{line}" cannot be found in the logs:\n{logs}'
             if absent:

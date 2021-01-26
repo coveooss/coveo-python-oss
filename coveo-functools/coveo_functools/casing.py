@@ -9,11 +9,12 @@ from .annotations import find_annotations
 
 
 class _AcceptsKeywordArgs(Protocol):
-    def __init__(self, **kwargs: Any) -> None: ...
+    def __init__(self, **kwargs: Any) -> None:
+        ...
 
 
-T = TypeVar('T')
-T_AcceptsKeywordArgs = TypeVar('T_AcceptsKeywordArgs', bound=_AcceptsKeywordArgs)
+T = TypeVar("T")
+T_AcceptsKeywordArgs = TypeVar("T_AcceptsKeywordArgs", bound=_AcceptsKeywordArgs)
 
 
 # noinspection PyDefaultArgument
@@ -35,10 +36,7 @@ def snake_case(string: str, bad_casing: Iterable[str] = ()) -> str:
         boundary = -2 if sub[-1].isupper() else -1
         return sub[:boundary].title() + sub[boundary:]
 
-    prepared = re.sub(
-            pattern=re.compile(r'([A-Z]{2,}[a-z]?(?=$|[^a-z]))'),
-            repl=_replace_caps_clusters,
-            string=string)
+    prepared = re.sub(pattern=re.compile(r"([A-Z]{2,}[a-z]?(?=$|[^a-z]))"), repl=_replace_caps_clusters, string=string)
 
     # check if we can find any of the words and fix their casing
     for word in bad_casing:
@@ -50,17 +48,18 @@ def snake_case(string: str, bad_casing: Iterable[str] = ()) -> str:
 
     def _remove_digits_underscore(match: Match) -> str:
         sub: str = match.group()
-        assert sub[-1] == '_'
+        assert sub[-1] == "_"
         return sub[:-1]
 
     # inflection will add an underscore after numbers. we don't want that.
-    result = re.sub(pattern=r'\d+_', repl=_remove_digits_underscore, string=result)
+    result = re.sub(pattern=r"\d+_", repl=_remove_digits_underscore, string=result)
     return result
 
 
 class _FlexcaseDecorator:
     """Allow passing kwargs to a method without consideration for casing or underscores."""
-    __slots__ = 'strip_extra', 'allowed_extras'
+
+    __slots__ = "strip_extra", "allowed_extras"
 
     def __init__(self, *, strip_extra: bool = True, allowed_extras: Iterable[str] = None) -> None:
         self.strip_extra = strip_extra
@@ -95,18 +94,21 @@ class _FlexcaseDecorator:
         """Create a simple lookup of stripped underscore + lowercased -> Original bases on the function's annotation.
         Additional kwargs may be allowed to go through by using `extras`
         """
-        return {cls._lookup_key(annotation): annotation
-                for annotation in list(find_annotations(fn)) + list(extras or [])
-                if annotation != 'return'}
+        return {
+            cls._lookup_key(annotation): annotation
+            for annotation in list(find_annotations(fn)) + list(extras or [])
+            if annotation != "return"
+        }
 
     @staticmethod
     def _lookup_key(key: str) -> str:
         """Return a normalized lookup key."""
-        return key.replace('-', '').replace('_', '').lower()
+        return key.replace("-", "").replace("_", "").lower()
 
 
-def flexcase(fn: Callable[..., T], *, strip_extra: bool = True, allowed_extras: Iterable[str] = None) \
-        -> Callable[..., T]:
+def flexcase(
+    fn: Callable[..., T], *, strip_extra: bool = True, allowed_extras: Iterable[str] = None
+) -> Callable[..., T]:
     """Return fn wrapped in flexcase magic.
 
     Can be used as decorator over methods and functions: @flexcase
@@ -121,8 +123,9 @@ def unflex(fn: Callable, dirty_kwargs: Mapping[str, Any], strip_extra: bool = Tr
     return flex.unflex(flex.create_lookup(fn), dirty_kwargs)
 
 
-def flexfactory(cls: Type[T_AcceptsKeywordArgs], *, strip_extra: bool = True, **dirty_kwargs: Any) \
-        -> T_AcceptsKeywordArgs:
+def flexfactory(
+    cls: Type[T_AcceptsKeywordArgs], *, strip_extra: bool = True, **dirty_kwargs: Any
+) -> T_AcceptsKeywordArgs:
     """Syntactic sugar that maps kwargs to a class's constructor arguments and return an instance of it.
     E.g.:
 
