@@ -32,8 +32,8 @@ class ContinuousIntegrationRunner:
         self._last_output: List[str] = []
         self._test_cases: List[TestCase] = []
 
-    def launch(self, environment: PythonEnvironment = None, *extra_args: str) -> RunnerStatus:
-        """Launch the runner's checks. Will raise on unhandled exceptions."""
+    def launch(self, environment: PythonEnvironment = None, *extra_args: str, auto_fix: bool = False) -> RunnerStatus:
+        """Launch the runner's checks. Will raise on unhandled exceptions. """
         try:
             self.status = self._launch(environment, *extra_args)
         except DetailedCalledProcessError as exception:
@@ -43,6 +43,20 @@ class ContinuousIntegrationRunner:
             self._last_output.extend(exception.decode_output().split("\n"))
             self._last_output.extend(exception.decode_stderr().split("\n"))
             self.status = RunnerStatus.CheckFailed
+
+        if auto_fix and (self.status == RunnerStatus.CheckFailed):
+            try:
+                echo.noise("Errors founds; launching auto-fix routine.")
+                self.auto_fix(environment)
+            except NotImplementedError:
+                pass
+            else:
+                # it should pass now!
+                self.launch(environment, *extra_args)
+                if self.status == RunnerStatus.CheckFailed:
+                    echo.error("The auto fix routine was launched but the check is still failing.")
+                else:
+                    echo.success("Auto fix was a success. Good job soldier!")
 
         if not self.outputs_own_report:
             self._output_generic_report(environment)
@@ -57,6 +71,10 @@ class ContinuousIntegrationRunner:
     @abstractmethod
     def _launch(self, environment: PythonEnvironment, *extra_args: str) -> RunnerStatus:
         """Launch the continuous integration check using the given environment and store the output."""
+
+    def auto_fix(self, environment: PythonEnvironment) -> None:
+        """Launch the auto_fix routine if the runner implements it."""
+        raise NotImplementedError
 
     def echo_last_failures(self) -> None:
         """Echo the failures of the last run to the user. If there was no failure, do nothing."""

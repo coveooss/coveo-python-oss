@@ -201,7 +201,7 @@ class PythonProject(PythonProjectAPI):
 
         return target
 
-    def launch_continuous_integration(self) -> bool:
+    def launch_continuous_integration(self, auto_fix: bool = False) -> bool:
         """Launch all continuous integration runners on the project."""
         if self.ci.disabled:
             return True
@@ -211,7 +211,7 @@ class PythonProject(PythonProjectAPI):
             for environment in self.virtual_environments(create_default_if_missing=True):
                 try:
                     echo.normal(f"{runner} ({environment.pretty_python_version})", emoji="hourglass")
-                    status = runner.launch(environment)
+                    status = runner.launch(environment, auto_fix=auto_fix)
                     if status is not RunnerStatus.Success:
                         echo.warning(
                             f"{self.package.name}: {runner} reported issues:", pad_before=False, pad_after=False
