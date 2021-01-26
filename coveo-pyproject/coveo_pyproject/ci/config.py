@@ -16,7 +16,7 @@ CIConfig = Optional[Union[Dict[str, Any], bool]]
 
 class ContinuousIntegrationConfig:
     def __init__(self, *, disabled: bool = False, mypy: CIConfig = True, check_outdated: CIConfig = True,
-                 pytest: CIConfig = True, poetry_check: CIConfig = True, offline_build: CIConfig = True,
+                 pytest: CIConfig = False, poetry_check: CIConfig = True, offline_build: CIConfig = False,
                  _pyproject: PythonProjectAPI):
         self._pyproject = _pyproject
         self.disabled = disabled  # a master switch used by pyproject to skip this project.
