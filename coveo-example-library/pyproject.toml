@@ -15,12 +15,12 @@ coveo-testing = { path = "../coveo-testing", develop = true }
 
 [tool.coveo.ci]
 pytest = true
-offline_build = true
+offline-build = true
 black = true
 
 
 [tool.black]
-line_length = 120
+line-length = 100
 
 
 [build-system]
