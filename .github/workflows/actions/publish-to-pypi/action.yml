@@ -8,6 +8,9 @@ inputs:
   pypi-token:
     description: The pypi token to use for authentication
     required: true
+  dry-run:
+    description: Set to true for a test run that doesn't publish or tag.
+    default: false
 
 runs:
   using: 'composite'
@@ -30,22 +33,44 @@ runs:
         python -m poetry install
         NEXT_VERSION="$(python -m poetry run pypi next-version ${{ inputs.project-name }} --minimum-version ${{ steps.get-minimum-version.outputs.minimum-version }})"
         echo "::set-output name=next-version::$NEXT_VERSION"
+        echo "Next release's version: $NEXT_VERSION"
 
-    - name: Push to pypi.org
+    - name: Setup poetry for publish
       shell: bash
       working-directory: ${{ inputs.project-name }}
       run: |
         python -m poetry version ${{ steps.get-next-version.outputs.next-version }}
         python -m poetry build
         python -m poetry config pypi-token.pypi ${{ inputs.pypi-token }}
-        python -m poetry publish --no-interaction
+
+    - name: Publish to pypi.org
+      shell: bash
+      working-directory: ${{ inputs.project-name }}
+      run: |
+        if [[ ${{ inputs.dry-run }} == false ]]; then
+          python -m poetry publish --no-interaction
+        else
+          echo "Just a dry run; we're not actually publishing"
+        fi
 
     - name: Tag repository
       shell: bash
+      id: get-next-tag
       run: |
         TAG_NAME=${{ inputs.project-name }}.${{ steps.get-next-version.outputs.next-version }}
+        echo "::set-output name=tag-name::$TAG_NAME"
         echo "This release will be tagged as $TAG_NAME"
         git config user.name "github-actions"
         git config user.email "actions@users.noreply.github.com"
         git tag --annotate --message="Automated tagging system" $TAG_NAME ${{ github.ref }}
-        git push origin $TAG_NAME
+
+    - name: Push the tag
+      shell: bash
+      env:
+        TAG_NAME: ${{ steps.get-next-tag.outputs.tag-name }}
+      run: |
+        if [[ ${{ inputs.dry-run }} == false ]]; then
+          git push origin $TAG_NAME
+        else
+          echo "If this wasn't a dry run, I would push this new tag named $TAG_NAME"
+        fi
