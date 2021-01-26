@@ -9,13 +9,14 @@ packages = [
 
 [tool.poetry.dependencies]
 python = ">=3.8"
+black = { version = "20.8b1", allow-prereleases = true }
 click = "*"
 coveo-functools = { version = "^1.0.0" }
 coveo-itertools = { version = "^1.0.0" }
 coveo-systools = { version = "^1.0.0" }
 coveo-styles = { version = "^1.0.0" }
 junit-xml = "*"
-#mypy = { git = "https://github.com/python/mypy" }
+mypy = "*"
 poetry = "^1.1.4"
 toml = "*"
 typing_extensions = "*"
