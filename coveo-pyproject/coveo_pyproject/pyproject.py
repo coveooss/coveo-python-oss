@@ -44,9 +44,17 @@ class PythonProject(PythonProjectAPI):
             CoveoPackage, **dict_lookup(toml_content, "tool", "coveo", "pyproject", default={}), _pyproject=self
         )
 
-        self.ci: ContinuousIntegrationConfig = flexfactory(
-            ContinuousIntegrationConfig, **dict_lookup(toml_content, "tool", "coveo", "ci", default={}), _pyproject=self
-        )
+        if self.options.pydev:
+            # ensure no steps are repeated. pydev projects only receive basic poetry/lock checks
+            self.ci: ContinuousIntegrationConfig = ContinuousIntegrationConfig(
+                check_outdated=True, poetry_check=True, mypy=False, _pyproject=self
+            )
+        else:
+            self.ci = flexfactory(
+                ContinuousIntegrationConfig,
+                **dict_lookup(toml_content, "tool", "coveo", "ci", default={}),
+                _pyproject=self,
+            )
 
         # these are the actual poetry apis
         self.poetry = Factory().create_poetry(self.project_path)
@@ -223,11 +231,15 @@ class PythonProject(PythonProjectAPI):
 
         return all(runner.status is RunnerStatus.Success for runner in self.ci.runners)
 
-    def install(self, remove_untracked: bool = True) -> None:
-        """Performs a 'poetry install --remove-untracked' on the project. If an environment is provided, target it."""
+    def install(self, remove_untracked: bool = True, quiet: bool = False) -> None:
+        """
+        Performs a 'poetry install --remove-untracked' on the project. If an environment is provided, target it.
+        """
         command = ["install"]
         if remove_untracked:
             command.append("--remove-untracked")
+        if quiet:
+            command.append("--quiet")
         self.poetry_run(*command)
 
     def remove_egg_info(self) -> bool:

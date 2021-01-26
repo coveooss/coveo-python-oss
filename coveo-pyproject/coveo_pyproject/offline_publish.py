@@ -21,14 +21,16 @@ _DEFAULT_PIP_OPTIONS = (
 )
 
 
-def offline_publish(project: PythonProjectAPI, wheelhouse: Path, environment: PythonEnvironment) -> None:
+def offline_publish(
+    project: PythonProjectAPI, wheelhouse: Path, environment: PythonEnvironment, *, quiet: bool = False
+) -> None:
     """
     Store the project and all its locked dependencies into a folder, so that it can be installed offline using pip.
 
     Some packages provide wheels specific to an interpreter's version/abi/platform/implementation. It's important
     to use the right environment here because the files may differ and `pip install --no-index` will not work.
     """
-    _OfflinePublish(project, wheelhouse, environment).perform_offline_install()
+    _OfflinePublish(project, wheelhouse, environment).perform_offline_install(quiet=quiet)
 
 
 class _OfflinePublish:
@@ -87,12 +89,12 @@ class _OfflinePublish:
         assert self._valid_packages is not None
         return self._valid_packages
 
-    def perform_offline_install(self) -> None:
+    def perform_offline_install(self, *, quiet: bool = False) -> None:
         """ Performs all the operation for the offline install. """
         if not self.project.lock_path.exists():
             raise PythonProjectException("Project isn't locked; can't proceed.")
 
-        self.project.install(remove_untracked=False)
+        self.project.install(remove_untracked=False, quiet=quiet)
         self.project.build(self.wheelhouse)
         self._store_setup_dependencies_in_wheelhouse(self.project)
         self._store_dependencies_in_wheelhouse()
