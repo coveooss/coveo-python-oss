@@ -1,240 +1,196 @@
-# pyproject
+# coveo-pyproject
 
-Helps with both the packaging and development sides of python projects backed by poetry.
+Extra magic for poetry-backed projects with CI and batch operations in mind.
 
 
-## Install
+## Use cases
 
-We strongly recommend using `pipx` to wrap this into a nice little space:
+- You don't want to spend time writing the setup/test/report/publish/tag CI workflow
+- You want to work with multiple python projects in a single repository
+- You need a way to download locked dependencies and install them offline later
+
+
+# Features
+
+## poetry on steroids / offline distribution
+- Orchestrates several isolated poetry projects in one repo
+- Supports unpublished, local-only libraries and projects
+- Generates offline installation package from lock files
+
+## developer tools
+- Act on python projects in a git repo by name (path is irrelevant)
+- Batch support for common operations such as poetry lock and poetry install
+- Specialized development environment support (called pydev)
+
+## ci tools
+- Builtin, config-free pytest and mypy checks
+- Able to resolve some checks automatically (e.g.: lock file is outdated? call poetry lock!)
+- JUnit report generation
+- Github action
+
+
+# Installation
+
+It is recommended to install using `pipx` in order to isolate this into a nice little space:
 
 ```
 pip install pipx --user
 pipx install coveo-pyproject
 ```
 
-## Commands
-
-`pyproject <command>`
-
-The `pyproject` entrypoint has a bunch of commands designed to interact with `pyproject.toml` and `poetry`.
-
-It's designed to simplify common operations over multiple sub projects.
-
-Some commands can target "all" projects in a repository. What "all" means will depend on your context:
-- Within a git repository, "all" means everything from the first git parent.
-- Outside of the git context, "all" is the current directory, recursive.
-
-### build some-project
-This command outputs the artifacts of your project into a folder, so that it can be distributed based on its `poetry.lock`
-metadata.
-
-This is different from publishing to a `pypi` server, where distribution is based on the _constraints_ you placed
-in `pyproject.toml`.
-
-A nice bonus is that the folder does not require poetry or coveo-pyproject to be installed, so it helps keeping production
-systems as small and specific as they should be.
-
-To install from the artifacts folder: 
-`pip install --no-index --find-links /path/to/.wheels <package-name>`
-
-Without a project name specified, all projects will be built.
-
-Scroll down to the poetry gotchas for a more detailed use case and why this command exists!
+If you don't use pipx, make sure to isolate the installation into a virtual environment, else it may interfere with an existing poetry installation.
 
 
-### check-outdated
-Ensure that all files in the repo are up to date and return an error if something's outdated.
+# Commands
 
-A file is out of date if:
-- the `pyproject.toml` changed but not the `poetry.lock`
-- a `pydev` project's dev requirements changed and `pull-dev-requirements` was not called.
+## General command usage
+
+Unless a project name is specified, most commands will operate on all projects in a git repository based on the current working folder:
+
+- `pyproject <command>`
+    - Perform a command on all projects
+- `pyproject <command> --help`
+    - Obtain help about a particular command
+- `pyproject <command> <project-name>`
+    - Perform the command on all projects with `<project-name>` in their name (partial match)
+- `pyproject <command> <project-name> --exact-match`
+    - Disable partial project name matching
+
+The main commands are summarized below.
 
 
-### fix-outdated
-Like `pyproject check-outdated`, but also fixes anything that is outdated.
+## `pyproject ci`
 
+Orchestrates the CI process over one or multiple projects. 
 
-### bump some-project
-Bumps the version of all dependencies of _some-project_.
+Errors will show in the console and in junit xml reports generated inside the `.ci` folder.
 
-Without a project specified, all lock files of the repository will be updated. This doesn't update constraints, rather, it
-bumps everything to the latest version that match your constraints.
-
-
-### pull-dev-requirements
-`poetry install` will not install the dev-requirements of dependencies...
-
-If you have a `pyproject.toml` that is aimed at unifying all python projects of a 
-repository inside a single environment, run this script to pull the dev requirements
-of local dependencies inside that file.
-
-To mark such a development-only environment, add this to its `pyproject.toml` file:
+Configuration is done through each `pyproject.toml` file; default values are shown:
 
 ```
-[tool.coveo.pyproject]
-pydev = true
+[tool.coveo.ci]
+mypy = true
+poetry-check = true
+check-outdated = true
+pytest = false
+offline-build = false
 ```
 
-Note: pydev projects cannot (and should not) be built or published.
-
-
-### fresh-eggs
-This will remove all `*.egg-info` and rebuild them.
-
-The `egg-info` is used by poetry to link all local dependencies correctly in the virtual environment.
-Some changes to `pyproject.toml` will not be reapplied on `poetry install` unless you delete the egg.
-
-For example, changing something in the `[tool.poetry.script]` section requires fresh-eggs.
-
-Use `fresh-eggs` as a last resort, try with `poetry install` first.
-
-
-# poetry gotchas
-
-## pip knows about poetry
-
-Did you know? You can `pip install` from a folder with `pyproject.toml` without having poetry installed on your system! Be careful though as this method will not activate any virtual environment.
-
-Reference: https://pip.pypa.io/en/stable/reference/pip/#pep-517-and-518-support
-
-## constraints vs locks - where do they apply?
-
-Poetry locks down the dependencies of your project for development use (the lock file). Its only use is to
-prepare python virtual environments.
-
-But when published, it's the `pyproject.toml` that gets uploaded to the artifactory, not the lock file! This is necessary so that your package can be installed alongside other packages without too much conflicts.
-
-- Shared libraries should keep the loosest constraint you can afford in order to maximize compatibility.
-- Applications, services, tests can use more specific constraints, if necessary.
-
-## not so great: trick poetry into provisioning your production system
-
-For a private production server with our own python libraries, we want to install what's in the lock file, not what's in the toml file. Poetry offers us two options here:  
-
-- You can use `poetry config` and disable the virtual environment. When calling `poetry install`, the system's python libraries will be synchronized with the lock file.
-- You can mimic the development flow, and use `poetry install` and `poetry run` to run your application in production.
-
-Both options require poetry to be installed at some point on the production system to work. This may
-require your build system (e.g.: Docker) to be VPN-aware which is known to require tweaks to work properly.
-An easier method is outlined in "how to provision a production system" down below! :)
-
-
-# How to depend on libraries...
-
-## ...from a private pypi server 
-
-First you need to add the repository metadata to your `pyproject.toml` file:
+The value type of these items is designed to be extensible. For instance, the pytest runner allows you to configure the markers for the ci run:
 
 ```
-[[tool.poetry.source]]
-name = "pypi.dev"
-url = "https://my.pypi.server/simple/"
-default = true
+[tool.coveo.ci]
+pytest = { marker_expression = 'not docker_tests' }
 ```
 
-> The `default=true` is necessary to circumvent an issue with pip and poetry. Not using it may create problems for other projects that depends on your project.
 
-Then, specify the source when declaring the dependency in `pyproject.toml`:
+## `pyproject build`
+
+Store the project and its **locked dependencies** to disk. 
+
+Optimally used to create truly repeatable builds and workflows (e.g.: docker images, terraform, S3, puppet...)
+
+The folder can later be installed offline with `pip install --no-index --find-links <folder> <project-name>`
+
+**Make sure your target `<folder>` is clean**: Keep in mind that `pip` will still use the `pyproject.toml` constraints when installing, not `poetry.lock`. 
+The system works when the locked version is the only thing that `pip` can find in the `<folder>`.
+
+
+### `pyproject fix-outdated`
+
+Checks for out-of-date files and automatically updates them.
+
+Summary of actions:
+- `poetry lock` if `pyproject.toml` changed but not the `poetry.lock`
+- `pyproject pull-dev-requirements` if a pydev project's dev-requirements are out of sync
+
+
+### `pyproject bump`
+
+Calls `poetry lock` on all projects.
+
+
+# How to depend on a local library
+
+We leverage poetry's `path` constraint in a very specific way:
 
 ```
 [tool.poetry.dependencies]
-my-package = { version = "^2.4", source = "pypi.dev" }
-```
-
-The next `poetry lock` will adjust the `poetry.lock` file with this information.
-
-
-## ...from local paths published to a private pypi server
-
-Poetry offers a `path` constraint that you can use to reference local libraries:
-
-```
-[tool.poetry.dependencies]
-my-package = { version = "^2.4", source = "pypi.dev" }
+my-package = { version = "^2.4" }
 
 [tool.poetry.dev-dependencies]
 my-package = { path = "../my-package/" }
 ```
 
-It's important to keep local paths in the `dev-dependencies` section if you are publishing your project. If you don't,
-the constraint will not be published to pypi correctly and:
+Essentially, the behavior we're looking for:
 
-- It will install the latest version available during a vanilla install (instead of your constraint)
-- It will not be upgraded during a `pip install --update` call; since the dependency is already installed and it fulfills
-the (absence of) constraint, poetry favors the pre-installed package over an upgrade.
+- Through `pip install`, it will obtain the latest `^2.4` from `pypi.org`
+- Through `poetry install`, which is only meant for development, the source is fetched from the disk.
 
 
-## ...from local, unpublished paths
+# pydev (development environment)
 
-Just link it in the dependencies directly and drop the constraint:
+A repo-wide `pyproject.toml` is available at the root which refers to the projects by path. 
+This is a development bootstrap for development convenience, so that one can work in any of the projects of the repository without having to configure multiple environments in the IDE.
 
-```
-[tool.poetry.dependencies]
-my-package = { path = "../my-package/" }
-```
+## How to enable pydev
 
-Limitation:
-
-- You cannot publish to a pypi server (even a private one!) if you use unpublished libraries in `tool.poetry.dependencies`.
-- You cannot "pip install" your project folder anymore.
-
-To work around these limitations, we use `pyproject build` to create a package that will include all of the dependencies, including unpublished local paths, and install it "offline".
-  
-Poetry also provides a `packages` section that may be used to bundle additional files when publishing.
-
-
-# How to create a python development environment
-
-This special kind of project cannot (and should not) be built or published. It's only a convenience tool for developers.
-
-I use a `pyproject.toml` file in the root of my repository, which serves the purpose of a python environment that contains
-all of the in-tree python projects inside my repository:
+This functionality is enabled by adding the following to your `pyproject.toml`:
 
 ```
-[tool.poetry]
-name = "devtools-pydev"
-version = "0.0.1"
-description = "Development environment for devtool's python components."
-authors = ["Jonathan piché <jpiche@coveo.com>"]
-
-
-[tool.poetry.dependencies]
-python = ">=3.6"
-coveo-grab-bag = { path = "coveo-grab-bag/", extras = ["all"] }
-coveo-pypi-cli = { path = "coveo-pypi-cli/" }
-coveo-pyproject = { path = "coveo-pyproject/" }
-
-
-[tool.poetry.dev-dependencies] # pydev projects' dev-dependencies are autogenerated; do not edit manually!
-mypy = "*"
-pytest = "*"
-requests-mock = "*"
-
-
 [tool.coveo.pyproject]
 pydev = true
 ```
 
-You may notice a new section here called `[tool.coveo.pyproject]` - we use it to add coveo-specific metadata.
+The marker above comes with a few behavior differences:
 
-The `pydev = true` option is covered in the `pyproject pull-dev-requirements` command described above. For now, it's a quick way of
-obtaining the dev dependencies of your in-tree dependencies.
-This is necessary because:
-- Poetry does not install the dev dependencies of dependencies, regardless if they're local or not.
-- The locked versions in your pydev project may become out of sync with the locked versions of the local projects.
+- it cannot be packaged, published or even pip-installed.
+- `pyproject ci` will skip it
+- the `tool.poetry.dev-dependencies` section is reserved, can be generated and updated through pyproject's `pull-dev-requirements` and `fix-outdated` commands.
+
+As such, the pydev functionality is only suitable to enable seamless development between python projects in the repository.
+
+## How to use pydev
+
+1. Call `poetry install` from the root of the repository
+1. Obtain the location of the virtual environment (i.e.: `poetry env list --full-path`)
+1. Configure your IDE to use the python interpreter from that location.
+
+If your IDE is python-smart, it should be able to pick up all imports automatically regardless of your PYTHONPATH or your working directory.
+Since the local source is linked to, any change to the source code will be reflected on the next run.
 
 
-# How to provision a production system
+# FAQ
 
-## Installing a project
+## constraints vs locks - where do they apply?
 
-You can keep `poetry` and `coveo-pyproject` off your production environment by creating an offline install of your application or library:
+When you call `poetry install`, you end up installing packages based on the `poetry.lock` file.
+The resulting packages will always be the same no matter what.
+This is the dev scenario.
+
+When you call `pip install`, you are installing packages based on the constraints placed in a `pyproject.toml` or a `setup.py` file.
+Unless the constraints are hard pinned versions, the resulting packages is not guaranteed and will depend on the point in time when the installation is performed, among other factors.
+This is the shared library scenario.
+
+When you use poetry, you cover the two scenarios above.
+
+The third scenario is the private business use case: you want to freeze your dependencies in time so that everything from the developer to the CI servers to the production system is identical.
+Essentially, you want `poetry install` without the dev requirements.
+
+This functionality is provided out of the box by `pyproject build`, which creates a pip-installable package from the lock file that you can then stash in a private storage of your choice or pass around your deployments.
+
+
+## How to provision a production system
+
+### Preparing the virtual environment
+
+You can keep `poetry` and `coveo-pyproject` off your production environment by creating a frozen archive of your application or library from your CI servers (docker used as example):
 
 - Use the `pyproject build` tool which:
     - performs a `poetry build` on your project
     - calls `pip download` based on the content of the lock file
     - Moves the artifacts to the `.wheels` folder of your repo (can be configured with `--target`)
-- Recommended: Use the `--python` switch to specify which python executable to use! Make sure to use a python interpreter that matches the os/arch/bits of the system you want to provision.
+- Recommended: Use the `--python` switch when calling `pyproject build` to specify which python executable to use! Make sure to use a python interpreter that matches the os/arch/bits of the system you want to provision.
 - Include the `.wheels` folder into your Docker build context
 - In your Dockerfile:
     - ADD the `.wheels` folder
@@ -245,38 +201,13 @@ You can keep `poetry` and `coveo-pyproject` off your production environment by c
     - Install your application into the python environment you just created:
         - Use `<venv-python-exec> -m pip install <your-package> --no-index --find-links <wheels-folder-location>`
     - You may delete the `.wheels` folder if you want. Consider keeping a copy of the lock file within the docker image, for reference.
+    
 
+### Using the environment
 
-## Activating the environment for a process
+Using the correct interpreter is all you need to do. There is no activation script or environment variables to set up: the interpreter's executable is a fully bootstrapped and isolated environment.
 
-Using the correct interpreter is all you need to do. There is no activation script or environment variables to set up: the executable
-is already a fully bootstrapped isolated environment.
+- A python dockerfile may call `<venv-python-exec>` directly in the dockerfile's CMD
+- A service that spawns other processes should receive the path to the `<venv-python-exec>`
 
-A python service will use the `<venv-python-exec>` directly in its CMD.
-
-A service that spawns python processes will need to find a way to retrieve the `<venv-python-exec>`. This is most easily done
-through a custom environment variable. Some like to manipulate the PATH variable for this but keep in mind that your OS may rely on packages that are not available in your virtual environment.
-
-If you're a python service that spawns python processes, the active interpreter path can be retrieved at runtime using `sys.executable`.
-
-
-# Publishing
-
-Using `poetry version`, bump/commit the version you want to publish into the `pyproject.toml` file.
-
-The ci script should (pseudo-code):
-```
-# For private servers, configure the target repository in poetry's config
-poetry config repositories.pypi.dev https://my.pypi.server/simple
-
-# Configure the credentials for the repository
-poetry config http-basic.pypi.dev $PYPI_USERNAME $PYPI_PASSWORD
-
-# build it
-poetry build --format wheel
-
-# push it
-poetry publish --repository pypi.dev --no-interaction
-```
-
-Note: Poetry will not verify if the version exists and will gladly update (overwrite) an existing version.
+[Use the `-m` switch](https://docs.python.org/3/using/cmdline.html#cmdoption-m) in order to launch your app!
