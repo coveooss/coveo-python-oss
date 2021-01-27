@@ -27,6 +27,12 @@ class BlackRunner(ContinuousIntegrationRunner):
 
     def _launch_internal(self, environment: PythonEnvironment, *extra_args: str) -> None:
         # projects may opt to use coveo-pyproject's black version by not including black in their dependencies.
-        black_environment = environment if environment.black_executable.exists() else coveo_pyproject_environment
+        black_environment = (
+            environment if environment.black_executable.exists() else coveo_pyproject_environment
+        )
         command = black_environment.build_command(PythonTool.Black, ".", *extra_args)
-        check_output(*command, working_directory=self._pyproject.project_path, verbose=self._pyproject.verbose)
+        check_output(
+            *command,
+            working_directory=self._pyproject.project_path,
+            verbose=self._pyproject.verbose
+        )

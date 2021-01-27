@@ -22,7 +22,11 @@ _DEFAULT_PIP_OPTIONS = (
 
 
 def offline_publish(
-    project: PythonProjectAPI, wheelhouse: Path, environment: PythonEnvironment, *, quiet: bool = False
+    project: PythonProjectAPI,
+    wheelhouse: Path,
+    environment: PythonEnvironment,
+    *,
+    quiet: bool = False,
 ) -> None:
     """
     Store the project and all its locked dependencies into a folder, so that it can be installed offline using pip.

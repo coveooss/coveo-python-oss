@@ -32,7 +32,9 @@ class ContinuousIntegrationRunner:
         self._last_output: List[str] = []
         self._test_cases: List[TestCase] = []
 
-    def launch(self, environment: PythonEnvironment = None, *extra_args: str, auto_fix: bool = False) -> RunnerStatus:
+    def launch(
+        self, environment: PythonEnvironment = None, *extra_args: str, auto_fix: bool = False
+    ) -> RunnerStatus:
         """Launch the runner's checks. Will raise on unhandled exceptions. """
         try:
             self.status = self._launch(environment, *extra_args)

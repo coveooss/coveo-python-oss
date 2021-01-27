@@ -361,7 +361,9 @@ def refresh(project_name: str = None, exact_match: bool = False, verbose: bool =
 @click.option("--exact-match/--no-exact-match", default=False)
 @click.option("--fix/--no-fix", default=False)
 @click.option("--verbose", is_flag=True, default=False)
-def ci(project_name: str = None, exact_match: bool = False, fix: bool = False, verbose: bool = False) -> None:
+def ci(
+    project_name: str = None, exact_match: bool = False, fix: bool = False, verbose: bool = False
+) -> None:
     failures = []
     try:
         for project in PythonProject.find_pyprojects(

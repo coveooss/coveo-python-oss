@@ -232,7 +232,9 @@ class PythonProject(PythonProjectAPI):
         for runner in self.ci.runners:
             for environment in self.virtual_environments(create_default_if_missing=True):
                 try:
-                    echo.normal(f"{runner} ({environment.pretty_python_version})", emoji="hourglass")
+                    echo.normal(
+                        f"{runner} ({environment.pretty_python_version})", emoji="hourglass"
+                    )
                     status = runner.launch(environment, auto_fix=auto_fix)
                     if status is not RunnerStatus.Success:
                         echo.warning(

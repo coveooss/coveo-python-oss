@@ -24,6 +24,10 @@ coveo-testing-extras = { path = 'coveo-testing-extras/', develop = true }
 pydev = true
 
 
+[tool.black]
+line-length = 100
+
+
 [build-system]
 requires = ["poetry_core>=1.0.0", "setuptools"]
 build-backend = "poetry.core.masonry.api"
