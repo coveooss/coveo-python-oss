@@ -19,7 +19,7 @@ Extra magic for poetry-backed projects with CI and batch operations in mind.
 
 ## developer tools
 - Act on python projects in a git repo by name (path is irrelevant)
-- Batch support for common operations such as poetry lock and poetry install
+- Batch support for common operations, such as poetry lock and poetry install
 - Specialized development environment support (called pydev)
 
 ## ci tools
@@ -38,7 +38,7 @@ pip3 install pipx --user
 pipx install coveo-pyproject
 ```
 
-If you don't use pipx, make sure to isolate the installation into a virtual environment, else it may interfere with an existing poetry installation.
+If you don't use pipx, make sure to isolate the installation into a virtual environment, otherwise it may interfere with an existing poetry installation.
 
 
 # Commands
@@ -125,12 +125,12 @@ my-package = { path = "../my-package/" }
 Essentially, the behavior we're looking for:
 
 - Through `pip install`, it will obtain the latest `^2.4` from `pypi.org`
-- Through `poetry install`, which is only meant for development, the source is fetched from the disk.
+- Through `poetry install`, which is only meant for development, the source is fetched from the disk
 
 
 # pydev (development environment)
 
-A repo-wide `pyproject.toml` is available at the root which refers to the projects by path. 
+A repo-wide `pyproject.toml` is available at the root, which refers to the projects by path. 
 This is a development bootstrap for development convenience, so that one can work in any of the projects of the repository without having to configure multiple environments in the IDE.
 
 ## How to enable pydev
@@ -144,9 +144,9 @@ pydev = true
 
 The marker above comes with a few behavior differences in the way it interacts with pyproject and poetry:
 
-- it cannot be packaged, published or even pip-installed.
+- it cannot be packaged, published or even pip-installed
 - `pyproject ci` will skip it
-- the `tool.poetry.dev-dependencies` section is reserved, can be generated and updated through pyproject's `pull-dev-requirements` and `fix-outdated` commands.
+- the `tool.poetry.dev-dependencies` section is reserved, can be generated and updated through pyproject's `pull-dev-requirements` and `fix-outdated` commands
 
 As such, the pydev functionality is only suitable to enable seamless development between python projects in the repository.
 
@@ -156,7 +156,7 @@ As such, the pydev functionality is only suitable to enable seamless development
 1. Obtain the location of the virtual environment (i.e.: `poetry env list --full-path`)
 1. Configure your IDE to use the python interpreter from that location.
 
-If your IDE is python-smart, it should be able to pick up all imports automatically regardless of your PYTHONPATH or your working directory.
+If your IDE is python-smart, it should be able to pick up all imports automatically, regardless of your PYTHONPATH or your working directory.
 Since the local source is linked to, any change to the source code will be reflected on the next run.
 
 
@@ -165,11 +165,11 @@ Since the local source is linked to, any change to the source code will be refle
 ## constraints vs locks - where do they apply?
 
 When you call `poetry install`, you end up installing packages based on the `poetry.lock` file.
-The resulting packages will always be the same no matter what.
+The resulting packages will always be the same, no matter what.
 This is the dev scenario.
 
 When you call `pip install`, you are installing packages based on the constraints placed in a `pyproject.toml` or a `setup.py` file.
-Unless the constraints are hard pinned versions, the resulting packages is not guaranteed and will depend on the point in time when the installation is performed, among other factors.
+Unless the constraints are hard pinned versions, the resulting packages are not guaranteed and will depend on the point in time when the installation is performed, among other factors.
 This is the shared library scenario.
 
 When you use poetry, you cover the two scenarios above.
