@@ -20,11 +20,13 @@ class MaxBackoffException(StopIteration):
     """When we're all out of bubble gum."""
 
 
-def until(condition: Callable[[], Any],
-          timeout_s: Optional[TimeoutValue] = 300,
-          retry_ms: Optional[TimeoutValue] = 500,
-          handle_exceptions: SuppressCondition = None,
-          failure_message: str = None) -> None:
+def until(
+    condition: Callable[[], Any],
+    timeout_s: Optional[TimeoutValue] = 300,
+    retry_ms: Optional[TimeoutValue] = 500,
+    handle_exceptions: SuppressCondition = None,
+    failure_message: str = None,
+) -> None:
     """
     Waits for a condition to be True, or raise a TimeoutException.
 
@@ -60,7 +62,7 @@ def until(condition: Callable[[], Any],
             return (suppress_condition,)
         if isinstance(suppress_condition, tuple):
             return suppress_condition
-        raise ValueError(f'Unsupported suppress condition: {suppress_condition}')
+        raise ValueError(f"Unsupported suppress condition: {suppress_condition}")
 
     suppressed_exceptions = _get_exception_tuple(handle_exceptions)
 
@@ -84,13 +86,15 @@ def until(condition: Callable[[], Any],
 
         if not infinite:
             elapsed = datetime.now() - call_timestamp
-            sleep_time = max(zero, retry_ms - elapsed)  # sleep time is reduced by call time because why not.
+            sleep_time = max(
+                zero, retry_ms - elapsed
+            )  # sleep time is reduced by call time because why not.
             timeout_s -= elapsed + sleep_time
 
         if timeout_s >= zero:  # don't sleep if timeout already drained out
             sleep(sleep_time.total_seconds())
 
-    timeout_message = failure_message or f'Timed out waiting for condition: {last_value}'
+    timeout_message = failure_message or f"Timed out waiting for condition: {last_value}"
     if isinstance(last_value, Exception):
         raise TimeoutExpired(timeout_message) from last_value
     raise TimeoutExpired(timeout_message)
@@ -131,13 +135,16 @@ class Backoff(Iterator):
         else:
             raise ImSickOfTrying()
     """
-    def __init__(self,
-                 first_wait: float = 0.2,
-                 max_backoff: float = 30,
-                 max_backoff_attempts: Optional[int] = 4,
-                 growth: float = 2.5,
-                 *,
-                 stages: Tuple[float, ...] = None) -> None:
+
+    def __init__(
+        self,
+        first_wait: float = 0.2,
+        max_backoff: float = 30,
+        max_backoff_attempts: Optional[int] = 4,
+        growth: float = 2.5,
+        *,
+        stages: Tuple[float, ...] = None,
+    ) -> None:
         """
         Initializes a backoff helper. The default values provide 10 retries of these approximate lengths:
             [0.2, 0.5, 1.25, 3.1, 7.8, 19.5, 30, 30, 30, 30]
@@ -152,7 +159,9 @@ class Backoff(Iterator):
                        specifying firstwait/maxbackoff/growth.
         """
         self.stage: int = 0
-        self._stages = stages or tuple(self.generate_backoff_stages(first_wait, growth, max_backoff))
+        self._stages = stages or tuple(
+            self.generate_backoff_stages(first_wait, growth, max_backoff)
+        )
         if not self._stages or (0 in self._stages):
             raise ValueError("Backoff received wrong values.")
 
@@ -182,7 +191,9 @@ class Backoff(Iterator):
         return self._stages[next_stage] / self._stages[-1]
 
     @staticmethod
-    def generate_backoff_stages(first_wait: float, growth: float, max_backoff: float) -> Generator[float, None, None]:
+    def generate_backoff_stages(
+        first_wait: float, growth: float, max_backoff: float
+    ) -> Generator[float, None, None]:
         """Generate the stages (wait seconds) of this backoff strategy."""
         # Any invalid value is adjusted to sane defaults. This is a safeguard in case one of the values comes from
         # the environment or command line to prevent infinite backoff.
@@ -227,6 +238,7 @@ class NoBackoff(Backoff):
     A special backoff strategy that immediately raises RetriesExhausted. This is a convenience class that makes code
     cleaner compared to Optional[Backoff].
     """
+
     def __next__(self) -> float:
         """ Raise immediately, as if all retries were exhausted. """
         raise MaxBackoffException

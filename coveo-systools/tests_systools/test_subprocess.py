@@ -7,11 +7,16 @@ import pytest
 from coveo_testing.logging import assert_logging
 from coveo_testing.markers import UnitTest
 from coveo_testing.parametrize import parametrize
-from coveo_systools.subprocess import DetailedCalledProcessError, log as called_process_error_logger, \
-    cast_command_line_argument_to_string
+from coveo_systools.subprocess import (
+    DetailedCalledProcessError,
+    log as called_process_error_logger,
+    cast_command_line_argument_to_string,
+)
 
 
-def _forge_test_exception(original_exception: CalledProcessError, **kwargs) -> DetailedCalledProcessError:
+def _forge_test_exception(
+    original_exception: CalledProcessError, **kwargs
+) -> DetailedCalledProcessError:
     """forge a DetailedCalledProcessError exception using python's exception handlers."""
     try:
         raise DetailedCalledProcessError(**kwargs) from original_exception
@@ -20,22 +25,23 @@ def _forge_test_exception(original_exception: CalledProcessError, **kwargs) -> D
 
 
 @UnitTest
-@parametrize('original_exception', (
-    # command as str/list
-    CalledProcessError(1, 'command-str'),
-    CalledProcessError(1, ('command', 'list')),
-
-    # bytes/str support in stdout/stderr
-    CalledProcessError(1, '', b'stdout'),
-    CalledProcessError(1, '', 'stdout'),
-    CalledProcessError(1, '', None, b'stderr'),
-    CalledProcessError(1, '', None, 'stderr'),
-
-    # exit code support
-    CalledProcessError(2, ''),
-    CalledProcessError(0, ''),
-    CalledProcessError(-1, '')
-))
+@parametrize(
+    "original_exception",
+    (
+        # command as str/list
+        CalledProcessError(1, "command-str"),
+        CalledProcessError(1, ("command", "list")),
+        # bytes/str support in stdout/stderr
+        CalledProcessError(1, "", b"stdout"),
+        CalledProcessError(1, "", "stdout"),
+        CalledProcessError(1, "", None, b"stderr"),
+        CalledProcessError(1, "", None, "stderr"),
+        # exit code support
+        CalledProcessError(2, ""),
+        CalledProcessError(0, ""),
+        CalledProcessError(-1, ""),
+    ),
+)
 def test_detailed_subprocess_exception_attributes(original_exception: CalledProcessError) -> None:
     """Tests that the attributes fallback to the underlying exception."""
     exception = _forge_test_exception(original_exception)
@@ -58,22 +64,22 @@ def test_detailed_subprocess_exception_wrong_exception() -> None:
     we try to retain it as much as we can."""
     try:
         try:
-            raise OSError('i am not really supported')
+            raise OSError("i am not really supported")
         except OSError:
             raise DetailedCalledProcessError
     except DetailedCalledProcessError as exception:
         assert isinstance(exception._wrapped_exception, OSError)
-        assert 'i am not really supported' in str(exception)
+        assert "i am not really supported" in str(exception)
 
 
 @UnitTest
 def test_detailed_subprocess_exception_no_exception() -> None:
     """there's an error message when no exception is given as context."""
-    with assert_logging(called_process_error_logger, absent='placebo'):
+    with assert_logging(called_process_error_logger, absent="placebo"):
         # the logging only occurs when we use the exception
         exception = DetailedCalledProcessError()
 
-    with assert_logging(called_process_error_logger, present='placebo', level=logging.ERROR):
+    with assert_logging(called_process_error_logger, present="placebo", level=logging.ERROR):
         str(exception)
 
 
@@ -93,19 +99,16 @@ def test_detailed_subprocess_exception_precedence() -> None:
 
 
 @UnitTest
-@parametrize(['argument', 'expected'], (
-    ('string', 'string'),
-    (0, '0'),
-    (0.0, '0.0'),
-    (Path('.'), '.')
-))
+@parametrize(
+    ["argument", "expected"], (("string", "string"), (0, "0"), (0.0, "0.0"), (Path("."), "."))
+)
 def test_command_line_argument_conversion(argument: Any, expected: str) -> None:
     """tests the supported command line arg conversion types"""
     assert cast_command_line_argument_to_string(argument) == expected
 
 
 @UnitTest
-@parametrize('argument', (True, False, dict(), list(), tuple(), set(), object(), b''))
+@parametrize("argument", (True, False, dict(), list(), tuple(), set(), object(), b""))
 def test_command_line_argument_conversion_unsupported(argument: Any) -> None:
     """unsupported types will raise an exception to prevent mistakes"""
     with pytest.raises(ValueError):

@@ -17,7 +17,7 @@ def test_exit_with_failure_exit_code_attribute() -> None:
 @UnitTest
 def test_exit_with_failure_exit_code() -> None:
     try:
-        raise ExitWithFailure(exit_code=5) from ValueError('whatever')
+        raise ExitWithFailure(exit_code=5) from ValueError("whatever")
     except ExitWithFailure:
         try:
             _pretty_excepthook(*sys.exc_info())
@@ -30,12 +30,12 @@ def test_exit_with_failure_exit_code() -> None:
 
 @UnitTest
 def test_disable_emoji() -> None:
-    assert echo.passthrough.prettify('!!robot_face!!') == '\U0001F916\x1b[0m'
+    assert echo.passthrough.prettify("!!robot_face!!") == "\U0001F916\x1b[0m"
     try:
         Pretty.set_safe_encode()
-        with mock.patch('sys.stdout') as stdout_mock:
-            stdout_mock.encoding = 'cp1258'
-            assert echo.passthrough.prettify('!!robot_face!!') == '\x1b[0m'
+        with mock.patch("sys.stdout") as stdout_mock:
+            stdout_mock.encoding = "cp1258"
+            assert echo.passthrough.prettify("!!robot_face!!") == "\x1b[0m"
     finally:
         Pretty.set_safe_encode(False)
-    assert echo.passthrough.prettify('!!robot_face!!') == '\U0001F916\x1b[0m'
+    assert echo.passthrough.prettify("!!robot_face!!") == "\U0001F916\x1b[0m"

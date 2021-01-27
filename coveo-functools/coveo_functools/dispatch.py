@@ -6,12 +6,15 @@ import inspect
 from typing import Any, Type, cast, Union, Callable, TypeVar
 from typing_extensions import Protocol
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 class SingleDispatch(Protocol[T]):
-    def register(*args: Any, **kwargs: Any) -> 'SingleDispatch[T]': ...
-    def __call__(*args: Any, **kwargs: Any) -> T: ...
+    def register(*args: Any, **kwargs: Any) -> "SingleDispatch[T]":
+        ...
+
+    def __call__(*args: Any, **kwargs: Any) -> T:
+        ...
 
 
 class _Dispatch:
@@ -20,15 +23,17 @@ class _Dispatch:
 
     def __call__(self, func: Callable[..., T]) -> SingleDispatch[T]:
         """This is an enhanced version of @singledispatch:
-          - adds support for types
-          - not limited to switch pos 0
-          - can target kwargs
+        - adds support for types
+        - not limited to switch pos 0
+        - can target kwargs
         """
         dispatcher = _singledispatch(func)
         signature = inspect.signature(func)
-        switch_keyword = list(signature.parameters.keys())[self.switch_pos] \
-            if isinstance(self.switch_pos, int) \
+        switch_keyword = (
+            list(signature.parameters.keys())[self.switch_pos]
+            if isinstance(self.switch_pos, int)
             else self.switch_pos
+        )
 
         def _wrapper(*args: Any, **kw: Any) -> T:
             switch = signature.bind(*args, **kw).arguments[switch_keyword]
@@ -43,7 +48,8 @@ class _Dispatch:
 
 def _register_warning(*_: Any, **__: Any) -> None:
     """A common mistake is to use @dispatch() then @dispatch.register(), we give a hint to the dev in this case."""
-    raise TypeError("""register(...) must be called from the wrapper and not from @dispatch:
+    raise TypeError(
+        """register(...) must be called from the wrapper and not from @dispatch:
 
 @dispatch()
 def some_method(arg):
@@ -54,7 +60,8 @@ def some_method(arg):
 def _dispatch_ints_and_bools(arg):
     ...
 
-""")
+"""
+    )
 
 
 # this hides our "fake" register method from pycharm's auto-completion so not to provoke more mistakes.

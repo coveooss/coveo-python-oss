@@ -7,11 +7,12 @@ from typing import Generator, TypeVar
 log = logging.getLogger(__name__)
 
 # Type that represent the type of self for classes that derives from TmpResource.
-T = TypeVar('T', bound='TemporaryResource')
+T = TypeVar("T", bound="TemporaryResource")
 
 
 class TemporaryResource:
     """ Base class used for creating temporary unit test objects """
+
     _disposed: bool = False
 
     @abstractmethod
