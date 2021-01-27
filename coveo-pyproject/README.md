@@ -34,7 +34,7 @@ Extra magic for poetry-backed projects with CI and batch operations in mind.
 It is recommended to install using [pipx](https://github.com/pipxproject/pipx) in order to isolate this into a nice little space:
 
 ```
-pip install pipx --user
+pip3 install pipx --user
 pipx install coveo-pyproject
 ```
 
@@ -142,7 +142,7 @@ This functionality is enabled by adding the following to your `pyproject.toml`:
 pydev = true
 ```
 
-The marker above comes with a few behavior differences for the project:
+The marker above comes with a few behavior differences in the way it interacts with pyproject and poetry:
 
 - it cannot be packaged, published or even pip-installed.
 - `pyproject ci` will skip it
