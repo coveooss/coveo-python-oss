@@ -9,20 +9,22 @@ from typing_extensions import Final
 from coveo_systools.subprocess import check_output
 
 
-RUNNING_IN_WINDOWS: bool = bool(platform.system() == 'Windows')
+RUNNING_IN_WINDOWS: bool = bool(platform.system() == "Windows")
 
 
 class PythonTool(Enum):
-    Python = 'python'
-    Poetry = 'poetry'
-    Mypy = 'mypy'
-    Pytest = 'pytest'
-    Pip = 'pip'
+    Python = "python"
+    Poetry = "poetry"
+    Mypy = "mypy"
+    Pytest = "pytest"
+    Pip = "pip"
+    Black = "black"
 
 
 class PythonEnvironment:
     """Simple class to DRY-virtualenv."""
-    _prefix, _suffix = ('Scripts', '.exe') if RUNNING_IN_WINDOWS else ('bin', '')
+
+    _prefix, _suffix = ("Scripts", ".exe") if RUNNING_IN_WINDOWS else ("bin", "")
 
     def __init__(self, environment_path: Union[Path, str]) -> None:
         """
@@ -34,10 +36,10 @@ class PythonEnvironment:
 
         python_path = Path(environment_path)
         if python_path.is_dir():
-            python_path = (python_path / self._prefix / 'python').with_suffix(self._suffix)
+            python_path = (python_path / self._prefix / "python").with_suffix(self._suffix)
 
         if not python_path.exists():
-            raise FileNotFoundError(f'Cannot find a python executable in {environment_path}')
+            raise FileNotFoundError(f"Cannot find a python executable in {environment_path}")
 
         self.python_executable: Path = python_path
 
@@ -50,7 +52,7 @@ class PythonEnvironment:
 
     def build_command(self, tool: PythonTool, *args: Any) -> List[Any]:
         """Builds a command for a given executable. OS-dependant."""
-        return [self.python_executable, '-m', tool.value, *args]
+        return [self.python_executable, "-m", tool.value, *args]
 
     @property
     def mypy_executable(self) -> Path:
@@ -65,21 +67,25 @@ class PythonEnvironment:
         return self._guess_path(PythonTool.Pytest)
 
     @property
+    def black_executable(self) -> Path:
+        return self._guess_path(PythonTool.Black)
+
+    @property
     def python_version(self) -> str:
         if self._python_version is None:
-            self._python_version = check_output(str(self.python_executable), '--version').strip()
+            self._python_version = check_output(str(self.python_executable), "--version").strip()
         assert self._python_version is not None
         return self._python_version
 
     @property
     def pretty_python_version(self) -> str:
         """Will change e.g. Python 3.6.8 into py3.6.8"""
-        version = self.python_version.split(' ')[1]
-        return f'py{version}'
+        version = self.python_version.split(" ")[1]
+        return f"py{version}"
 
     def __str__(self) -> str:
         try:
-            return f'{self.python_version} ({self.python_executable})'
+            return f"{self.python_version} ({self.python_executable})"
         except Exception:
             return str(self.python_executable)
 

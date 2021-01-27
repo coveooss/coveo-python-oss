@@ -3,6 +3,7 @@ on:
   push:
     paths:
       - 'coveo-example-library/**'
+      - '.github/workflows/**'
   workflow_dispatch: {}
 
 jobs:
@@ -33,7 +34,6 @@ jobs:
   publish:
     name: Publish to pypi.org
     runs-on: ubuntu-20.04
-    if: github.ref == 'refs/heads/main'
     needs: pyprojectci
 
     steps:
@@ -46,8 +46,8 @@ jobs:
           python-version: 3.9
 
       - name: Publish to pypi
-        if: github.ref == 'refs/heads/main'
         uses: ./.github/workflows/actions/publish-to-pypi
         with:
           project-name: ${{ github.workflow }}
           pypi-token: ${{ secrets.PYPI_TOKEN_COVEO_EXAMPLE_LIBRARY }}
+          dry-run: ${{ github.ref != 'refs/heads/main' }}

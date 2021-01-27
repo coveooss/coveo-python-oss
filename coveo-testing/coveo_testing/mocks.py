@@ -8,4 +8,4 @@ def resolve_mock_target(target: Any) -> str:
 
     This method will not handle _all_ kinds of objects, in which case an AttributeError will most likely be raised.
     """
-    return f'{target.__module__}.{target.__name__}'
+    return f"{target.__module__}.{target.__name__}"

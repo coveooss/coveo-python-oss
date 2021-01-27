@@ -29,10 +29,10 @@ def test_pyproject_mock_initial_state_integration(pyproject_mock: PythonProject)
 
 
 @UnitTest
-@parametrize('package_name', ('requests', 'mock-pyproject-dependency'))
+@parametrize("package_name", ("requests", "mock-pyproject-dependency"))
 def test_pyproject_dependencies(pyproject_mock: PythonProject, package_name: str) -> None:
     dependency = pyproject_mock.package.dependencies[package_name]
-    assert dependency.version == '*'
+    assert dependency.version == "*"
     assert dependency.name == package_name
     assert not dependency.optional
     assert not dependency.extras
@@ -40,9 +40,13 @@ def test_pyproject_dependencies(pyproject_mock: PythonProject, package_name: str
 
 @UnitTest
 def test_pyproject_locker(pyproject_mock: PythonProject) -> None:
-    locked_requests: Package = next(filter(lambda package: package.name == 'requests',
-                                           pyproject_mock.poetry.locker.locked_repository().packages))
-    assert str(locked_requests.version) == '2.20.0'
+    locked_requests: Package = next(
+        filter(
+            lambda package: package.name == "requests",
+            pyproject_mock.poetry.locker.locked_repository().packages,
+        )
+    )
+    assert str(locked_requests.version) == "2.20.0"
 
 
 @Integration
@@ -55,20 +59,24 @@ def test_pyproject_virtual_environment(pyproject_mock: PythonProject) -> None:
 @Integration
 def test_pyproject_publish(pyproject_mock: PythonProject, tmpdir: PathLike) -> None:
     pyproject_mock.install()
-    publish_location = Path(tmpdir) / 'local-publish'
+    publish_location = Path(tmpdir) / "local-publish"
     assert not publish_location.exists()
     with pushd(Path(tmpdir)):
         # note: local directories are found from working folder or git root
-        offline_publish(pyproject_mock, publish_location,
-                        pyproject_mock.virtual_environments(create_default_if_missing=True)[0])
+        offline_publish(
+            pyproject_mock,
+            publish_location,
+            pyproject_mock.virtual_environments(create_default_if_missing=True)[0],
+        )
     assert publish_location.exists()
 
     # note: the package names in the filenames end up as underscores, not dashes.
     for required_file in (
-            'setuptools',
-            'setuptools_scm',
-            'requests',
-            'wheel',
-            'mock_pyproject_dependency',
-            'black'):
-        assert any(publish_location.rglob(f'{required_file}-*')), f"Cannot find {required_file}"
+        "setuptools",
+        "setuptools_scm",
+        "requests",
+        "wheel",
+        "mock_pyproject_dependency",
+        "black",
+    ):
+        assert any(publish_location.rglob(f"{required_file}-*")), f"Cannot find {required_file}"

@@ -24,10 +24,8 @@ coveo-testing-extras = { path = 'coveo-testing-extras/', develop = true }
 pydev = true
 
 
-[tool.coveo.ci]
-pytest = false
-mypy = false
-offline-build = false
+[tool.black]
+line-length = 100
 
 
 [build-system]

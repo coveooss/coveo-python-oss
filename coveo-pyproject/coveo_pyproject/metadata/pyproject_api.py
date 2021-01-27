@@ -11,15 +11,15 @@ if TYPE_CHECKING:
     from coveo_pyproject.metadata.poetry_api import PoetryAPI
 
 
-T_PythonProject = TypeVar('T_PythonProject', bound='PythonProjectAPI')
+T_PythonProject = TypeVar("T_PythonProject", bound="PythonProjectAPI")
 
 
 class PythonProjectAPI(Protocol):
     verbose: bool
     project_path: Path
     toml_path: Path
-    package: 'PoetryAPI'
-    options: 'CoveoPackage'
+    package: "PoetryAPI"
+    options: "CoveoPackage"
     lock_path: Path
     egg_path: Path
     poetry: Poetry
@@ -28,10 +28,12 @@ class PythonProjectAPI(Protocol):
     def __init__(self, project_path: Path, *, verbose: bool = False) -> None:
         ...
 
-    def virtual_environments(self, *, create_default_if_missing: bool = False) -> List['PythonEnvironment']:
+    def virtual_environments(
+        self, *, create_default_if_missing: bool = False
+    ) -> List["PythonEnvironment"]:
         ...
 
-    def install(self, remove_untracked: bool = True) -> None:
+    def install(self, *, remove_untracked: bool = True, quiet: bool = False) -> None:
         ...
 
     def build(self, target_path: Path) -> Path:
@@ -42,14 +44,20 @@ class PythonProjectAPI(Protocol):
         ...
 
     @classmethod
-    def find_pyproject(cls: Type[T_PythonProject], project_name: str, path: Path = None, *, verbose: bool = False) \
-            -> T_PythonProject:
+    def find_pyproject(
+        cls: Type[T_PythonProject], project_name: str, path: Path = None, *, verbose: bool = False
+    ) -> T_PythonProject:
         ...
 
     @classmethod
-    def find_pyprojects(cls: Type[T_PythonProject], path: Path = None,
-                        *, query: str = None, exact_match: bool = False, verbose: bool = False) \
-            -> Generator[T_PythonProject, None, None]:
+    def find_pyprojects(
+        cls: Type[T_PythonProject],
+        path: Path = None,
+        *,
+        query: str = None,
+        exact_match: bool = False,
+        verbose: bool = False
+    ) -> Generator[T_PythonProject, None, None]:
         ...
 
     @classmethod

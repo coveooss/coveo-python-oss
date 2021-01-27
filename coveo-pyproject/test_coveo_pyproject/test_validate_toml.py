@@ -7,16 +7,18 @@ from toml.decoder import TomlDecodeError
 from coveo_pyproject.utils import _load_toml_from_content
 
 
-DUMMY_TEST_PATH = Path('/some/dummy/path.toml')
+DUMMY_TEST_PATH = Path("/some/dummy/path.toml")
 
 
-def _retrieve_exception(fn: Callable = _load_toml_from_content, *args: Any, **kwargs: Any) -> Exception:
+def _retrieve_exception(
+    fn: Callable = _load_toml_from_content, *args: Any, **kwargs: Any
+) -> Exception:
     try:
         fn(*args, **kwargs)
     except Exception as exception:
         return exception
 
-    assert False, 'Did not raise.'
+    assert False, "Did not raise."
 
 
 @UnitTest
@@ -25,7 +27,7 @@ def test_toml_decode_error() -> None:
     assert isinstance(exception.__cause__, TomlDecodeError)
     error_line = 1
     error_col = 8
-    assert f'{DUMMY_TEST_PATH}:{error_line}:{error_col}' in str(exception)
+    assert f"{DUMMY_TEST_PATH}:{error_line}:{error_col}" in str(exception)
 
 
 @UnitTest
@@ -44,5 +46,5 @@ def test_toml_repeated_section() -> None:
     error_col = 1
     exception = _retrieve_exception(_load_toml_from_content, toml, DUMMY_TEST_PATH)
     assert isinstance(exception.__cause__, TomlDecodeError)
-    assert f'{DUMMY_TEST_PATH}:{error_line}:{error_col}' in str(exception)
-    assert 'already exists' in str(exception)  # may change with new toml parser versions
+    assert f"{DUMMY_TEST_PATH}:{error_line}:{error_col}" in str(exception)
+    assert "already exists" in str(exception)  # may change with new toml parser versions

@@ -8,18 +8,22 @@ from .exceptions import VersionException
 from .versions import StrictVersionHelper
 
 
-PYPI_HOSTNAME: Final[str] = 'https://pypi.org'
+PYPI_HOSTNAME: Final[str] = "https://pypi.org"
 
-T = TypeVar('T', bound=Version)
+T = TypeVar("T", bound=Version)
 
 
 class VersionExists(Exception):
     ...
 
 
-def obtain_versions_from_pypi(package_name: str, host: str = PYPI_HOSTNAME, *,
-                              version_class: Type[T] = StrictVersion,  # type: ignore
-                              oldest_first: bool = False) -> List[T]:
+def obtain_versions_from_pypi(
+    package_name: str,
+    host: str = PYPI_HOSTNAME,
+    *,
+    version_class: Type[T] = StrictVersion,  # type: ignore
+    oldest_first: bool = False,
+) -> List[T]:
     """
     Requests all versions of a package from pypidev-coveo.
 
@@ -34,7 +38,7 @@ def obtain_versions_from_pypi(package_name: str, host: str = PYPI_HOSTNAME, *,
     data = response.json()
 
     valid_versions: List[T] = []
-    for version in data['releases'].keys():
+    for version in data["releases"].keys():
         try:
             valid_versions.append(version_class(version))
         except ValueError:
@@ -51,11 +55,14 @@ def obtain_latest_release_from_pypi(package: str) -> Optional[StrictVersion]:
     """Obtains the latest non-prerelease version from pypi."""
     official_releases = filter(
         lambda version: not version.prerelease,
-        obtain_versions_from_pypi(package, version_class=StrictVersionHelper))
+        obtain_versions_from_pypi(package, version_class=StrictVersionHelper),
+    )
     return next(official_releases, None)
 
 
-def compute_next_version(package: str, *, prerelease: bool, minimum_version: str = '0.0.1') -> StrictVersionHelper:
+def compute_next_version(
+    package: str, *, prerelease: bool, minimum_version: str = "0.0.1"
+) -> StrictVersionHelper:
     """
     Given a package, compute the next version based on what's in pypi. e.g.:
         - If 1.0.0 is the latest release version, it becomes 1.0.1 or 1.0.1a1
@@ -68,9 +75,9 @@ def compute_next_version(package: str, *, prerelease: bool, minimum_version: str
     """
     lbound_version = StrictVersionHelper(minimum_version)
     if lbound_version.prerelease:
-        raise VersionException(f'Minimum version {minimum_version} cannot be a pre-release.')
-    if lbound_version < StrictVersionHelper('0.0.1'):
-        raise VersionException(f'Minimum version {minimum_version} must be 0.0.1 or higher.')
+        raise VersionException(f"Minimum version {minimum_version} cannot be a pre-release.")
+    if lbound_version < StrictVersionHelper("0.0.1"):
+        raise VersionException(f"Minimum version {minimum_version} must be 0.0.1 or higher.")
 
     # don't bump the patch number of the minimum version, but process the prerelease bump if applicable.
     if prerelease:
