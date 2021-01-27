@@ -2,8 +2,10 @@
 name = "coveo-settings"
 version = "1.0.0"
 description = "Settings driven by environment variables."
+license = "Apache-2.0"
+readme = "README.md"
+repository = "https://github.com/coveooss/coveo-python-oss"
 authors = ["Jonathan Piché <jpiche@coveo.com>"]
-
 
 [tool.poetry.dependencies]
 python = ">=3.8"
