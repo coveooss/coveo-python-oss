@@ -31,7 +31,7 @@ Extra magic for poetry-backed projects with CI and batch operations in mind.
 
 # Installation
 
-It is recommended to install using `pipx` in order to isolate this into a nice little space:
+It is recommended to install using [pipx](https://github.com/pipxproject/pipx) in order to isolate this into a nice little space:
 
 ```
 pip install pipx --user
