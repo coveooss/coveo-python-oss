@@ -142,7 +142,7 @@ This functionality is enabled by adding the following to your `pyproject.toml`:
 pydev = true
 ```
 
-The marker above comes with a few behavior differences:
+The marker above comes with a few behavior differences for the project:
 
 - it cannot be packaged, published or even pip-installed.
 - `pyproject ci` will skip it
