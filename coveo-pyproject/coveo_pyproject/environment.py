@@ -18,6 +18,7 @@ class PythonTool(Enum):
     Mypy = "mypy"
     Pytest = "pytest"
     Pip = "pip"
+    Black = "black"
 
 
 class PythonEnvironment:
@@ -64,6 +65,10 @@ class PythonEnvironment:
     @property
     def pytest_executable(self) -> Path:
         return self._guess_path(PythonTool.Pytest)
+
+    @property
+    def black_executable(self) -> Path:
+        return self._guess_path(PythonTool.Black)
 
     @property
     def python_version(self) -> str:

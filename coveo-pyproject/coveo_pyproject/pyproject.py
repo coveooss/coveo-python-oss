@@ -50,11 +50,17 @@ class PythonProject(PythonProjectAPI):
             _pyproject=self,
         )
 
-        self.ci: ContinuousIntegrationConfig = flexfactory(
-            ContinuousIntegrationConfig,
-            **dict_lookup(toml_content, "tool", "coveo", "ci", default={}),
-            _pyproject=self,
-        )
+        if self.options.pydev:
+            # ensure no steps are repeated. pydev projects only receive basic poetry/lock checks
+            self.ci: ContinuousIntegrationConfig = ContinuousIntegrationConfig(
+                check_outdated=True, poetry_check=True, mypy=False, _pyproject=self
+            )
+        else:
+            self.ci = flexfactory(
+                ContinuousIntegrationConfig,
+                **dict_lookup(toml_content, "tool", "coveo", "ci", default={}),
+                _pyproject=self,
+            )
 
         # these are the actual poetry apis
         self.poetry = Factory().create_poetry(self.project_path)
@@ -217,7 +223,7 @@ class PythonProject(PythonProjectAPI):
 
         return target
 
-    def launch_continuous_integration(self) -> bool:
+    def launch_continuous_integration(self, auto_fix: bool = False) -> bool:
         """Launch all continuous integration runners on the project."""
         if self.ci.disabled:
             return True
@@ -226,10 +232,8 @@ class PythonProject(PythonProjectAPI):
         for runner in self.ci.runners:
             for environment in self.virtual_environments(create_default_if_missing=True):
                 try:
-                    echo.normal(
-                        f"{runner} ({environment.pretty_python_version})", emoji="hourglass"
-                    )
-                    status = runner.launch(environment)
+                    echo.normal(f"{runner} ({environment.pretty_python_version})", emoji="hourglass")
+                    status = runner.launch(environment, auto_fix=auto_fix)
                     if status is not RunnerStatus.Success:
                         echo.warning(
                             f"{self.package.name}: {runner} reported issues:",
@@ -252,11 +256,15 @@ class PythonProject(PythonProjectAPI):
 
         return all(runner.status is RunnerStatus.Success for runner in self.ci.runners)
 
-    def install(self, remove_untracked: bool = True) -> None:
-        """Performs a 'poetry install --remove-untracked' on the project. If an environment is provided, target it."""
+    def install(self, remove_untracked: bool = True, quiet: bool = False) -> None:
+        """
+        Performs a 'poetry install --remove-untracked' on the project. If an environment is provided, target it.
+        """
         command = ["install"]
         if remove_untracked:
             command.append("--remove-untracked")
+        if quiet:
+            command.append("--quiet")
         self.poetry_run(*command)
 
     def remove_egg_info(self) -> bool:
