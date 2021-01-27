@@ -34,7 +34,6 @@ jobs:
   publish:
     name: Publish to pypi.org
     runs-on: ubuntu-20.04
-    if: github.ref == 'refs/heads/main'
     needs: pyprojectci
 
     steps:
@@ -51,3 +50,4 @@ jobs:
         with:
           project-name: ${{ github.workflow }}
           pypi-token: ${{ secrets.PYPI_TOKEN_COVEO_EXAMPLE_LIBRARY }}
+          dry-run: ${{ github.ref != 'refs/heads/main' }}
