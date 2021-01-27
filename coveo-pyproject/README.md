@@ -18,7 +18,6 @@ Extra magic for poetry-backed projects with CI and batch operations in mind.
 - Generates offline installation package from lock files
 
 ## developer tools
-- Act on python projects in a git repo by name (path is irrelevant)
 - Batch support for common operations, such as poetry lock and poetry install
 - Specialized development environment support (called pydev)
 
@@ -154,7 +153,7 @@ As such, the pydev functionality is only suitable to enable seamless development
 
 1. Call `poetry install` from the root of the repository
 1. Obtain the location of the virtual environment (i.e.: `poetry env list --full-path`)
-1. Configure your IDE to use the python interpreter from that location.
+1. Configure your IDE to use the python interpreter from that location
 
 If your IDE is python-smart, it should be able to pick up all imports automatically, regardless of your PYTHONPATH or your working directory.
 Since the local source is linked to, any change to the source code will be reflected on the next run.
@@ -190,7 +189,7 @@ You can keep `poetry` and `coveo-pyproject` off your production environment by c
     - performs a `poetry build` on your project
     - calls `pip download` based on the content of the lock file
     - Moves the artifacts to the `.wheels` folder of your repo (can be configured with `--target`)
-- Recommended: Use the `--python` switch when calling `pyproject build` to specify which python executable to use! Make sure to use a python interpreter that matches the os/arch/bits of the system you want to provision.
+- Recommended: Use the `--python` switch when calling `pyproject build` to specify which python executable to use! Make sure to use a python interpreter that matches the os/arch/bits of the system you want to provision
 - Include the `.wheels` folder into your Docker build context
 - In your Dockerfile:
     - ADD the `.wheels` folder
@@ -200,7 +199,7 @@ You can keep `poetry` and `coveo-pyproject` off your production environment by c
         - Note the executable location... typically (`location/bin/python` or `location/Scripts/python.exe`)
     - Install your application into the python environment you just created:
         - Use `<venv-python-exec> -m pip install <your-package> --no-index --find-links <wheels-folder-location>`
-    - You may delete the `.wheels` folder if you want. Consider keeping a copy of the lock file within the docker image, for reference.
+    - You may delete the `.wheels` folder if you want. Consider keeping a copy of the lock file within the docker image, for reference
     
 
 ### Using the environment
