@@ -1,6 +1,6 @@
 # coveo-example-library
 
-This library serves as an example of the project structure used by all python projects in this repo.
+This project serves as an example / template of the project structure used by all python projects in the `coveo-python-oss` repository.
 The conventions and rules are explained below.
 
 All paths in the document are relative to the root of the `coveo-python-oss` repo.
