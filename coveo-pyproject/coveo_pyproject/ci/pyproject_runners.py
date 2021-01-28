@@ -29,7 +29,7 @@ class OfflineInstallRunner(ContinuousIntegrationRunner):
 
         try:
             # publish the offline wheels
-            offline_publish(self._pyproject, offline_install_location, environment, quiet=True)
+            offline_publish(self._pyproject, offline_install_location, environment, quiet=False)
 
             # make sure pip install finds everything it needs from the offline location.
             # move out to a controlled file structure so that no folder imports are possible
