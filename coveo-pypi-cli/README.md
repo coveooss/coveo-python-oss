@@ -1,6 +1,6 @@
 # coveo-pypi-cli
 
-A very simply pypi cli that can be used to obtain the latest version of a package, or calculate the next one.
+A very simple pypi cli that can be used to obtain the latest version of a package, or calculate the next one.
 
 Serves our automatic pypi push github action.
 

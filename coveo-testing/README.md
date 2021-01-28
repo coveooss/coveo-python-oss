@@ -1,6 +1,6 @@
 # coveo-testing
 
-A set of helpers to facilitate common test routines.
+A set of test/pytest helpers to facilitate common routines.
 
 
 Content in a nutshell:

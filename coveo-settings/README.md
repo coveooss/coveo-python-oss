@@ -9,7 +9,7 @@ DATABASE_URL = StringSetting('project.database.url')
 DATABASE_USE_SSL = BoolSetting('project.database.ssl')
 ```
 
-The user can then configure the environment variables to configure the application.
+The user can then configure the environment variables `project.database.url` and `project.database.ssl` to configure the application.
 
 When accessed, the values are automatically converted to the desired type:
 

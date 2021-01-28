@@ -17,9 +17,9 @@ from coveo_styles.styles import echo
 
 echo.step("Launching ci operations")
 echo.normal("pytest", emoji='hourglass')
-echo.success()
-echo.noise("Generated test report at .ci/report.xml")
 echo.normal("black", emoji='hourglass')
+echo.noise("Generated test reports in .ci/")
+echo.success()
 echo.warning("Formatting errors detected")
 echo.suggest("The --fix switch will automatically fix these for you and re-run the test !!smile!!")
 echo.error("The CI run detected errors you need to fix", pad_after=False)
@@ -32,11 +32,11 @@ echo.error_details("Details as items is nice!", item=True)
 Launching ci operations
 
 ⌛ pytest
+⌛ black
+Generated test reports in .ci/
 
 ✔ Success!
 
-Generated test report at .ci/report.xml
-⌛ black
 
 ⚠ Formatting errors detected
 
