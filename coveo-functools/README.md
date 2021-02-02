@@ -43,7 +43,8 @@ poetry install --no_dev
 
 ## dispatch
 
-An enhanced version of `functools.singledispatch`:
+An enhanced version of [functools.singledispatch](https://docs.python.org/3.8/library/functools.html#functools.singledispatch):
+
 
 - Adds support for `Type[]` annotations (singledispatch only works on instances)
 - You are no longer limited to the first argument of the method

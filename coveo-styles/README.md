@@ -4,7 +4,8 @@ Don't let your CLI app spit out hundreds of boring lines!
 
 Manage your user feedback a bit like you manage logs, and get bonus colors and emojis just because we can!
 
-This module provides a `echo` symbol that you can use instead of `print` for convenience.
+This module provides an `echo` symbol that you can use instead of `print` for convenience.
+
 It is also completely customizable!
 
 
@@ -49,7 +50,8 @@ Generated test reports in .ci/
  · Details as items is nice
 ```
 
-It's even nicer with the colors! :) This doc needs a few animated gifs!
+It's even nicer with colors! :) This doc needs a few animated gifs!
+
 
 
 # exception hook
@@ -76,7 +78,8 @@ The stacktrace will be hidden, the app will exit with code 1 after printing the 
 🤖 Use the --list switch to see which projects I can see
 ```
 
-Unhandled exceptions (ones that are not wrapped by an ExitWithFailure), will display the usual python feedback and stacktrace.
+Unhandled exceptions (those that are not wrapped by an ExitWithFailure), will display the usual python feedback and stacktrace.
+
 
 
 # hunting for emojis
