@@ -21,7 +21,7 @@ The principal use case is to allow seamless translation between snake_case and c
 - It inspects the provided input to find matching candidates
 - It calls the function with the cleaned arguments
 
-It can also be used to allow for a certain degree of "personalization" in typically strict contexts such as configuration files and APIs. 
+It can also be used to allow for a certain degree of personalization in typically strict contexts such as configuration files and APIs. 
 
 Take for example the toml below, where all 3 items are equivalent:
 
