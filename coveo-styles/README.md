@@ -52,7 +52,7 @@ Generated test reports in .ci/
 It's even nicer with the colors! :) This doc needs a few animated gifs!
 
 
-## bonus: exception hook
+# exception hook
 
 Exception handlers may re-raise an exception as an `ExitWithFailure` in order to hide the traceback from the user and show a helpful error message.
 
@@ -77,3 +77,32 @@ The stacktrace will be hidden, the app will exit with code 1 after printing the 
 ```
 
 Unhandled exceptions (ones that are not wrapped by an ExitWithFailure), will display the usual python feedback and stacktrace.
+
+
+# hunting for emojis
+
+Emoji support is provided by the [emoji](https://pypi.org/project/emoji/) package. 
+Their description provides different links to help with your emoji hunt, but for some reason not everything is supported or has the name it should have.
+
+The only foolproof way I have found is to actually inspect the `emoji` package, either by opening `site-packages/emoji/unicode_codes/en.py` in my IDE or programmatically like this:
+
+```python
+from coveo_styles.styles import echo
+from emoji.unicode_codes.en import EMOJI_UNICODE_ENGLISH, EMOJI_ALIAS_UNICODE_ENGLISH
+
+query = 'smile'.lower()
+
+for emoji_name in {*EMOJI_UNICODE_ENGLISH, *EMOJI_ALIAS_UNICODE_ENGLISH}:
+    emoji_name = emoji_name.strip(':')
+    if query in emoji_name.lower():
+        echo.normal(f'{emoji_name}: !!{emoji_name}!!')
+```
+
+```
+sweat_smile: 😅
+cat_face_with_wry_smile: 😼
+smile: 😄
+smiley: 😃
+smiley_cat: 😺
+smile_cat: 😸
+```
