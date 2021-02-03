@@ -5,7 +5,7 @@ from typing_extensions import Protocol, Literal, Final
 from poetry.core.packages import Package
 
 from coveo_functools.casing import flexfactory
-from coveo_pyproject.metadata.pyproject_api import PythonProjectAPI
+from coveo_stew.metadata.pyproject_api import PythonProjectAPI
 
 
 T = TypeVar("T")

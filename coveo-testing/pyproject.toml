@@ -18,7 +18,7 @@ pytest = "*"
 typing_extensions = "*"
 
 
-[tool.coveo.ci]
+[tool.stew.ci]
 pytest = true
 offline-build = true
 black = true

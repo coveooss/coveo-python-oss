@@ -20,7 +20,7 @@ coveo-testing = { path = 'coveo-testing/', develop = true }
 coveo-testing-extras = { path = 'coveo-testing-extras/', develop = true }
 
 
-[tool.coveo.pyproject]
+[tool.stew]
 pydev = true
 
 

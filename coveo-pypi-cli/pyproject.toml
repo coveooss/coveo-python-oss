@@ -30,7 +30,7 @@ requests-mock = "*"
 pypi = "coveo_pypi_cli.cli:pypi"
 
 
-[tool.coveo.ci]
+[tool.stew.ci]
 pytest = true
 offline-build = true
 black = true

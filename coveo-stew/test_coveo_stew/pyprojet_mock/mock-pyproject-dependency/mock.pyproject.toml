@@ -2,7 +2,7 @@
 name = "mock-pyproject-dependency"
 version = "0.2.4"
 description = "mocked dependency for pyproject mock"
-authors = ["Jonathan piché <jpiche@coveo.com>"]
+authors = ["Jonathan piché <tools@coveo.com>"]
 
 
 [tool.poetry.dependencies]
@@ -14,7 +14,7 @@ black = { version = "*", allow-prereleases = true }
 requests = "<=2.20"
 
 
-[tool.coveo.pyproject.build-dependencies]
+[tool.stew.build-dependencies]
 setuptools-scm = { version = "*" }  # required by black's setup
 
 

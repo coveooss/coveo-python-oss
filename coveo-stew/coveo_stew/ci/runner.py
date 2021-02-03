@@ -3,9 +3,9 @@ from enum import Enum, auto
 from pathlib import Path
 from typing import List
 
-from coveo_pyproject.ci.reporting import generate_report
-from coveo_pyproject.environment import PythonEnvironment
-from coveo_pyproject.metadata.pyproject_api import PythonProjectAPI
+from coveo_stew.ci.reporting import generate_report
+from coveo_stew.environment import PythonEnvironment
+from coveo_stew.metadata.pyproject_api import PythonProjectAPI
 from coveo_styles.styles import echo
 from coveo_systools.subprocess import DetailedCalledProcessError
 from junit_xml import TestCase

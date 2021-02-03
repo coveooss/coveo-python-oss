@@ -16,7 +16,7 @@ coveo-testing = { path = "../coveo-testing/", develop = true }
 pytest = "*"
 
 
-[tool.coveo.ci]
+[tool.stew.ci]
 pytest = true
 offline-build = true
 black = true

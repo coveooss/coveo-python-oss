@@ -1,9 +1,9 @@
 from typing import Mapping, Any
 
-from coveo_pyproject.metadata.poetry_api import dependencies_factory
+from coveo_stew.metadata.poetry_api import dependencies_factory
 
 
-class CoveoPackage:
+class StewPackage:
     """Represents the coveo-specific sections of a pyproject.toml file."""
 
     def __init__(

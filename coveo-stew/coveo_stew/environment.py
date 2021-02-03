@@ -99,4 +99,4 @@ class PythonEnvironment:
 
 
 # this is where our own dependencies reside (e.g.: our isolated poetry install)
-coveo_pyproject_environment: Final[PythonEnvironment] = PythonEnvironment(sys.executable)
+coveo_stew_environment: Final[PythonEnvironment] = PythonEnvironment(sys.executable)

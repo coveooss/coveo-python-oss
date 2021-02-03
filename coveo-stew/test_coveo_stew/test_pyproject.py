@@ -7,8 +7,8 @@ from coveo_testing.markers import UnitTest, Integration
 from coveo_testing.parametrize import parametrize
 from poetry.core.packages import Package
 
-from coveo_stew.pyproject import PythonProject
-from test_coveo_pyproject.pyprojet_mock.fixtures import pyproject_mock
+from coveo_stew.stew import PythonProject
+from test_coveo_stew.pyprojet_mock.fixtures import pyproject_mock
 
 _ = pyproject_mock  # mark the fixture as used
 

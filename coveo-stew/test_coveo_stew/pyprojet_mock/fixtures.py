@@ -4,7 +4,7 @@ from shutil import copytree, rmtree
 
 import pytest
 
-from coveo_stew.pyproject import PythonProject
+from coveo_stew.stew import PythonProject
 
 
 MOCK_FOLDER = Path("mock-pyproject")

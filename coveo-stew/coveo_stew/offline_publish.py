@@ -7,9 +7,9 @@ from coveo_styles.styles import echo
 from coveo_systools.subprocess import check_call, check_output
 from poetry.core.packages import Package
 
-from coveo_pyproject.environment import PythonEnvironment, PythonTool
-from coveo_pyproject.exceptions import PythonProjectException
-from coveo_pyproject.metadata.pyproject_api import PythonProjectAPI
+from coveo_stew.environment import PythonEnvironment, PythonTool
+from coveo_stew.exceptions import PythonProjectException
+from coveo_stew.metadata.pyproject_api import PythonProjectAPI
 
 
 _DEFAULT_PIP_OPTIONS = (

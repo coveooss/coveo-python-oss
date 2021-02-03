@@ -9,11 +9,11 @@ from coveo_functools.finalizer import finalizer
 from coveo_systools.filesystem import find_repo_root
 from coveo_styles.styles import echo, ExitWithFailure, install_pretty_exception_hook
 
-from coveo_pyproject.ci.runner import ContinuousIntegrationRunner, RunnerStatus
-from coveo_pyproject.exceptions import CheckFailed, RequirementsOutdated, PythonProjectNotFound
-from coveo_pyproject.offline_publish import offline_publish
-from coveo_pyproject.pydev import PyDev, NotPyDevProject
-from coveo_pyproject.pyproject import PythonProject, PythonEnvironment
+from coveo_stew.ci.runner import ContinuousIntegrationRunner, RunnerStatus
+from coveo_stew.exceptions import CheckFailed, RequirementsOutdated, PythonProjectNotFound
+from coveo_stew.offline_publish import offline_publish
+from coveo_stew.pydev import PyDev, NotPyDevProject
+from coveo_stew.stew import PythonProject, PythonEnvironment
 
 
 _COMMANDS_THAT_SKIP_INTRO_EMOJIS = ["locate"]
@@ -53,14 +53,14 @@ def _pull_dev_requirements(
 
 @click.group()
 @click.pass_context
-def pyproject(ctx: click.Context) -> None:
-    """The 'pyproject' cli entry point."""
+def stew(ctx: click.Context) -> None:
+    """The 'stew' cli entry point."""
     install_pretty_exception_hook()
     if ctx.invoked_subcommand not in _COMMANDS_THAT_SKIP_INTRO_EMOJIS:
         echo.step("!!sparkles!! !!snake!! !!sparkles!!")
 
 
-@pyproject.command()
+@stew.command()
 @click.option("--verbose", is_flag=True, default=False)
 def check_outdated(verbose: bool = False) -> None:
     """Return error code 1 if toml/lock are not in sync."""
@@ -88,7 +88,7 @@ def check_outdated(verbose: bool = False) -> None:
     echo.success("Check complete! All files are up-to-date.")
 
 
-@pyproject.command()
+@stew.command()
 @click.option("--verbose", is_flag=True, default=False)
 def fix_outdated(verbose: bool = False) -> None:
     """Scans the whole repo and updates outdated pyproject-related files.
@@ -114,7 +114,7 @@ def fix_outdated(verbose: bool = False) -> None:
     echo.success(f'Update complete! {len(updated) or "No"} file(s) were modified.\n')
 
 
-@pyproject.command()
+@stew.command()
 @click.option("--verbose", is_flag=True, default=False)
 def bump(verbose: bool = False) -> None:
     """Bumps locked versions for all pyprojects."""
@@ -131,7 +131,7 @@ def bump(verbose: bool = False) -> None:
     echo.success(f'Bump complete! {len(updated) or "No"} file(s) were modified.')
 
 
-@pyproject.command()
+@stew.command()
 @click.argument("project_name")
 @click.option("--directory", default=None)
 @click.option("--python", default=None)
@@ -175,7 +175,7 @@ def build(
     echo.success()
 
 
-@pyproject.command()
+@stew.command()
 @click.argument("project_name", default=None, required=False)
 @click.option("--install/--no-install", default=True)
 @click.option("--verbose", is_flag=True, default=False)
@@ -214,7 +214,7 @@ def fresh_eggs(project_name: str = None, install: bool = True, verbose: bool = F
     echo.success()
 
 
-@pyproject.command()
+@stew.command()
 @click.option("--dry-run/--no-dry-run", default=False)
 @click.option("--verbose", is_flag=True, default=False)
 def pull_dev_requirements(dry_run: bool = False, verbose: bool = False) -> None:
@@ -250,7 +250,7 @@ def _beautify_mypy_output(
             echo.noise(line)
 
 
-@pyproject.command()
+@stew.command()
 @click.argument("project_name", default=None, required=False)
 @click.option("--extra-mypy-option", multiple=True)
 @click.option("--exact-match/--no-exact-match", default=False)
@@ -302,7 +302,7 @@ def mypy(
     echo.success("All projects passed type checking.")
 
 
-@pyproject.command()
+@stew.command()
 @click.argument("project_name")
 @click.option("--verbose", is_flag=True, default=False)
 def locate(project_name: str, verbose: bool = False) -> None:
@@ -327,7 +327,7 @@ def locate(project_name: str, verbose: bool = False) -> None:
             raise ExitWithFailure from exception
 
 
-@pyproject.command()
+@stew.command()
 @click.argument("project_name", default=None, required=False)
 @click.option("--exact-match/--no-exact-match", default=False)
 @click.option("--verbose", is_flag=True, default=False)
@@ -356,7 +356,7 @@ def refresh(project_name: str = None, exact_match: bool = False, verbose: bool =
     echo.success()
 
 
-@pyproject.command()
+@stew.command()
 @click.argument("project_name", default=None, required=False)
 @click.option("--exact-match/--no-exact-match", default=False)
 @click.option("--fix/--no-fix", default=False)

@@ -1,14 +1,14 @@
 from typing import TypeVar, Any, Dict, Optional, Iterator, Union, Type
 
 from coveo_functools.casing import flexfactory
-from coveo_pyproject.ci.black_runner import BlackRunner
+from coveo_stew.ci.black_runner import BlackRunner
 
-from coveo_pyproject.ci.mypy_runner import MypyRunner
-from coveo_pyproject.ci.poetry_runners import PoetryCheckRunner
-from coveo_pyproject.ci.pyproject_runners import CheckOutdatedRunner, OfflineInstallRunner
-from coveo_pyproject.ci.pytest_runner import PytestRunner
-from coveo_pyproject.ci.runner import ContinuousIntegrationRunner
-from coveo_pyproject.metadata.pyproject_api import PythonProjectAPI
+from coveo_stew.ci.mypy_runner import MypyRunner
+from coveo_stew.ci.poetry_runners import PoetryCheckRunner
+from coveo_stew.ci.stew_runners import CheckOutdatedRunner, OfflineInstallRunner
+from coveo_stew.ci.pytest_runner import PytestRunner
+from coveo_stew.ci.runner import ContinuousIntegrationRunner
+from coveo_stew.metadata.pyproject_api import PythonProjectAPI
 
 T = TypeVar("T")
 
@@ -29,7 +29,7 @@ class ContinuousIntegrationConfig:
         _pyproject: PythonProjectAPI
     ):
         self._pyproject = _pyproject
-        self.disabled = disabled  # a master switch used by pyproject to skip this project.
+        self.disabled = disabled  # a master switch used by stew to skip this project.
         self.mypy: Optional[MypyRunner] = self._flexfactory(MypyRunner, mypy)
         self.check_outdated: Optional[CheckOutdatedRunner] = self._flexfactory(
             CheckOutdatedRunner, check_outdated

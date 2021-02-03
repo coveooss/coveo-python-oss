@@ -7,9 +7,9 @@ from coveo_styles.styles import echo
 from coveo_systools.filesystem import find_paths
 from coveo_systools.subprocess import check_output
 
-from coveo_pyproject.ci.runner import ContinuousIntegrationRunner, RunnerStatus
-from coveo_pyproject.environment import PythonEnvironment, PythonTool, coveo_pyproject_environment
-from coveo_pyproject.metadata.python_api import PythonFile
+from coveo_stew.ci.runner import ContinuousIntegrationRunner, RunnerStatus
+from coveo_stew.environment import PythonEnvironment, PythonTool, coveo_stew_environment
+from coveo_stew.metadata.python_api import PythonFile
 
 
 class MypyRunner(ContinuousIntegrationRunner):
@@ -31,9 +31,7 @@ class MypyRunner(ContinuousIntegrationRunner):
             )
         except StopIteration:
             # none can be found; using our own opinionated version.
-            return Path(
-                pkg_resources.resource_filename("coveo_pyproject", "package_resources/mypy.ini")
-            )
+            return Path(pkg_resources.resource_filename("coveo_stew", "package_resources/mypy.ini"))
 
     def _find_typed_folders(self) -> Generator[Path, None, None]:
         """Yield the folders of this project that should be type-checked."""
@@ -54,9 +52,9 @@ class MypyRunner(ContinuousIntegrationRunner):
         # mypy needs the dependencies installed in an environment in order to inspect them.
         self._pyproject.install(quiet=True)
 
-        # projects may opt to use coveo-pyproject's mypy version by not including mypy in their dependencies.
+        # projects may opt to use coveo-stew's mypy version by not including mypy in their dependencies.
         mypy_environment = (
-            environment if environment.mypy_executable.exists() else coveo_pyproject_environment
+            environment if environment.mypy_executable.exists() else coveo_stew_environment
         )
 
         command = mypy_environment.build_command(

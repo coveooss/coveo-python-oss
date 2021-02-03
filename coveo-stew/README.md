@@ -1,4 +1,4 @@
-# coveo-pyproject
+# coveo-stew
 
 Extra magic for poetry-backed projects with CI and batch operations in mind.
 
@@ -34,7 +34,7 @@ It is recommended to install using [pipx](https://github.com/pipxproject/pipx) i
 
 ```
 pip3 install pipx --user
-pipx install coveo-pyproject
+pipx install coveo-stew
 ```
 
 If you don't use pipx, make sure to isolate the installation into a virtual environment, otherwise it may interfere with an existing poetry installation.
@@ -46,19 +46,19 @@ If you don't use pipx, make sure to isolate the installation into a virtual envi
 
 Unless a project name is specified, most commands will operate on all projects in a git repository based on the current working folder:
 
-- `pyproject <command>`
+- `stew <command>`
     - Perform a command on all projects
-- `pyproject <command> --help`
+- `stew <command> --help`
     - Obtain help about a particular command
-- `pyproject <command> <project-name>`
+- `stew <command> <project-name>`
     - Perform the command on all projects with `<project-name>` in their name (partial match)
-- `pyproject <command> <project-name> --exact-match`
+- `stew <command> <project-name> --exact-match`
     - Disable partial project name matching
 
 The main commands are summarized below.
 
 
-## `pyproject ci`
+## `stew ci`
 
 Orchestrates the CI process over one or multiple projects. 
 
@@ -67,7 +67,7 @@ Errors will show in the console and in junit xml reports generated inside the `.
 Configuration is done through each `pyproject.toml` file; default values are shown:
 
 ```
-[tool.coveo.ci]
+[tool.stew.ci]
 mypy = true
 poetry-check = true
 check-outdated = true
@@ -78,12 +78,12 @@ offline-build = false
 The value type of these items is designed to be extensible. For instance, the pytest runner allows you to configure the markers for the ci run:
 
 ```
-[tool.coveo.ci]
+[tool.stew.ci]
 pytest = { marker_expression = 'not docker_tests' }
 ```
 
 
-## `pyproject build`
+## `stew build`
 
 Store the project and its **locked dependencies** to disk. 
 
@@ -95,16 +95,16 @@ The folder can later be installed offline with `pip install --no-index --find-li
 The system works when the locked version is the only thing that `pip` can find in the `<folder>`.
 
 
-### `pyproject fix-outdated`
+### `stew fix-outdated`
 
 Checks for out-of-date files and automatically updates them.
 
 Summary of actions:
 - `poetry lock` if `pyproject.toml` changed but not the `poetry.lock`
-- `pyproject pull-dev-requirements` if a pydev project's dev-requirements are out of sync
+- `stew pull-dev-requirements` if a pydev project's dev-requirements are out of sync
 
 
-### `pyproject bump`
+### `stew bump`
 
 Calls `poetry lock` on all projects.
 
@@ -137,15 +137,15 @@ This is a development bootstrap for development convenience, so that one can wor
 This functionality is enabled by adding the following to your `pyproject.toml`:
 
 ```
-[tool.coveo.pyproject]
+[tool.stew]
 pydev = true
 ```
 
-The marker above comes with a few behavior differences in the way it interacts with pyproject and poetry:
+The marker above comes with a few behavior differences in the way it interacts with stew and poetry:
 
 - it cannot be packaged, published or even pip-installed
-- `pyproject ci` will skip it
-- the `tool.poetry.dev-dependencies` section is reserved, can be generated and updated through pyproject's `pull-dev-requirements` and `fix-outdated` commands
+- `stew ci` will skip it
+- the `tool.poetry.dev-dependencies` section is reserved, can be generated and updated through stew's `pull-dev-requirements` and `fix-outdated` commands
 
 As such, the pydev functionality is only suitable to enable seamless development between python projects in the repository.
 
@@ -176,20 +176,20 @@ When you use poetry, you cover the two scenarios above.
 The third scenario is the private business use case: you want to freeze your dependencies in time so that everything from the developer to the CI servers to the production system is identical.
 Essentially, you want `poetry install` without the dev requirements.
 
-This functionality is provided out of the box by `pyproject build`, which creates a pip-installable package from the lock file that you can then stash in a private storage of your choice or pass around your deployments.
+This functionality is provided out of the box by `stew build`, which creates a pip-installable package from the lock file that you can then stash in a private storage of your choice or pass around your deployments.
 
 
 ## How to provision a production system
 
 ### Preparing the virtual environment
 
-You can keep `poetry` and `coveo-pyproject` off your production environment by creating a frozen archive of your application or library from your CI servers (docker used as example):
+You can keep `poetry` and `stew` off your production environment by creating a frozen archive of your application or library from your CI servers (docker used as example):
 
-- Use the `pyproject build` tool which:
+- Use the `stew build` tool which:
     - performs a `poetry build` on your project
     - calls `pip download` based on the content of the lock file
     - Moves the artifacts to the `.wheels` folder of your repo (can be configured with `--target`)
-- Recommended: Use the `--python` switch when calling `pyproject build` to specify which python executable to use! Make sure to use a python interpreter that matches the os/arch/bits of the system you want to provision
+- Recommended: Use the `--python` switch when calling `stew build` to specify which python executable to use! Make sure to use a python interpreter that matches the os/arch/bits of the system you want to provision
 - Include the `.wheels` folder into your Docker build context
 - In your Dockerfile:
     - ADD the `.wheels` folder

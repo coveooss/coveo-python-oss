@@ -37,7 +37,7 @@ def test_toml_repeated_section() -> None:
     name = "coveo-grab-bag"
     version = "0.0.6"
     description = "Grab bag of infinite utilities."
-    authors = ["Jonathan piché <jpiche@coveo.com>"]
+    authors = ["Jonathan piché <tools@coveo.com>"]
 
     [tool.poetry]
     python = ">=3.6"

@@ -5,9 +5,9 @@ import tempfile
 from coveo_systools.filesystem import pushd
 from coveo_systools.subprocess import check_output
 
-from coveo_pyproject.ci.runner import ContinuousIntegrationRunner, RunnerStatus
-from coveo_pyproject.environment import PythonEnvironment, PythonTool
-from coveo_pyproject.offline_publish import offline_publish
+from coveo_stew.ci.runner import ContinuousIntegrationRunner, RunnerStatus
+from coveo_stew.environment import PythonEnvironment, PythonTool
+from coveo_stew.offline_publish import offline_publish
 
 
 class CheckOutdatedRunner(ContinuousIntegrationRunner):
@@ -15,7 +15,7 @@ class CheckOutdatedRunner(ContinuousIntegrationRunner):
 
     def _launch(self, environment: PythonEnvironment, *extra_args: str) -> RunnerStatus:
         if self._pyproject.lock_is_outdated:
-            self._last_output = ['The lock file is out of date: run "pyproject fix-outdated"']
+            self._last_output = ['The lock file is out of date: run "stew fix-outdated"']
             return RunnerStatus.CheckFailed
         return RunnerStatus.Success
 

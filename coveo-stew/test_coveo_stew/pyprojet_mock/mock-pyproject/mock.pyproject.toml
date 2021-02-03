@@ -1,8 +1,8 @@
 [tool.poetry]
 name = "mock-pyproject"
 version = "0.1.1"
-description = "an internal mock for pyproject's tests"
-authors = ["Jonathan piché <jpiche@coveo.com>"]
+description = "an internal mock for stew's tests"
+authors = ["Jonathan piché <tools@coveo.com>"]
 
 
 [tool.poetry.dependencies]
@@ -16,16 +16,15 @@ mock-pyproject-dependency = { path = "../mock-pyproject-dependency/", develop = 
 mypy = "*"
 
 
-[tool.coveo.pyproject]
+[tool.stew]
 pydev = false
 
 
-[tool.coveo.ci]
+[tool.stew.ci]
 mypy = {}
 
 
-
-[tool.coveo.pyproject.build-dependencies]
+[tool.stew.build-dependencies]
 setuptools = ">=42"
 wheel = "*"
 

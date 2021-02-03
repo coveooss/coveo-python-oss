@@ -2,11 +2,11 @@ from typing import Dict, Any
 
 from coveo_systools.subprocess import check_output, DetailedCalledProcessError
 
-from coveo_pyproject.ci.runner import ContinuousIntegrationRunner, RunnerStatus
-from coveo_pyproject.environment import (
+from coveo_stew.ci.runner import ContinuousIntegrationRunner, RunnerStatus
+from coveo_stew.environment import (
     PythonEnvironment,
     PythonTool,
-    coveo_pyproject_environment,
+    coveo_stew_environment,
 )
 
 
@@ -26,9 +26,9 @@ class BlackRunner(ContinuousIntegrationRunner):
         self._launch_internal(environment, "--quiet")
 
     def _launch_internal(self, environment: PythonEnvironment, *extra_args: str) -> None:
-        # projects may opt to use coveo-pyproject's black version by not including black in their dependencies.
+        # projects may opt to use coveo-stew's black version by not including black in their dependencies.
         black_environment = (
-            environment if environment.black_executable.exists() else coveo_pyproject_environment
+            environment if environment.black_executable.exists() else coveo_stew_environment
         )
         command = black_environment.build_command(PythonTool.Black, ".", *extra_args)
         check_output(

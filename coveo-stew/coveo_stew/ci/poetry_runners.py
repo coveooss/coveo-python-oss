@@ -1,5 +1,5 @@
-from coveo_pyproject.ci.runner import ContinuousIntegrationRunner, RunnerStatus
-from coveo_pyproject.environment import PythonEnvironment, PythonTool, coveo_pyproject_environment
+from coveo_stew.ci.runner import ContinuousIntegrationRunner, RunnerStatus
+from coveo_stew.environment import PythonEnvironment, PythonTool, coveo_stew_environment
 from coveo_systools.subprocess import check_output
 
 
@@ -10,7 +10,7 @@ class PoetryCheckRunner(ContinuousIntegrationRunner):
     def _launch(self, environment: PythonEnvironment, *extra_args: str) -> RunnerStatus:
         assert environment  # we don't use this one; marking for linters to :chut:
         check_output(
-            *coveo_pyproject_environment.build_command(PythonTool.Poetry, "check"),
+            *coveo_stew_environment.build_command(PythonTool.Poetry, "check"),
             working_directory=self._pyproject.project_path
         )
         return RunnerStatus.Success

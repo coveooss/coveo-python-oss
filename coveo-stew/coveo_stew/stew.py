@@ -15,15 +15,15 @@ from coveo_systools.filesystem import find_repo_root, CannotFindRepoRoot
 from coveo_systools.subprocess import check_run, DetailedCalledProcessError
 from poetry.factory import Factory
 
-from coveo_pyproject.ci.config import ContinuousIntegrationConfig
-from coveo_pyproject.ci.runner import RunnerStatus
-from coveo_pyproject.environment import PythonEnvironment, coveo_pyproject_environment, PythonTool
-from coveo_pyproject.exceptions import PythonProjectNotFound, PythonProjectException
-from coveo_pyproject.metadata.coveo_api import CoveoPackage
-from coveo_pyproject.metadata.poetry_api import PoetryAPI
-from coveo_pyproject.metadata.pyproject_api import PythonProjectAPI, T_PythonProject
-from coveo_pyproject.metadata.python_api import PythonFile
-from coveo_pyproject.utils import load_toml_from_path
+from coveo_stew.ci.config import ContinuousIntegrationConfig
+from coveo_stew.ci.runner import RunnerStatus
+from coveo_stew.environment import PythonEnvironment, coveo_stew_environment, PythonTool
+from coveo_stew.exceptions import PythonProjectNotFound, PythonProjectException
+from coveo_stew.metadata.stew_api import StewPackage
+from coveo_stew.metadata.poetry_api import PoetryAPI
+from coveo_stew.metadata.pyproject_api import PythonProjectAPI, T_PythonProject
+from coveo_stew.metadata.python_api import PythonFile
+from coveo_stew.utils import load_toml_from_path
 
 
 class PythonProject(PythonProjectAPI):
@@ -44,9 +44,9 @@ class PythonProject(PythonProjectAPI):
         )
         self.egg_path: Path = self.project_path / f"{self.package.safe_name}.egg-info"
 
-        self.options: CoveoPackage = flexfactory(
-            CoveoPackage,
-            **dict_lookup(toml_content, "tool", "coveo", "pyproject", default={}),
+        self.options: StewPackage = flexfactory(
+            StewPackage,
+            **dict_lookup(toml_content, "tool", "stew", default={}),
             _pyproject=self,
         )
 
@@ -58,7 +58,7 @@ class PythonProject(PythonProjectAPI):
         else:
             self.ci = flexfactory(
                 ContinuousIntegrationConfig,
-                **dict_lookup(toml_content, "tool", "coveo", "ci", default={}),
+                **dict_lookup(toml_content, "tool", "stew", "ci", default={}),
                 _pyproject=self,
             )
 
@@ -172,7 +172,7 @@ class PythonProject(PythonProjectAPI):
 
     def current_environment_belongs_to_project(self) -> bool:
         """True if we're running from one of the project's virtual envs.
-        Typically False; serves the rare cases where pyproject is installed inside the environment.
+        Typically False; serves the rare cases where stew is installed inside the environment.
         """
         current_executable = Path(sys.executable)
         return any(
@@ -295,7 +295,7 @@ class PythonProject(PythonProjectAPI):
     ) -> Optional[str]:
         """internal run-a-poetry-command."""
         # we use the poetry executable from our dependencies, not from the project's environment!
-        poetry_env = coveo_pyproject_environment
+        poetry_env = coveo_stew_environment
         if not poetry_env.poetry_executable.exists():
             raise PythonProjectException(
                 f"Poetry was not found; expected to be somewhere around {poetry_env.python_executable}?"

@@ -1,6 +1,6 @@
-from coveo_pyproject.ci.runner import ContinuousIntegrationRunner, RunnerStatus
-from coveo_pyproject.environment import PythonEnvironment, PythonTool
-from coveo_pyproject.metadata.pyproject_api import PythonProjectAPI
+from coveo_stew.ci.runner import ContinuousIntegrationRunner, RunnerStatus
+from coveo_stew.environment import PythonEnvironment, PythonTool
+from coveo_stew.metadata.pyproject_api import PythonProjectAPI
 from coveo_systools.subprocess import check_output
 
 

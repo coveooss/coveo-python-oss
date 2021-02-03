@@ -9,13 +9,13 @@ from pathlib import Path
 from typing import Generator, Tuple, Set
 
 from coveo_functools.casing import flexfactory
-from coveo_pyproject.utils import load_toml_from_path
+from coveo_stew.utils import load_toml_from_path
 from coveo_systools.filesystem import find_repo_root, safe_text_write
 import tomlkit
 from tomlkit.items import item as toml_item, Item as TomlItem
 
 from .exceptions import PythonProjectException
-from .pyproject import PythonProject, CoveoPackage
+from .stew import PythonProject, StewPackage
 
 
 class NotPyDevProject(PythonProjectException):
@@ -91,6 +91,6 @@ class PyDev(PythonProject):
     def find_pyproject_paths(cls, path: Path) -> Generator[Path, None, None]:
         """Only return the paths that contain PyDev projects."""
         yield from filter(
-            lambda _path: flexfactory(CoveoPackage, **load_toml_from_path(_path)).pydev,
+            lambda _path: flexfactory(StewPackage, **load_toml_from_path(_path)).pydev,
             super().find_pyproject_paths(path),
         )

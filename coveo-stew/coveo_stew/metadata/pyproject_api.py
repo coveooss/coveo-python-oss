@@ -6,9 +6,9 @@ from poetry.poetry import Poetry
 
 
 if TYPE_CHECKING:
-    from coveo_pyproject.environment import PythonEnvironment
-    from coveo_pyproject.metadata.coveo_api import CoveoPackage
-    from coveo_pyproject.metadata.poetry_api import PoetryAPI
+    from coveo_stew.environment import PythonEnvironment
+    from coveo_stew.metadata.stew_api import StewPackage
+    from coveo_stew.metadata.poetry_api import PoetryAPI
 
 
 T_PythonProject = TypeVar("T_PythonProject", bound="PythonProjectAPI")
@@ -19,7 +19,7 @@ class PythonProjectAPI(Protocol):
     project_path: Path
     toml_path: Path
     package: "PoetryAPI"
-    options: "CoveoPackage"
+    options: "StewPackage"
     lock_path: Path
     egg_path: Path
     poetry: Poetry
