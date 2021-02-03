@@ -1,11 +1,12 @@
 import logging
 from pathlib import Path
-from typing import Generator, Any
+from typing import Generator
 from unittest import mock
 from unittest.mock import MagicMock
 from uuid import uuid4
 
 from coveo_functools import wait
+from coveo_systools.platforms import LINUX
 from coveo_testing.markers import UnitTest
 from coveo_testing.mocks import resolve_mock_target
 from coveo_testing.parametrize import parametrize
@@ -84,6 +85,7 @@ def mock_docker_client() -> Generator[None, None, None]:
 
 
 @DockerTest
+@pytest.mark.skipif(not LINUX, reason="TODO: Need a windows dockerfile.")
 def test_docker_temporary_resource_get_port(
     webserver_mock_container: TemporaryWebServerMockContainer,
 ) -> None:
@@ -96,6 +98,7 @@ def test_docker_temporary_resource_get_port(
 
 
 @DockerTest
+@pytest.mark.skipif(not LINUX, reason="TODO: Need a windows dockerfile.")
 @pytest.mark.skipif(not bool(DOCKER_USE_PUBLISHED_PORTS), reason="Port publishing is disabled")
 def test_docker_temporary_resource_get_non_existing_port(
     webserver_mock_container: TemporaryWebServerMockContainer,

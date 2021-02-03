@@ -2,10 +2,15 @@
 name = "coveo-pyproject"
 version = "1.0.0"
 description = "Python packaging and development utilities / poetry on steroids."
-authors = ["Jonathan Piché <jpiche@coveo.com>"]
+license = "Apache-2.0"
+readme = "README.md"
+repository = "https://github.com/coveooss/coveo-python-oss"
+authors = ["Jonathan Piché <tools@coveo.com>"]
+
 packages = [
     { include = "coveo_pyproject/**/*" },
 ]
+
 
 [tool.poetry.dependencies]
 python = ">=3.8"

@@ -1,9 +1,8 @@
-name: coveo-example-library
+name: coveo-settings
 on:
   push:
     paths:
-      - 'coveo-example-library/**'
-      - '.github/workflows/**'
+      - 'coveo-settings/**'
   workflow_dispatch: {}
 
 jobs:
@@ -49,6 +48,5 @@ jobs:
         uses: ./.github/workflows/actions/publish-to-pypi
         with:
           project-name: ${{ github.workflow }}
-          pypi-token: ${{ secrets.PYPI_TOKEN_COVEO_EXAMPLE_LIBRARY }}
-          dry-run: true
-          # dry-run: ${{ github.ref != 'refs/heads/main' }}
+          pypi-token: ${{ secrets.PYPI_TOKEN }}
+          dry-run: ${{ github.ref != 'refs/heads/main' }}
