@@ -17,7 +17,7 @@ runs:
 
     - name: Run pyproject ci
       shell: bash
-      working-directory: coveo-pyproject
+      working-directory: coveo-stew
       run: |
         python -m poetry install
         python -m poetry run pyproject ci ${{ inputs.project-name }} --exact-match

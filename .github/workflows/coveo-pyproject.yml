@@ -1,8 +1,8 @@
-name: coveo-pyproject
+name: coveo-stew
 on:
   push:
     paths:
-      - 'coveo-pyproject/**'
+      - 'coveo-stew/**'
   workflow_dispatch: {}
 
 jobs:

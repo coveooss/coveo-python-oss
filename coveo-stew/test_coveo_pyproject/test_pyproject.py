@@ -1,13 +1,13 @@
 from os import PathLike
 from pathlib import Path
-from coveo_pyproject.offline_publish import offline_publish
+from coveo_stew.offline_publish import offline_publish
 
 from coveo_systools.filesystem import pushd
 from coveo_testing.markers import UnitTest, Integration
 from coveo_testing.parametrize import parametrize
 from poetry.core.packages import Package
 
-from coveo_pyproject.pyproject import PythonProject
+from coveo_stew.pyproject import PythonProject
 from test_coveo_pyproject.pyprojet_mock.fixtures import pyproject_mock
 
 _ = pyproject_mock  # mark the fixture as used

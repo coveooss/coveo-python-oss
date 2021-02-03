@@ -4,7 +4,7 @@ from typing import Callable, Any
 from coveo_testing.markers import UnitTest
 from toml.decoder import TomlDecodeError
 
-from coveo_pyproject.utils import _load_toml_from_content
+from coveo_stew.utils import _load_toml_from_content
 
 
 DUMMY_TEST_PATH = Path("/some/dummy/path.toml")
