@@ -85,7 +85,7 @@ def mock_docker_client() -> Generator[None, None, None]:
 
 
 @DockerTest
-@pytest.mark.skipif(not LINUX)
+@pytest.mark.skipif(not LINUX, reason='TODO: Need a windows dockerfile.')
 def test_docker_temporary_resource_get_port(
     webserver_mock_container: TemporaryWebServerMockContainer,
 ) -> None:
@@ -98,7 +98,7 @@ def test_docker_temporary_resource_get_port(
 
 
 @DockerTest
-@pytest.mark.skipif(not LINUX)
+@pytest.mark.skipif(not LINUX, reason='TODO: Need a windows dockerfile.')
 @pytest.mark.skipif(not bool(DOCKER_USE_PUBLISHED_PORTS), reason="Port publishing is disabled")
 def test_docker_temporary_resource_get_non_existing_port(
     webserver_mock_container: TemporaryWebServerMockContainer,
