@@ -13,7 +13,7 @@ Can convert string annotations into their actual type reference.
 
 ## casing / flexcase
 
-flexcase takes a "dirty" input and maps it to a python construct.
+Flexcase takes a "dirty" input and maps it to a python construct.
 
 The principal use case is to allow seamless translation between snake_case and camelCase and generate PEP8-compliant code over APIs that support a different casing scheme.
 
