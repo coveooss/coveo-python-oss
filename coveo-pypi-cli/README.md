@@ -18,6 +18,28 @@ Compute the next version of a package.
   - e.g.: pypi is `0.0.3` and mininum set to `0.1`: next version will be `0.1`
 - Supports computing pre-release versions
 
+# private index support
+
+You can target a private pypi server through a switch or an environment variable.
+
+## Using the `--index` switch
+
+```shell
+$ pypi current-version secret-package --index https://my.pypi.server.org
+1.0.0
+
+$ pypi current-version secret-package --index https://my.pypi.server.org:51800/urlprefix
+1.0.0
+```
+
+## Using the environment variable:
+
+```shell
+$ PYPI_CLI_INDEX="https://my.pypi.server.org" pypi current-version secret-package
+```
+
+Note: Unlike `pip --index-url`, **you must omit** the `/simple` url prefix.
+The API used by `coveo-pypi-cli` is served by the `/pypi` endpoint _and should not be specified either!_
 
 
 # pypi-cli in action

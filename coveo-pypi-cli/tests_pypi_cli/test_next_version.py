@@ -9,7 +9,7 @@ from coveo_testing.parametrize import parametrize
 import pytest
 import requests_mock
 
-from coveo_pypi_cli.pypi import compute_next_version, obtain_versions_from_pypi, PYPI_HOSTNAME
+from coveo_pypi_cli.pypi import compute_next_version, obtain_versions_from_pypi, PYPI_CLI_INDEX
 from coveo_pypi_cli.versions import StrictVersionHelper
 
 
@@ -46,20 +46,20 @@ def test_new_version_bump() -> None:
         assert compute_next_version("mocked", prerelease=True) == StrictVersion("0.0.1a3")
 
 
-PYPI_MATCHER: Pattern = re.compile(rf"{PYPI_HOSTNAME}/*")
+PYPI_MATCHER: Pattern = re.compile(rf"{PYPI_CLI_INDEX}/*")
 
 
 @UnitTest
 def test_iter_sort_404() -> None:
     with requests_mock.Mocker() as http_mock:
-        http_mock.get(re.compile(PYPI_HOSTNAME), status_code=404)
+        http_mock.get(re.compile(str(PYPI_CLI_INDEX)), status_code=404)
         assert not list(obtain_versions_from_pypi("test"))
 
 
 @UnitTest
 def test_iter_sort_empty() -> None:
     with requests_mock.Mocker() as http_mock:
-        http_mock.get(re.compile(PYPI_HOSTNAME), json={"releases": {}})
+        http_mock.get(re.compile(str(PYPI_CLI_INDEX)), json={"releases": {}})
         assert not list(obtain_versions_from_pypi("test"))
 
 
