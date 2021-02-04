@@ -6,7 +6,12 @@ import click
 from coveo_styles.styles import echo, ExitWithFailure, install_pretty_exception_hook
 
 from .exceptions import VersionExists
-from .pypi import obtain_versions_from_pypi, compute_next_version, obtain_latest_release_from_pypi, PYPI_CLI_INDEX
+from .pypi import (
+    obtain_versions_from_pypi,
+    compute_next_version,
+    obtain_latest_release_from_pypi,
+    PYPI_CLI_INDEX,
+)
 from .versions import StrictVersionHelper
 
 
