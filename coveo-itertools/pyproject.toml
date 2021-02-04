@@ -1,9 +1,11 @@
 [tool.poetry]
 name = "coveo-itertools"
 version = "1.0.0"
-description = "Utilities and helpers related to collections."
-authors = ["Jonathan piché <jpiche@coveo.com>"]
-
+description = "Collection-related helpers."
+license = "Apache-2.0"
+readme = "README.md"
+repository = "https://github.com/coveooss/coveo-python-oss"
+authors = ["Jonathan Piché <tools@coveo.com>"]
 
 [tool.poetry.dependencies]
 python = ">=3.8"
@@ -12,6 +14,16 @@ python = ">=3.8"
 [tool.poetry.dev-dependencies]
 coveo-testing = { path = "../coveo-testing/", develop = true }
 pytest = "*"
+
+
+[tool.stew.ci]
+pytest = true
+offline-build = true
+black = true
+
+
+[tool.black]
+line-length = 100
 
 
 [build-system]

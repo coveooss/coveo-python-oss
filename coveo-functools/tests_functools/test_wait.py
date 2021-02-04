@@ -41,17 +41,11 @@ def test_until() -> None:
     val2 += datetime.timedelta(seconds=1)
 
     with pytest.raises(wait.TimeoutExpired):
-        wait.until(
-            lambda: NOW() > val2,
-            timeout_s=datetime.timedelta(milliseconds=1))
+        wait.until(lambda: NOW() > val2, timeout_s=datetime.timedelta(milliseconds=1))
 
 
 @UnitTest
-@parametrize("timeout,retry", [
-    (25, 5),
-    (5, 1),
-    (10, 50),
-    (25, 25)])
+@parametrize("timeout,retry", [(25, 5), (5, 1), (10, 50), (25, 25)])
 def test_until_timeout_retry(timeout: int, retry: int) -> None:
     """ Tests various timeout and retry values """
     timestamp = NOW()
@@ -59,7 +53,8 @@ def test_until_timeout_retry(timeout: int, retry: int) -> None:
         wait.until(
             lambda: False,
             timeout_s=datetime.timedelta(milliseconds=timeout),
-            retry_ms=datetime.timedelta(milliseconds=retry))
+            retry_ms=datetime.timedelta(milliseconds=retry),
+        )
     assert NOW() - timestamp >= datetime.timedelta(milliseconds=timeout)
 
 
@@ -81,7 +76,8 @@ def test_until_infinite_timeout() -> None:
         wait.until(
             raise_if_called_more_than_max_count_times,
             timeout_s=None,
-            retry_ms=datetime.timedelta(milliseconds=retry_ms))
+            retry_ms=datetime.timedelta(milliseconds=retry_ms),
+        )
     assert count[0] > max_count
     assert NOW() - timestamp >= datetime.timedelta(milliseconds=max_count * retry_ms)
 
@@ -102,9 +98,7 @@ def test_until_wait_timeout() -> None:
     val = NOW() + datetime.timedelta(milliseconds=100)
 
     with pytest.raises(wait.TimeoutExpired):
-        wait.until(
-            lambda: NOW() > val,
-            timeout_s=datetime.timedelta(milliseconds=10))
+        wait.until(lambda: NOW() > val, timeout_s=datetime.timedelta(milliseconds=10))
 
 
 @UnitTest
@@ -122,8 +116,8 @@ def test_until_retry(timeout: int) -> None:
 
 
 _timeout: Dict[str, TimeoutValue] = {
-    'timeout_s': datetime.timedelta(milliseconds=4),
-    'retry_ms': datetime.timedelta(milliseconds=1)
+    "timeout_s": datetime.timedelta(milliseconds=4),
+    "retry_ms": datetime.timedelta(milliseconds=1),
 }
 
 
@@ -157,16 +151,20 @@ def test_until_raise_on_exception() -> None:
 @UnitTest
 def test_until_suppress_exception_tuple() -> None:
     with pytest.raises(wait.TimeoutExpired):
-        wait.until(lambda: _raise(NotImplementedError),
-                   handle_exceptions=(NotImplementedError,), **_timeout)  # type: ignore
+        wait.until(
+            lambda: _raise(NotImplementedError),
+            handle_exceptions=(NotImplementedError,),
+            **_timeout
+        )  # type: ignore
 
 
 @UnitTest
 def test_until_suppress_exception_tuple_conversion() -> None:
     # test conversion to tuple
     with pytest.raises(wait.TimeoutExpired):
-        wait.until(lambda: _raise(NotImplementedError),
-                   handle_exceptions=NotImplementedError, **_timeout)  # type: ignore
+        wait.until(
+            lambda: _raise(NotImplementedError), handle_exceptions=NotImplementedError, **_timeout
+        )  # type: ignore
 
 
 @UnitTest
@@ -210,7 +208,9 @@ def test_until_custom_exception() -> None:
 
 def _verify_backoff_output(backoff: Backoff, expected_results: List[float]) -> None:
     """ Checks that the output of a backoff matches a list, bypassing jitter. """
-    assert sorted(backoff._stages) == sorted(set(expected_results))  # expected results includes max retries
+    assert sorted(backoff._stages) == sorted(
+        set(expected_results)
+    )  # expected results includes max retries
     assert tuple(sorted(backoff._stages)) == backoff._stages
 
     try:
@@ -223,43 +223,70 @@ def _verify_backoff_output(backoff: Backoff, expected_results: List[float]) -> N
                     next(backoff)
                 except MaxBackoffException:
                     break
-                assert False, 'Iteration of expected results stopped prematurely.'
+                assert False, "Iteration of expected results stopped prematurely."
 
     except MaxBackoffException:
-        assert False, 'Iteration of backoff ended prematurely.'
+        assert False, "Iteration of backoff ended prematurely."
 
 
 # noinspection PyArgumentEqualDefault
-@parametrize("backoff,expected_results", [
-    (Backoff(first_wait=1, max_backoff=5, max_backoff_attempts=5, growth=2), [1, 2, 4, 5, 5, 5, 5, 5]),
-    (Backoff(first_wait=2, max_backoff=20, max_backoff_attempts=3, growth=2), [2, 4, 8, 16, 20, 20, 20]),
-    # floats
-    (Backoff(first_wait=1, max_backoff=3, max_backoff_attempts=1, growth=1.5), [1, 1.5, 2.25, 3]),
-    # ensure growth with small floats
-    (Backoff(first_wait=0.2, max_backoff=0.21, max_backoff_attempts=3, growth=1.1), [0.2, 0.21, 0.21, 0.21]),
-    # safeguard, first_wait will be 0.2, backoff 0.8, attempts 2, growth 2:
-    (Backoff(first_wait=0, max_backoff=-0.8, max_backoff_attempts=-2, growth=1), [0.2, 0.4, 0.8, 0.8]),
-    # safeguard, first_wait and growth will be absolute
-    (Backoff(first_wait=-1, max_backoff=4, max_backoff_attempts=1, growth=-2), [1, 2, 4])
-])
+@parametrize(
+    "backoff,expected_results",
+    [
+        (
+            Backoff(first_wait=1, max_backoff=5, max_backoff_attempts=5, growth=2),
+            [1, 2, 4, 5, 5, 5, 5, 5],
+        ),
+        (
+            Backoff(first_wait=2, max_backoff=20, max_backoff_attempts=3, growth=2),
+            [2, 4, 8, 16, 20, 20, 20],
+        ),
+        # floats
+        (
+            Backoff(first_wait=1, max_backoff=3, max_backoff_attempts=1, growth=1.5),
+            [1, 1.5, 2.25, 3],
+        ),
+        # ensure growth with small floats
+        (
+            Backoff(first_wait=0.2, max_backoff=0.21, max_backoff_attempts=3, growth=1.1),
+            [0.2, 0.21, 0.21, 0.21],
+        ),
+        # safeguard, first_wait will be 0.2, backoff 0.8, attempts 2, growth 2:
+        (
+            Backoff(first_wait=0, max_backoff=-0.8, max_backoff_attempts=-2, growth=1),
+            [0.2, 0.4, 0.8, 0.8],
+        ),
+        # safeguard, first_wait and growth will be absolute
+        (Backoff(first_wait=-1, max_backoff=4, max_backoff_attempts=1, growth=-2), [1, 2, 4]),
+    ],
+)
 @UnitTest
 def test_backoff(backoff: Backoff, expected_results: List[float]) -> None:
     """ Tests valid backoff scenarios. """
     _verify_backoff_output(backoff, expected_results)
 
 
-@parametrize("backoff,expected_results", [
-    # wrong wait time value
-    (Backoff(), [0]),
-    # not enough results to cover all results
-    (Backoff(first_wait=1, max_backoff=8, growth=2), [1, 2, 4]),
-    # not enough results to cover max_backoff_attempts
-    (Backoff(first_wait=1, max_backoff=8, max_backoff_attempts=5, growth=2), [1, 2, 4, 8, 8]),
-    # too many results
-    (Backoff(first_wait=1, max_backoff=8, max_backoff_attempts=2, growth=2), [1, 2, 4, 8, 8, 8]),
-    # just plain wrong, unnecessary and evil
-    (Backoff(first_wait=0, max_backoff=0, max_backoff_attempts=0, growth=0), [1, 2, 4, 8, 8, 8]),
-])
+@parametrize(
+    "backoff,expected_results",
+    [
+        # wrong wait time value
+        (Backoff(), [0]),
+        # not enough results to cover all results
+        (Backoff(first_wait=1, max_backoff=8, growth=2), [1, 2, 4]),
+        # not enough results to cover max_backoff_attempts
+        (Backoff(first_wait=1, max_backoff=8, max_backoff_attempts=5, growth=2), [1, 2, 4, 8, 8]),
+        # too many results
+        (
+            Backoff(first_wait=1, max_backoff=8, max_backoff_attempts=2, growth=2),
+            [1, 2, 4, 8, 8, 8],
+        ),
+        # just plain wrong, unnecessary and evil
+        (
+            Backoff(first_wait=0, max_backoff=0, max_backoff_attempts=0, growth=0),
+            [1, 2, 4, 8, 8, 8],
+        ),
+    ],
+)
 @UnitTest
 def test_verify_backoff(backoff: Backoff, expected_results: List[float]) -> None:
     """ Make sure the verify method actually throws/asserts on errors. """
@@ -285,14 +312,16 @@ def test_verify_backoff_endless() -> None:
     Verifies that Backoff supports endless iteration.
     """
     target_maximum = 10
-    backoff = Backoff(first_wait=target_maximum, max_backoff=target_maximum, max_backoff_attempts=None, growth=10)
+    backoff = Backoff(
+        first_wait=target_maximum, max_backoff=target_maximum, max_backoff_attempts=None, growth=10
+    )
 
     for _ in range(1000):  # Ok ok not endless, but "endless"
         try:
             assert backoff.percent_to_max_time() == 1
             val = next(backoff)
         except MaxBackoffException:
-            pytest.fail('Backoff raised RetriesExhausted while in endless mode.')
+            pytest.fail("Backoff raised RetriesExhausted while in endless mode.")
         else:
             assert target_maximum <= val <= target_maximum + 0.5
 
@@ -304,11 +333,7 @@ def test_verify_backoff_render_on_endless() -> None:
     assert backoff._stages == (1, 2, 4, 8)
 
 
-@parametrize('stages', (
-    (1, 2, 4, 5),
-    (2, 3, 4, 5),
-    (2, 4.5, 9.25, 16.5)
-))
+@parametrize("stages", ((1, 2, 4, 5), (2, 3, 4, 5), (2, 4.5, 9.25, 16.5)))
 @UnitTest
 def test_backoff_percent_to_max_time(stages: Tuple[float, ...]) -> None:
     backoff = Backoff(stages=stages)
@@ -330,9 +355,9 @@ def test_backoff_percent_to_max_time_litteral() -> None:
         assert backoff.percent_to_max_time() == percent_value
         assert backoff_value <= next(backoff) <= backoff_value + 0.5
 
-    _check_for(1/15, 1)
-    _check_for(5/15, 5)
-    _check_for(10/15, 10)
+    _check_for(1 / 15, 1)
+    _check_for(5 / 15, 5)
+    _check_for(10 / 15, 10)
 
     # 5 max backoff attempts
     _check_for(1, 15)

@@ -15,7 +15,19 @@ from pathlib import Path
 from pprint import pformat
 from traceback import format_exception
 from types import TracebackType
-from typing import Any, Generator, Dict, Optional, ClassVar, Tuple, Type, Iterable, Union, TYPE_CHECKING, Callable
+from typing import (
+    Any,
+    Generator,
+    Dict,
+    Optional,
+    ClassVar,
+    Tuple,
+    Type,
+    Iterable,
+    Union,
+    TYPE_CHECKING,
+    Callable,
+)
 
 if TYPE_CHECKING:
     from typing_extensions import Final, Protocol
@@ -30,30 +42,32 @@ import click
 from emoji import emojize
 
 # these are the colors supported by click; some may vary based on global system settings:
-_Black = 'black'  # might be a gray
-_Red = 'red'
-_Green = 'green'
-_Yellow = 'yellow'  # might be an orange
-_Blue = 'blue'
-_Magenta = 'magenta'
-_Cyan = 'cyan'
-_White = 'white'  # might be light gray
+_Black = "black"  # might be a gray
+_Red = "red"
+_Green = "green"
+_Yellow = "yellow"  # might be an orange
+_Blue = "blue"
+_Magenta = "magenta"
+_Cyan = "cyan"
+_White = "white"  # might be light gray
 
-_BrightBlack = 'bright_black'
-_BrightRed = 'bright_red'
-_BrightGreen = 'bright_green'
-_BrightYellow = 'bright_yellow'
-_BrightBlue = 'bright_blue'
-_BrightMagenta = 'bright_magenta'
-_BrightCyan = 'bright_cyan'
-_BrightWhite = 'bright_white'
+_BrightBlack = "bright_black"
+_BrightRed = "bright_red"
+_BrightGreen = "bright_green"
+_BrightYellow = "bright_yellow"
+_BrightBlue = "bright_blue"
+_BrightMagenta = "bright_magenta"
+_BrightCyan = "bright_cyan"
+_BrightWhite = "bright_white"
 
-_Reset = 'reset'  # reset the color code only
+_Reset = "reset"  # reset the color code only
 
 
 class _CallHook(Protocol):
     """Defines the interface we require from the call hook, for correctness."""
-    def __call__(self, message: str, *, err: bool) -> None: ...
+
+    def __call__(self, message: str, *, err: bool) -> None:
+        ...
 
 
 def _convert_to_strings(*objects: Any) -> Generator[str, None, None]:
@@ -62,18 +76,22 @@ def _convert_to_strings(*objects: Any) -> Generator[str, None, None]:
         if isinstance(obj, str):
             yield obj
         elif isinstance(obj, bytes):
-            yield obj.decode('utf-8')
+            yield obj.decode("utf-8")
         elif isinstance(obj, Path):
             yield str(obj)
         elif isinstance(obj, BaseException):
-            yield f'{type(obj).__name__}: {obj}'
-        elif hasattr(obj, '__str__'):
+            yield f"{type(obj).__name__}: {obj}"
+        elif hasattr(obj, "__str__"):
             yield str(obj)
         else:
-            yield pformat(obj)  # this is like json.dumps() but prettified and won't break on unknown types.
+            yield pformat(
+                obj
+            )  # this is like json.dumps() but prettified and won't break on unknown types.
 
 
-def _prettify_exception(value: BaseException = None, traceback: TracebackType = None) -> Generator[Any, None, None]:
+def _prettify_exception(
+    value: BaseException = None, traceback: TracebackType = None
+) -> Generator[Any, None, None]:
     """Yields pretty lines detailing an exception."""
     if not value or traceback:
         _, _val, _tb = sys.exc_info()
@@ -86,7 +104,7 @@ def _prettify_exception(value: BaseException = None, traceback: TracebackType = 
 
     if isinstance(value, ExitWithFailure):
         # rewind to the cause for the header
-        yield echo.error.prettify(value.__cause__, pad_after=False, emoji='exclamation')
+        yield echo.error.prettify(value.__cause__, pad_after=False, emoji="exclamation")
 
         if value.failures is not None:
             yield from map(echo.error_details.copy(item=True).prettify, value.failures)
@@ -94,26 +112,31 @@ def _prettify_exception(value: BaseException = None, traceback: TracebackType = 
         if value.suggestions is not None:
             suggestions = list(value.suggestions)
             if len(suggestions) > 1:
-                yield echo.suggest.prettify('The following hints may help diagnose the issue:', pad_after=False)
+                yield echo.suggest.prettify(
+                    "The following hints may help diagnose the issue:", pad_after=False
+                )
                 yield from map(echo.normal.copy(item=True).prettify, suggestions)
             elif suggestions:
                 yield echo.suggest.prettify(suggestions[0])
     else:
-        yield echo.error.prettify(''.join(format_exception(type(value), value, traceback)))
+        yield echo.error.prettify("".join(format_exception(type(value), value, traceback)))
         yield echo.suggest.prettify(
             "This is an unhandled exception; report it if you can't fix it! !!stuck_out_tongue_winking_eye!!",
-            emoji='bug')
+            emoji="bug",
+        )
 
-    yield ''
+    yield ""
 
 
-def _pretty_excepthook(type_: Type[BaseException], value: BaseException, traceback: TracebackType) -> None:
+def _pretty_excepthook(
+    type_: Type[BaseException], value: BaseException, traceback: TracebackType
+) -> None:
     """The actual function that replaces sys.excepthook."""
     # restore the original hook so not to paint ourselves in a corner
     sys.excepthook = sys.__excepthook__
     for line in _prettify_exception(value, traceback):
         echo.passthrough(line)
-    exit(getattr(value, 'exit_code', 1))
+    exit(getattr(value, "exit_code", 1))
 
 
 def install_pretty_exception_hook() -> None:
@@ -148,8 +171,14 @@ class ExitWithFailure(Exception):
 
     Anything else is considered unhandled and will show e.g.: a stacktrace and invite the user to file a bug.
     """
-    def __init__(self, *, failures: Union[Iterable, str] = None, suggestions: Union[Iterable, str] = None,
-                 exit_code: int = 1) -> None:
+
+    def __init__(
+        self,
+        *,
+        failures: Union[Iterable, str] = None,
+        suggestions: Union[Iterable, str] = None,
+        exit_code: int = 1,
+    ) -> None:
         """
         Each individual object will be formatted as a bullet point.
 
@@ -167,21 +196,29 @@ class ExitWithFailure(Exception):
         self.exit_code = exit_code
 
     def __str__(self) -> str:
-        return '\n'.join(_prettify_exception(self, self.__traceback__))
+        return "\n".join(_prettify_exception(self, self.__traceback__))
+
 
 class Pretty:
     """Kinda like pretty-print, but over the top."""
-    _delimiters: ClassVar[Tuple[str, str]] = ('!!', '!!')
+
+    _delimiters: ClassVar[Tuple[str, str]] = ("!!", "!!")
     _emojize: ClassVar[bool] = True
-    _item: ClassVar[str] = b'\xce\x87'.decode('utf-8')  # a round, centered dot
+    _item: ClassVar[str] = b"\xce\x87".decode("utf-8")  # a round, centered dot
     _safe_encode: ClassVar[bool] = False
 
-    def __init__(self, *,
-                 call_hook: _CallHook = click.echo,
-                 emoji: str = None, pad_before: bool = False, pad_after: bool = False, item: bool = False,
-                 err: bool = False,
-                 default: str = None,
-                 **click_style_kw: Any) -> None:
+    def __init__(
+        self,
+        *,
+        call_hook: _CallHook = click.echo,
+        emoji: str = None,
+        pad_before: bool = False,
+        pad_after: bool = False,
+        item: bool = False,
+        err: bool = False,
+        default: str = None,
+        **click_style_kw: Any,
+    ) -> None:
         """Arguments specified here set defaults, but you can always override any of them on the spot.
 
         parameters:
@@ -243,31 +280,31 @@ class Pretty:
             return self.copy(**kw).prettify(*messages)
 
         if not messages and self.default:
-            messages = (self.default, )
+            messages = (self.default,)
 
-        message = ''.join(_convert_to_strings(*messages))
+        message = "".join(_convert_to_strings(*messages))
 
         if self.item:
-            message = f' {self._item} {message}'
+            message = f" {self._item} {message}"
         if self.emoji and not self.item:
-            message = f'{self._delimiters[0]}{self.emoji}{self._delimiters[1]} {message}'
+            message = f"{self._delimiters[0]}{self.emoji}{self._delimiters[1]} {message}"
         if self.pad_before:
-            message = '\n' + message
+            message = "\n" + message
         if self.pad_after:
-            message += '\n'
+            message += "\n"
         if self._delimiters[0] in message:
             message = emojize(message, use_aliases=True, delimiters=self._delimiters)
 
         if self._safe_encode:
             # remove any character that doesn't match stdout's encoding.
-            message = message.encode(sys.stdout.encoding, errors='ignore').decode()
+            message = message.encode(sys.stdout.encoding, errors="ignore").decode()
 
         return click.style(message, **self.click_style_kw)
 
-    def copy(self, **kw: Any) -> 'Pretty':
+    def copy(self, **kw: Any) -> "Pretty":
         """Creates a new instance like this one; new defaults may be specified."""
         merged_kw = self.__dict__.copy()
-        merged_kw.update(merged_kw.pop('click_style_kw'))
+        merged_kw.update(merged_kw.pop("click_style_kw"))
         merged_kw.update(kw)
         return Pretty(**merged_kw)
 
@@ -290,27 +327,30 @@ class Styles:
     - Use it like "msg = echo.noise.prettify(*messages, **kw)" to format a string beforehand.
         (Display it with echo.passthrough(msg))
     """
+
     # header-like; use it to headline each major step of the script
     step: Pretty = Pretty(fg=_BrightCyan, pad_before=True, pad_after=True)
 
     # header for outcomes (changed files, new resources, etc)
-    outcome: Pretty = Pretty(fg=_Yellow, dim=True, bold=True, emoji='mega')
+    outcome: Pretty = Pretty(fg=_Yellow, dim=True, bold=True, emoji="mega")
 
     # normal and noise are self-explanatory
     normal: Pretty = Pretty(fg=_White, dim=True, bold=True)
     noise: Pretty = Pretty(fg=_White, dim=True)
 
     # suggest uses a in-your-face style to catch attention, like how to resolve a problem
-    suggest: Pretty = Pretty(fg=_Yellow, emoji='robot_face', pad_before=True, pad_after=True)
+    suggest: Pretty = Pretty(fg=_Yellow, emoji="robot_face", pad_before=True, pad_after=True)
 
     # warnings informs the user about less-than-ideal situation that the code had to deal with.
     # a warning follow by a suggest is a great way to
-    warning: Pretty = Pretty(fg=_Yellow, emoji='warning', pad_before=True, pad_after=True)
+    warning: Pretty = Pretty(fg=_Yellow, emoji="warning", pad_before=True, pad_after=True)
 
     # success and error are header-like and should be used sparingly
     # error and error_details will end up in stderr
-    success: Pretty = Pretty(fg=_Green, emoji='heavy_check_mark', pad_before=True, pad_after=True, default='Success!')
-    error: Pretty = Pretty(fg=_Red, err=True, emoji='collision', pad_before=True, pad_after=True)
+    success: Pretty = Pretty(
+        fg=_Green, emoji="heavy_check_mark", pad_before=True, pad_after=True, default="Success!"
+    )
+    error: Pretty = Pretty(fg=_Red, err=True, emoji="collision", pad_before=True, pad_after=True)
     error_details: Pretty = Pretty(fg=_Red, err=True, dim=True)
 
     # passthrough can be used to skip (or retain) formatting.

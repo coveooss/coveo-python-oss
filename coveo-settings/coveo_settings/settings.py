@@ -18,18 +18,30 @@ import logging
 import os
 from abc import abstractmethod
 from contextlib import contextmanager
-from typing import Any, Dict, Optional, Union, SupportsInt, SupportsFloat, Generic, TypeVar, Iterator, Generator, \
-    Collection, Callable
+from typing import (
+    Any,
+    Dict,
+    Optional,
+    Union,
+    SupportsInt,
+    SupportsFloat,
+    Generic,
+    TypeVar,
+    Iterator,
+    Generator,
+    Collection,
+    Callable,
+)
 from unittest.mock import patch
 
 
 ConfigValue = Union[str, int, float, bool, dict]
 ConfigDict = Dict[str, ConfigValue]
-T = TypeVar('T')  # pylint: disable=invalid-name
+T = TypeVar("T")  # pylint: disable=invalid-name
 
 log = logging.getLogger(__name__)
 
-ENVIRONMENT_VARIABLE_SEPARATORS = '._'
+ENVIRONMENT_VARIABLE_SEPARATORS = "._"
 
 
 class InvalidConfiguration(Exception):
@@ -37,11 +49,12 @@ class InvalidConfiguration(Exception):
 
 
 def _find_setting(*keys: str) -> Optional[ConfigValue]:
-    """ Attempts to find a variable in the environment variables. The casing, dots (.) and the underline character (_)
-    are not significant. For instance, "ut.test.setting" will match "UTTESTSETTING" and also "UT_teST.._setting". """
+    """Attempts to find a variable in the environment variables. The casing, dots (.) and the underline character (_)
+    are not significant. For instance, "ut.test.setting" will match "UTTESTSETTING" and also "UT_teST.._setting"."""
+
     def _normalize(key_: str) -> str:
         """ Returns a lowercase version of key without separators. """
-        return ''.join(char.lower() for char in key_ if char not in ENVIRONMENT_VARIABLE_SEPARATORS)
+        return "".join(char.lower() for char in key_ if char not in ENVIRONMENT_VARIABLE_SEPARATORS)
 
     if not keys:
         raise InvalidConfiguration("Key should not be empty.")
@@ -74,9 +87,13 @@ class Setting(SupportsInt, SupportsFloat, Generic[T]):
 
     All methods read the value and raise an exception on bad formats.
     """
-    def __init__(self, key: str,
-                 fallback: Union[ConfigValue, Callable[[], Optional[ConfigValue]]] = None,
-                 alternate_keys: Collection[str] = None) -> None:
+
+    def __init__(
+        self,
+        key: str,
+        fallback: Union[ConfigValue, Callable[[], Optional[ConfigValue]]] = None,
+        alternate_keys: Collection[str] = None,
+    ) -> None:
         """ Initializes a setting. """
         self._key: str = key
         self._alternate_keys: Collection[str] = alternate_keys or tuple()
@@ -116,7 +133,8 @@ class Setting(SupportsInt, SupportsFloat, Generic[T]):
             return self.cast(value)
         except (TypeError, ValueError) as exception:
             raise InvalidConfiguration(
-                f'An invalid configuration value was provided to {self.__class__.__name__}.') from exception
+                f"An invalid configuration value was provided to {self.__class__.__name__}."
+            ) from exception
 
     def _get_value(self) -> Optional[T]:
         """ Internal gets-a-value. """
@@ -137,7 +155,7 @@ class Setting(SupportsInt, SupportsFloat, Generic[T]):
 
     def __repr__(self) -> str:  # pragma: no cover
         """ Returns a readable representation of the item when None, for debugging. """
-        return f'<{self.key}> {self.value}'
+        return f"<{self.key}> {self.value}"
 
     def __eq__(self, other: Any) -> bool:
         """ Indicates if the value is equal to another one. """
@@ -183,15 +201,16 @@ class BoolSetting(Setting[bool]):  # pylint: disable=inherit-non-class
     Unlike Python, the bool conversion only allows for a few specific keywords to guard against mistakes.
     For instance, empty objects (strings, lists, dicts) or None will raise an exception.
     """
-    TRUE_VALUES = ('true', 'yes', '1')
-    FALSE_VALUES = ('false', 'no', '0')
+
+    TRUE_VALUES = ("true", "yes", "1")
+    FALSE_VALUES = ("false", "no", "0")
 
     @staticmethod
     def cast(value: Optional[ConfigValue]) -> bool:
         """ Converts any supported value to a bool. """
         value = str(value).lower()
         if value not in BoolSetting.TRUE_VALUES + BoolSetting.FALSE_VALUES:
-            raise ValueError(f'Cannot determine boolean from {value}')
+            raise ValueError(f"Cannot determine boolean from {value}")
 
         return value in BoolSetting.TRUE_VALUES
 
@@ -203,13 +222,13 @@ class StringSetting(Setting[str]):  # pylint: disable=inherit-non-class
     def cast(value: Optional[ConfigValue]) -> str:
         """ Converts a value to a string. """
         if not isinstance(value, (str, bool, int, float)):
-            raise ValueError(f'Cannot convert objects of type {type(value)}.')
+            raise ValueError(f"Cannot convert objects of type {type(value)}.")
 
         if not isinstance(value, str):
             value = str(value)
 
         if not value:
-            raise ValueError(f'StringSettings cannot be empty.')
+            raise ValueError(f"StringSettings cannot be empty.")
 
         return value
 
@@ -223,7 +242,7 @@ class IntSetting(Setting[int]):  # pylint: disable=inherit-non-class
         # check for the presence of a float before converting it. This is the easiest way to catch
         # edge cases such as "0.0"
         value = str(value)
-        if '.' in value:
+        if "." in value:
             raise ValueError
         return int(value)
 
@@ -265,7 +284,9 @@ class DictSetting(Setting[dict]):  # pylint: disable=inherit-non-class
 
 
 @contextmanager
-def mock_config_value(setting: Setting, value: Optional[ConfigValue]) -> Generator[None, None, None]:
+def mock_config_value(
+    setting: Setting, value: Optional[ConfigValue]
+) -> Generator[None, None, None]:
     """ Mocks a setting value during a block of code so that value getters are ignored. """
-    with patch.object(setting, '_get_value', return_value=value):
+    with patch.object(setting, "_get_value", return_value=value):
         yield

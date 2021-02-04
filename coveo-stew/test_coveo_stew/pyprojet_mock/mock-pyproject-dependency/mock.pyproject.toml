@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "mock-pyproject-dependency"
+version = "0.2.4"
+description = "mocked dependency for pyproject mock"
+authors = ["Jonathan piché <tools@coveo.com>"]
+
+
+[tool.poetry.dependencies]
+python = ">=3.6"
+
+black = { version = "*", allow-prereleases = true }
+
+# at time of writing, 2.24 was used. we use 2.20 to ensure we don't get the latest.
+requests = "<=2.20"
+
+
+[tool.stew.build-dependencies]
+setuptools-scm = { version = "*" }  # required by black's setup
+
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"

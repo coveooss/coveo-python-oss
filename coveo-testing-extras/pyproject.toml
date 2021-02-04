@@ -1,9 +1,11 @@
 [tool.poetry]
 name = "coveo-testing-extras"
 version = "1.0.0"
-description = "Additional utilities for testing."
-authors = ["Jonathan piché <jpiche@coveo.com>"]
-
+description = "Dependency-hungry testing helpers"
+license = "Apache-2.0"
+readme = "README.md"
+repository = "https://github.com/coveooss/coveo-python-oss"
+authors = ["Jonathan Piché <tools@coveo.com>"]
 
 [tool.poetry.dependencies]
 python = ">=3.8"
@@ -21,6 +23,16 @@ coveo-settings = { path = "../coveo-settings/", develop = true }
 coveo-systools = { path = "../coveo-systools/", develop = true }
 coveo-testing = { path = "../coveo-testing/", develop = true }
 typing_extensions = "*"
+
+
+[tool.stew.ci]
+pytest = true
+offline-build = true
+black = true
+
+
+[tool.black]
+line-length = 100
 
 
 [build-system]

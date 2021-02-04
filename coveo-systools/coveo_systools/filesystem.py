@@ -27,9 +27,14 @@ def pushd(working_directory: Union[Path, str]) -> Iterator[None]:
         os.chdir(cwd)
 
 
-def find_paths(path_to_find: Path, search_from: Path = None,
-               *, in_root: bool = False, in_parents: bool = False, in_children: bool = False) \
-        -> Generator[Path, None, None]:
+def find_paths(
+    path_to_find: Path,
+    search_from: Path = None,
+    *,
+    in_root: bool = False,
+    in_parents: bool = False,
+    in_children: bool = False,
+) -> Generator[Path, None, None]:
     """
     Generic utility to find files from python.
 
@@ -48,10 +53,10 @@ def find_paths(path_to_find: Path, search_from: Path = None,
         in_children: Include results in search_from's folders.
     """
     if search_from is None:
-        search_from = Path('.')
+        search_from = Path(".")
 
     if not search_from.is_dir():
-        raise FileNotFoundError(f'Cannot search from ({search_from}): not an existing directory.')
+        raise FileNotFoundError(f"Cannot search from ({search_from}): not an existing directory.")
 
     if in_root and (search_from / path_to_find).exists():
         yield (search_from / path_to_find).resolve()
@@ -70,7 +75,9 @@ def find_paths(path_to_find: Path, search_from: Path = None,
         yield from search_from.rglob(str(path_to_find))
 
 
-def find_application(name: str, *, path: str = None, raise_if_not_found: bool = False) -> Optional[Path]:
+def find_application(
+    name: str, *, path: str = None, raise_if_not_found: bool = False
+) -> Optional[Path]:
     """Finds an application using the shell (e.g.: which).
 
     path: https://docs.python.org/3/library/shutil.html#shutil.which
@@ -78,15 +85,17 @@ def find_application(name: str, *, path: str = None, raise_if_not_found: bool = 
           either the “PATH” value or a fallback of os.defpath.
     """
     executable = shutil.which(name, path=path)
-    if executable: return Path(executable.strip()).absolute()
-    if raise_if_not_found: raise FileNotFoundError(f'{name} cannot be located.')
+    if executable:
+        return Path(executable.strip()).absolute()
+    if raise_if_not_found:
+        raise FileNotFoundError(f"{name} cannot be located.")
     return None
 
 
 @functools.lru_cache(maxsize=1)
 def _which_git() -> Optional[Path]:
     """Returns the path to the git executable if it can be found."""
-    return find_application('git')
+    return find_application("git")
 
 
 @functools.lru_cache(maxsize=32)
@@ -99,19 +108,23 @@ def _find_repo_root(path: Path) -> Path:
     if git:
         try:
             with pushd(path):
-                return Path(check_output(git, 'rev-parse', '--show-toplevel', stderr=subprocess.STDOUT))
+                return Path(
+                    check_output(git, "rev-parse", "--show-toplevel", stderr=subprocess.STDOUT)
+                )
         except DetailedCalledProcessError as exception:
             git_error = exception
 
-    git_evidence = next(find_paths(Path('.git'), path, in_root=True, in_parents=True), None)
+    git_evidence = next(find_paths(Path(".git"), path, in_root=True, in_parents=True), None)
     if git_evidence:
         assert git_evidence.is_dir()
         return git_evidence.parent
 
-    raise CannotFindRepoRoot("Cannot find a .git folder in order to locate repo's root.") from git_error
+    raise CannotFindRepoRoot(
+        "Cannot find a .git folder in order to locate repo's root."
+    ) from git_error
 
 
-def find_repo_root(path: Union[Path, str] = '.', *, default: Union[str, Path] = None) -> Path:
+def find_repo_root(path: Union[Path, str] = ".", *, default: Union[str, Path] = None) -> Path:
     """Will find the root of a git repo based on the provided path.
 
     Will raise FileNotFoundError if it cannot be found.
@@ -146,7 +159,9 @@ def _safe_text_write_dry_run(target: Path, content: str, *, only_if_changed: boo
     return True
 
 
-def safe_text_write(target: Path, content: str, *, only_if_changed: bool = False, dry_run: bool = False) -> bool:
+def safe_text_write(
+    target: Path, content: str, *, only_if_changed: bool = False, dry_run: bool = False
+) -> bool:
     """Writes a text file to a temporary location then replaces target.
     Returns True if the file ("would be" if dry_run else "was") overwritten."""
     if dry_run:
