@@ -11,7 +11,7 @@ Take the time to read and understand [its readme](./coveo-example-library/README
 
 ## For developers
 
-All projects in this repository are backed by [coveo-pyproject](coveo-stew/README.md) and [poetry](https://python-poetry.org/).
+All projects in this repository are backed by [coveo-stew](./coveo-stew/README.md) and [poetry](https://python-poetry.org/).
 A dev environment is provided at `/pyproject.toml` which aggregates all the projects into one convenient virtual environment. 
 Refer to poetry's documentation if you're new to poetry.
 
