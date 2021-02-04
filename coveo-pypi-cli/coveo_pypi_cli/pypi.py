@@ -1,14 +1,14 @@
 from distutils.version import Version, StrictVersion
 from typing import List, Type, TypeVar, Optional
 
+from coveo_settings.settings import StringSetting
 import requests
-from typing_extensions import Final
 
 from .exceptions import VersionException
 from .versions import StrictVersionHelper
 
 
-PYPI_HOSTNAME: Final[str] = "https://pypi.org"
+PYPI_CLI_INDEX = StringSetting("pypi.cli.index", fallback="https://pypi.org")
 
 T = TypeVar("T", bound=Version)
 
@@ -19,19 +19,19 @@ class VersionExists(Exception):
 
 def obtain_versions_from_pypi(
     package_name: str,
-    host: str = PYPI_HOSTNAME,
+    index: str = PYPI_CLI_INDEX,
     *,
     version_class: Type[T] = StrictVersion,  # type: ignore
     oldest_first: bool = False,
 ) -> List[T]:
     """
-    Requests all versions of a package from pypidev-coveo.
+    Requests all versions of a package from a pypi server.
 
     oldest_first: sort order
     version_class: some functionality depends on StrictVersion. LooseVersion may be used to obtain
-    packages that don't follow distutils' best practices.
+      packages that don't follow distutils' best practices.
     """
-    response = requests.get(f"{host}/pypi/{package_name}/json")
+    response = requests.get(f"{index}/pypi/{package_name}/json")
     if response.status_code == 404:
         return []  # no hits; that might be ok.
     response.raise_for_status()
@@ -51,17 +51,19 @@ def obtain_versions_from_pypi(
         return sorted(valid_versions, reverse=not oldest_first, key=str)
 
 
-def obtain_latest_release_from_pypi(package: str) -> Optional[StrictVersion]:
+def obtain_latest_release_from_pypi(
+    package: str, index: str = PYPI_CLI_INDEX
+) -> Optional[StrictVersion]:
     """Obtains the latest non-prerelease version from pypi."""
     official_releases = filter(
         lambda version: not version.prerelease,
-        obtain_versions_from_pypi(package, version_class=StrictVersionHelper),
+        obtain_versions_from_pypi(package, version_class=StrictVersionHelper, index=index),
     )
     return next(official_releases, None)
 
 
 def compute_next_version(
-    package: str, *, prerelease: bool, minimum_version: str = "0.0.1"
+    package: str, *, prerelease: bool, minimum_version: str = "0.0.1", index: str = PYPI_CLI_INDEX
 ) -> StrictVersionHelper:
     """
     Given a package, compute the next version based on what's in pypi. e.g.:
@@ -83,7 +85,9 @@ def compute_next_version(
     if prerelease:
         lbound_version.bump_next_prerelease(patch=False)
 
-    latest_release = next(map(StrictVersionHelper, obtain_versions_from_pypi(package)), None)
+    latest_release = next(
+        map(StrictVersionHelper, obtain_versions_from_pypi(package, index=index)), None
+    )
     if latest_release is None:
         return lbound_version
 
