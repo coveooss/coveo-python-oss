@@ -19,7 +19,7 @@ typing_extensions = "*"
 coveo-testing = { path = "../coveo-testing/", develop = true }
 
 
-[tool.coveo.ci]
+[tool.stew.ci]
 pytest = true
 offline-build = true
 black = true

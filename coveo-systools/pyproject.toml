@@ -19,7 +19,7 @@ coveo-functools = { path = "../coveo-functools/", develop = true }
 coveo-testing = { path = "../coveo-testing/", develop = true }
 
 
-[tool.coveo.ci]
+[tool.stew.ci]
 pytest = true
 offline-build = true
 black = true

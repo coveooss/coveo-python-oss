@@ -10,7 +10,7 @@ python-versions = "*"
 name = "atomicwrites"
 version = "1.4.0"
 description = "Atomic file writes."
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 
@@ -18,7 +18,7 @@ python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 name = "attrs"
 version = "20.3.0"
 description = "Classes Without Boilerplate"
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 
@@ -143,22 +143,9 @@ pylev = ">=1.3,<2.0"
 name = "colorama"
 version = "0.4.4"
 description = "Cross-platform colored terminal text."
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
-
-[[package]]
-name = "coveo-example-library"
-version = "0.0.1"
-description = "coveo-python-oss example library"
-category = "main"
-optional = false
-python-versions = ">=3.8"
-develop = true
-
-[package.source]
-type = "directory"
-url = "coveo-example-library"
 
 [[package]]
 name = "coveo-functools"
@@ -175,7 +162,7 @@ typing_extensions = "*"
 
 [package.source]
 type = "directory"
-url = "coveo-functools"
+url = "../coveo-functools"
 
 [[package]]
 name = "coveo-itertools"
@@ -188,66 +175,7 @@ develop = true
 
 [package.source]
 type = "directory"
-url = "coveo-itertools"
-
-[[package]]
-name = "coveo-pypi-cli"
-version = "1.0.0"
-description = "Query and compute pypi versions from command line."
-category = "main"
-optional = false
-python-versions = ">=3.8"
-develop = true
-
-[package.dependencies]
-click = "*"
-coveo-styles = "^1.0.0"
-coveo-systools = "^1.0.0"
-requests = "*"
-typing-extensions = "*"
-
-[package.source]
-type = "directory"
-url = "coveo-pypi-cli"
-
-[[package]]
-name = "coveo-settings"
-version = "1.0.0"
-description = "Settings driven by environment variables."
-category = "main"
-optional = false
-python-versions = ">=3.8"
-develop = true
-
-[package.source]
-type = "directory"
-url = "coveo-settings"
-
-[[package]]
-name = "coveo-stew"
-version = "1.0.0"
-description = "Opinionated python packaging and development utilities"
-category = "main"
-optional = false
-python-versions = ">=3.8"
-develop = true
-
-[package.dependencies]
-black = "20.8b1"
-click = "*"
-coveo-functools = "^1.0.0"
-coveo-itertools = "^1.0.0"
-coveo-styles = "^1.0.0"
-coveo-systools = "^1.0.0"
-junit-xml = "*"
-mypy = "*"
-poetry = "^1.1.4"
-toml = "*"
-typing_extensions = "*"
-
-[package.source]
-type = "directory"
-url = "coveo-stew"
+url = "../coveo-itertools"
 
 [[package]]
 name = "coveo-styles"
@@ -265,7 +193,7 @@ typing_extensions = "*"
 
 [package.source]
 type = "directory"
-url = "coveo-styles"
+url = "../coveo-styles"
 
 [[package]]
 name = "coveo-systools"
@@ -282,13 +210,13 @@ typing_extensions = "*"
 
 [package.source]
 type = "directory"
-url = "coveo-systools"
+url = "../coveo-systools"
 
 [[package]]
 name = "coveo-testing"
 version = "1.0.0"
 description = "Lightweight testing helpers"
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.8"
 develop = true
@@ -299,27 +227,7 @@ pytest = "*"
 
 [package.source]
 type = "directory"
-url = "coveo-testing"
-
-[[package]]
-name = "coveo-testing-extras"
-version = "1.0.0"
-description = "Dependency-hungry testing helpers"
-category = "main"
-optional = false
-python-versions = ">=3.8"
-develop = true
-
-[package.dependencies]
-coveo-functools = "*"
-coveo-settings = "*"
-coveo-systools = "*"
-coveo-testing = "*"
-docker = "*"
-
-[package.source]
-type = "directory"
-url = "coveo-testing-extras"
+url = "../coveo-testing"
 
 [[package]]
 name = "crashtest"
@@ -355,24 +263,6 @@ description = "Distribution utilities"
 category = "main"
 optional = false
 python-versions = "*"
-
-[[package]]
-name = "docker"
-version = "4.4.1"
-description = "A Python library for the Docker Engine API."
-category = "main"
-optional = false
-python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
-
-[package.dependencies]
-pywin32 = {version = "227", markers = "sys_platform == \"win32\""}
-requests = ">=2.14.2,<2.18.0 || >2.18.0"
-six = ">=1.4.0"
-websocket-client = ">=0.32.0"
-
-[package.extras]
-ssh = ["paramiko (>=2.4.2)"]
-tls = ["pyOpenSSL (>=17.5.0)", "cryptography (>=1.3.4)", "idna (>=2.0.0)"]
 
 [[package]]
 name = "emoji"
@@ -431,7 +321,7 @@ python-versions = ">=3.5"
 name = "iniconfig"
 version = "1.1.1"
 description = "iniconfig: brain-dead simple config-ini parsing"
-category = "main"
+category = "dev"
 optional = false
 python-versions = "*"
 
@@ -567,7 +457,7 @@ testing = ["nose", "coverage"]
 name = "pluggy"
 version = "0.13.1"
 description = "plugin and hook calling mechanisms for python"
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 
@@ -620,7 +510,7 @@ python-versions = "*"
 name = "py"
 version = "1.10.0"
 description = "library with cross-python path, ini-parsing, io, code, log facilities"
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 
@@ -652,7 +542,7 @@ python-versions = ">=2.6, !=3.0.*, !=3.1.*, !=3.2.*"
 name = "pytest"
 version = "6.2.2"
 description = "pytest: simple powerful testing with Python"
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.6"
 
@@ -668,14 +558,6 @@ toml = "*"
 
 [package.extras]
 testing = ["argcomplete", "hypothesis (>=3.56)", "mock", "nose", "requests", "xmlschema"]
-
-[[package]]
-name = "pywin32"
-version = "227"
-description = "Python for Window Extensions"
-category = "main"
-optional = false
-python-versions = "*"
 
 [[package]]
 name = "pywin32-ctypes"
@@ -820,21 +702,10 @@ category = "main"
 optional = false
 python-versions = "*"
 
-[[package]]
-name = "websocket-client"
-version = "0.57.0"
-description = "WebSocket client for Python. hybi13 is supported."
-category = "main"
-optional = false
-python-versions = ">=2.6, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
-
-[package.dependencies]
-six = "*"
-
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.8"
-content-hash = "1b7151f3aa94a8b48acf494eb8be64f08ee590c9a749571cc3749d21f6374336"
+content-hash = "35cfe9da0f195278132d911a42457ac922b7a5ab90f97e2aeee0828f921c8ea4"
 
 [metadata.files]
 appdirs = [
@@ -922,16 +793,11 @@ colorama = [
     {file = "colorama-0.4.4-py2.py3-none-any.whl", hash = "sha256:9f47eda37229f68eee03b24b9748937c7dc3868f906e8ba69fbcbdd3bc5dc3e2"},
     {file = "colorama-0.4.4.tar.gz", hash = "sha256:5941b2b48a20143d2267e95b1c2a7603ce057ee39fd88e7329b0c292aa16869b"},
 ]
-coveo-example-library = []
 coveo-functools = []
 coveo-itertools = []
-coveo-pypi-cli = []
-coveo-settings = []
-coveo-stew = []
 coveo-styles = []
 coveo-systools = []
 coveo-testing = []
-coveo-testing-extras = []
 crashtest = [
     {file = "crashtest-0.3.1-py3-none-any.whl", hash = "sha256:300f4b0825f57688b47b6d70c6a31de33512eb2fa1ac614f780939aa0cf91680"},
     {file = "crashtest-0.3.1.tar.gz", hash = "sha256:42ca7b6ce88b6c7433e2ce47ea884e91ec93104a4b754998be498a8e6c3d37dd"},
@@ -955,10 +821,6 @@ cryptography = [
 distlib = [
     {file = "distlib-0.3.1-py2.py3-none-any.whl", hash = "sha256:8c09de2c67b3e7deef7184574fc060ab8a793e7adbb183d942c389c8b13c52fb"},
     {file = "distlib-0.3.1.zip", hash = "sha256:edf6116872c863e1aa9d5bb7cb5e05a022c519a4594dc703843343a9ddd9bff1"},
-]
-docker = [
-    {file = "docker-4.4.1-py2.py3-none-any.whl", hash = "sha256:e455fa49aabd4f22da9f4e1c1f9d16308286adc60abaf64bf3e1feafaed81d06"},
-    {file = "docker-4.4.1.tar.gz", hash = "sha256:0604a74719d5d2de438753934b755bfcda6f62f49b8e4b30969a4b0a2a8a1220"},
 ]
 emoji = [
     {file = "emoji-1.2.0-py3-none-any.whl", hash = "sha256:6b19b65da8d6f30551eead1705539cc0eadcd9e33a6ecbc421a29b87f96287eb"},
@@ -1113,20 +975,6 @@ pytest = [
     {file = "pytest-6.2.2-py3-none-any.whl", hash = "sha256:b574b57423e818210672e07ca1fa90aaf194a4f63f3ab909a2c67ebb22913839"},
     {file = "pytest-6.2.2.tar.gz", hash = "sha256:9d1edf9e7d0b84d72ea3dbcdfd22b35fb543a5e8f2a60092dd578936bf63d7f9"},
 ]
-pywin32 = [
-    {file = "pywin32-227-cp27-cp27m-win32.whl", hash = "sha256:371fcc39416d736401f0274dd64c2302728c9e034808e37381b5e1b22be4a6b0"},
-    {file = "pywin32-227-cp27-cp27m-win_amd64.whl", hash = "sha256:4cdad3e84191194ea6d0dd1b1b9bdda574ff563177d2adf2b4efec2a244fa116"},
-    {file = "pywin32-227-cp35-cp35m-win32.whl", hash = "sha256:f4c5be1a293bae0076d93c88f37ee8da68136744588bc5e2be2f299a34ceb7aa"},
-    {file = "pywin32-227-cp35-cp35m-win_amd64.whl", hash = "sha256:a929a4af626e530383a579431b70e512e736e9588106715215bf685a3ea508d4"},
-    {file = "pywin32-227-cp36-cp36m-win32.whl", hash = "sha256:300a2db938e98c3e7e2093e4491439e62287d0d493fe07cce110db070b54c0be"},
-    {file = "pywin32-227-cp36-cp36m-win_amd64.whl", hash = "sha256:9b31e009564fb95db160f154e2aa195ed66bcc4c058ed72850d047141b36f3a2"},
-    {file = "pywin32-227-cp37-cp37m-win32.whl", hash = "sha256:47a3c7551376a865dd8d095a98deba954a98f326c6fe3c72d8726ca6e6b15507"},
-    {file = "pywin32-227-cp37-cp37m-win_amd64.whl", hash = "sha256:31f88a89139cb2adc40f8f0e65ee56a8c585f629974f9e07622ba80199057511"},
-    {file = "pywin32-227-cp38-cp38-win32.whl", hash = "sha256:7f18199fbf29ca99dff10e1f09451582ae9e372a892ff03a28528a24d55875bc"},
-    {file = "pywin32-227-cp38-cp38-win_amd64.whl", hash = "sha256:7c1ae32c489dc012930787f06244426f8356e129184a02c25aef163917ce158e"},
-    {file = "pywin32-227-cp39-cp39-win32.whl", hash = "sha256:c054c52ba46e7eb6b7d7dfae4dbd987a1bb48ee86debe3f245a2884ece46e295"},
-    {file = "pywin32-227-cp39-cp39-win_amd64.whl", hash = "sha256:f27cec5e7f588c3d1051651830ecc00294f90728d19c3bf6916e6dba93ea357c"},
-]
 pywin32-ctypes = [
     {file = "pywin32-ctypes-0.2.0.tar.gz", hash = "sha256:24ffc3b341d457d48e8922352130cf2644024a4ff09762a2261fd34c36ee5942"},
     {file = "pywin32_ctypes-0.2.0-py2.py3-none-any.whl", hash = "sha256:9dc2d991b3479cc2df15930958b674a48a227d5361d413827a4cfd0b5876fc98"},
@@ -1250,8 +1098,4 @@ virtualenv = [
 webencodings = [
     {file = "webencodings-0.5.1-py2.py3-none-any.whl", hash = "sha256:a0af1213f3c2226497a97e2b3aa01a7e4bee4f403f95be16fc9acd2947514a78"},
     {file = "webencodings-0.5.1.tar.gz", hash = "sha256:b36a1c245f2d304965eb4e0a82848379241dc04b865afcc4aab16748587e1923"},
-]
-websocket-client = [
-    {file = "websocket_client-0.57.0-py2.py3-none-any.whl", hash = "sha256:0fc45c961324d79c781bab301359d5a1b00b13ad1b10415a4780229ef71a5549"},
-    {file = "websocket_client-0.57.0.tar.gz", hash = "sha256:d735b91d6d1692a6a181f2a8c9e0238e5f6373356f561bb9dc4c7af36f452010"},
 ]
