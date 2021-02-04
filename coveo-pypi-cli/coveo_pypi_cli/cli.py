@@ -3,11 +3,10 @@ from distutils.version import LooseVersion
 from typing import List, Dict
 
 import click
-from coveo_pypi_cli.pypi import PYPI_CLI_INDEX
 from coveo_styles.styles import echo, ExitWithFailure, install_pretty_exception_hook
 
 from .exceptions import VersionExists
-from .pypi import obtain_versions_from_pypi, compute_next_version, obtain_latest_release_from_pypi
+from .pypi import obtain_versions_from_pypi, compute_next_version, obtain_latest_release_from_pypi, PYPI_CLI_INDEX
 from .versions import StrictVersionHelper
 
 
