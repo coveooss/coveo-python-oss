@@ -19,7 +19,7 @@ class VersionExists(Exception):
 
 def obtain_versions_from_pypi(
     package_name: str,
-    index: str = PYPI_CLI_INDEX,
+    index: str = str(PYPI_CLI_INDEX),
     *,
     version_class: Type[T] = StrictVersion,  # type: ignore
     oldest_first: bool = False,
@@ -52,7 +52,7 @@ def obtain_versions_from_pypi(
 
 
 def obtain_latest_release_from_pypi(
-    package: str, index: str = PYPI_CLI_INDEX
+    package: str, index: str = str(PYPI_CLI_INDEX)
 ) -> Optional[StrictVersion]:
     """Obtains the latest non-prerelease version from pypi."""
     official_releases = filter(
@@ -63,7 +63,11 @@ def obtain_latest_release_from_pypi(
 
 
 def compute_next_version(
-    package: str, *, prerelease: bool, minimum_version: str = "0.0.1", index: str = PYPI_CLI_INDEX
+    package: str,
+    *,
+    prerelease: bool,
+    minimum_version: str = "0.0.1",
+    index: str = str(PYPI_CLI_INDEX),
 ) -> StrictVersionHelper:
     """
     Given a package, compute the next version based on what's in pypi. e.g.:

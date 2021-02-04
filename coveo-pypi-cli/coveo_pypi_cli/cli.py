@@ -1,6 +1,6 @@
 from collections import defaultdict
 from distutils.version import LooseVersion
-from typing import List, Dict, Optional
+from typing import List, Dict
 
 import click
 from coveo_pypi_cli.pypi import PYPI_CLI_INDEX
@@ -13,7 +13,9 @@ from .versions import StrictVersionHelper
 
 click_argument_package = click.argument("package")
 click_option_index = click.option(
-    "--index", default=PYPI_CLI_INDEX, help='The pypi index host, in the form "https://pypi.org"'
+    "--index",
+    default=str(PYPI_CLI_INDEX),
+    help='The pypi index host, in the form "https://pypi.org"',
 )
 
 
@@ -26,7 +28,7 @@ def pypi() -> None:
 @click_argument_package
 @click.argument("version")
 @click_option_index
-def raise_if_exists(package: str, version: str, index: str = PYPI_CLI_INDEX) -> None:
+def raise_if_exists(package: str, version: str, index: str = str(PYPI_CLI_INDEX)) -> None:
     """Raise if the version already exists."""
     if version in obtain_versions_from_pypi(package, index=index):
         raise ExitWithFailure(
@@ -37,7 +39,7 @@ def raise_if_exists(package: str, version: str, index: str = PYPI_CLI_INDEX) -> 
 @pypi.command()
 @click_argument_package
 @click_option_index
-def versions(package: str, index: str = PYPI_CLI_INDEX) -> None:
+def versions(package: str, index: str = str(PYPI_CLI_INDEX)) -> None:
     """Prints the (unsorted) versions of a package."""
     groups: Dict[str, List[LooseVersion]] = defaultdict(list)
     for loose_version in obtain_versions_from_pypi(
@@ -64,7 +66,7 @@ def next_version(
     package: str,
     prerelease: bool = False,
     minimum_version: str = "0.0.1",
-    index: str = PYPI_CLI_INDEX,
+    index: str = str(PYPI_CLI_INDEX),
 ) -> None:
     """Returns the version number for this release."""
     echo.passthrough(
@@ -77,7 +79,7 @@ def next_version(
 @pypi.command()
 @click_argument_package
 @click_option_index
-def current_version(package: str, index: str = PYPI_CLI_INDEX) -> None:
+def current_version(package: str, index: str = str(PYPI_CLI_INDEX)) -> None:
     """Returns the most recent official release version."""
     echo.passthrough(
         obtain_latest_release_from_pypi(package, index=index) or StrictVersionHelper("0.0.0")

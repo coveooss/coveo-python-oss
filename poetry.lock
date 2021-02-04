@@ -201,6 +201,7 @@ develop = true
 
 [package.dependencies]
 click = "*"
+coveo-settings = "^1.0.0"
 coveo-styles = "^1.0.0"
 coveo-systools = "^1.0.0"
 requests = "*"

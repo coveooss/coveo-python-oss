@@ -52,14 +52,14 @@ PYPI_MATCHER: Pattern = re.compile(rf"{PYPI_CLI_INDEX}/*")
 @UnitTest
 def test_iter_sort_404() -> None:
     with requests_mock.Mocker() as http_mock:
-        http_mock.get(re.compile(PYPI_CLI_INDEX), status_code=404)
+        http_mock.get(re.compile(str(PYPI_CLI_INDEX)), status_code=404)
         assert not list(obtain_versions_from_pypi("test"))
 
 
 @UnitTest
 def test_iter_sort_empty() -> None:
     with requests_mock.Mocker() as http_mock:
-        http_mock.get(re.compile(PYPI_CLI_INDEX), json={"releases": {}})
+        http_mock.get(re.compile(str(PYPI_CLI_INDEX)), json={"releases": {}})
         assert not list(obtain_versions_from_pypi("test"))
 
 
