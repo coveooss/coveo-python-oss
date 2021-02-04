@@ -48,5 +48,5 @@ jobs:
         uses: ./.github/workflows/actions/publish-to-pypi
         with:
           project-name: ${{ github.workflow }}
-          pypi-token: ${{ secrets.PYPI_TOKEN }}
+          pypi-token: ${{ secrets.PYPI_TOKEN_COVEO_STEW }}
           dry-run: ${{ github.ref != 'refs/heads/main' }}
