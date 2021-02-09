@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Generator, Tuple, Set
 
 from coveo_functools.casing import flexfactory
+from coveo_itertools.lookups import dict_lookup
 from coveo_stew.utils import load_toml_from_path
 from coveo_systools.filesystem import find_repo_root, safe_text_write
 import tomlkit
@@ -90,7 +91,9 @@ class PyDev(PythonProject):
     @classmethod
     def find_pyproject_paths(cls, path: Path) -> Generator[Path, None, None]:
         """Only return the paths that contain PyDev projects."""
-        yield from filter(
-            lambda _path: flexfactory(StewPackage, **load_toml_from_path(_path)).pydev,
-            super().find_pyproject_paths(path),
-        )
+
+        def _is_pydev(_path: Path) -> bool:
+            tool_stew_config = dict_lookup(load_toml_from_path(_path), "tool", "stew", default={})
+            return flexfactory(StewPackage, **tool_stew_config).pydev
+
+        yield from filter(_is_pydev, super().find_pyproject_paths(path))

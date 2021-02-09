@@ -1,20 +1,13 @@
 import functools
 import re
-from typing import Match, Iterable, Dict, Callable, Any, TypeVar, Mapping, Type
-from typing_extensions import Protocol
+from typing import Match, Iterable, Dict, Callable, Any, TypeVar, Mapping, Type, cast
 
 import inflection
 
 from .annotations import find_annotations
 
 
-class _AcceptsKeywordArgs(Protocol):
-    def __init__(self, **kwargs: Any) -> None:
-        ...
-
-
 T = TypeVar("T")
-T_AcceptsKeywordArgs = TypeVar("T_AcceptsKeywordArgs", bound=_AcceptsKeywordArgs)
 
 
 # noinspection PyDefaultArgument
@@ -129,9 +122,7 @@ def unflex(
     return flex.unflex(flex.create_lookup(fn), dirty_kwargs)
 
 
-def flexfactory(
-    cls: Type[T_AcceptsKeywordArgs], *, strip_extra: bool = True, **dirty_kwargs: Any
-) -> T_AcceptsKeywordArgs:
+def flexfactory(cls: Type[T], *, strip_extra: bool = True, **dirty_kwargs: Any) -> T:
     """Syntactic sugar that maps kwargs to a class's constructor arguments and return an instance of it.
     E.g.:
 
@@ -141,4 +132,4 @@ def flexfactory(
 
     return flexfactory(ClassWithArgs, {'Arg1': 10, 'ARG2': 20})
     """
-    return cls(**unflex(cls.__init__, dirty_kwargs, strip_extra=strip_extra))
+    return cls(**unflex(cls.__init__, dirty_kwargs, strip_extra=strip_extra))  # type: ignore
