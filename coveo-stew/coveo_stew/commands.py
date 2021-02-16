@@ -178,9 +178,8 @@ def build(
 
 @stew.command()
 @click.argument("project_name", default=None, required=False)
-@click.option("--install/--no-install", default=True)
 @click.option("--verbose", is_flag=True, default=False)
-def fresh_eggs(project_name: str = None, install: bool = True, verbose: bool = False) -> None:
+def fresh_eggs(project_name: str = None, verbose: bool = False) -> None:
     """
     Removes the egg-info from project folders.
 
