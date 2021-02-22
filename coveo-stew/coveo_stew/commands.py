@@ -13,7 +13,7 @@ from coveo_styles.styles import echo, ExitWithFailure, install_pretty_exception_
 from coveo_stew.ci.runner import ContinuousIntegrationRunner, RunnerStatus
 from coveo_stew.exceptions import CheckFailed, RequirementsOutdated, PythonProjectNotFound
 from coveo_stew.offline_publish import offline_publish
-from coveo_stew.pydev import NotPyDevProject, is_pydev_project, pull_and_write_dev_requirements
+from coveo_stew.pydev import is_pydev_project, pull_and_write_dev_requirements
 from coveo_stew.stew import PythonProject, PythonEnvironment
 
 

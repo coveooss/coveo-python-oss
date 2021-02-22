@@ -55,13 +55,12 @@ def discover_pyprojects(
         if verbose:
             echo.noise("PyProject found: ", project)
 
-        if (
+        if predicate(project) and (
             not query
             or (exact_match and project.package.name == query)
             or (
                 not exact_match
                 and query.replace("-", "_").lower() in project.package.safe_name.lower()
-                and predicate(project)
             )
         ):
             count_projects += 1
