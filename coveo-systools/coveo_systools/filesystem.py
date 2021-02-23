@@ -58,8 +58,9 @@ def find_paths(
     if not search_from.is_dir():
         raise FileNotFoundError(f"Cannot search from ({search_from}): not an existing directory.")
 
-    if in_root and (search_from / path_to_find).exists():
-        yield (search_from / path_to_find).resolve()
+    root_path: Path = search_from / path_to_find
+    if in_root and root_path.exists():
+        yield root_path.resolve()
 
     if in_parents:
         current = search_from.parent
@@ -72,7 +73,7 @@ def find_paths(
                 break
 
     if in_children:
-        yield from search_from.rglob(str(path_to_find))
+        yield from filter(lambda path: path != root_path, search_from.rglob(str(path_to_find)))
 
 
 def find_application(
