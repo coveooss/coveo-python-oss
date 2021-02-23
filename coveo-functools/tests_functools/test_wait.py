@@ -1,7 +1,7 @@
 """ Tests the wait method features """
 
 import datetime
-from typing import Dict, List, Type, Tuple
+from typing import Dict, List, Type, Tuple, TypedDict
 
 from coveo_testing.markers import UnitTest
 from coveo_testing.parametrize import parametrize
@@ -115,7 +115,12 @@ def test_until_retry(timeout: int) -> None:
         assert retry - first >= datetime.timedelta(milliseconds=timeout)
 
 
-_timeout: Dict[str, TimeoutValue] = {
+class TimeoutValues(TypedDict):
+    timeout_s: TimeoutValue
+    retry_ms: TimeoutValue
+
+
+_timeout: TimeoutValues = {
     "timeout_s": datetime.timedelta(milliseconds=4),
     "retry_ms": datetime.timedelta(milliseconds=1),
 }
@@ -129,13 +134,13 @@ def _raise(exception: Type[Exception]) -> None:
 @UnitTest
 def test_until_suppress_all_exceptions() -> None:
     with pytest.raises(wait.TimeoutExpired):
-        wait.until(lambda: _raise(Exception), handle_exceptions=True, **_timeout)  # type: ignore
+        wait.until(lambda: _raise(Exception), handle_exceptions=True, **_timeout)
 
 
 @UnitTest
 def test_until_suppress_subclass() -> None:
     with pytest.raises(wait.TimeoutExpired):
-        wait.until(lambda: _raise(TypeError), handle_exceptions=True, **_timeout)  # type: ignore
+        wait.until(lambda: _raise(TypeError), handle_exceptions=True, **_timeout)
 
 
 @UnitTest
@@ -155,7 +160,7 @@ def test_until_suppress_exception_tuple() -> None:
             lambda: _raise(NotImplementedError),
             handle_exceptions=(NotImplementedError,),
             **_timeout
-        )  # type: ignore
+        )
 
 
 @UnitTest
@@ -164,14 +169,14 @@ def test_until_suppress_exception_tuple_conversion() -> None:
     with pytest.raises(wait.TimeoutExpired):
         wait.until(
             lambda: _raise(NotImplementedError), handle_exceptions=NotImplementedError, **_timeout
-        )  # type: ignore
+        )
 
 
 @UnitTest
 def test_until_cannot_suppress_own_exception() -> None:
     # make sure we can't suppress its own exception
     with pytest.raises(wait.TimeoutExpired):
-        wait.until(lambda: False, handle_exceptions=(wait.TimeoutExpired,), **_timeout)  # type: ignore
+        wait.until(lambda: False, handle_exceptions=(wait.TimeoutExpired,), **_timeout)
 
 
 @UnitTest
@@ -193,17 +198,17 @@ def test_until_custom_exception() -> None:
 
     # test tuple
     with pytest.raises(DummyException2):
-        wait.until(_raise_both, handle_exceptions=(DummyException,), **_timeout)  # type: ignore
+        wait.until(_raise_both, handle_exceptions=(DummyException,), **_timeout)
 
     # test tuple again
     i = 0
     with pytest.raises(DummyException):
-        wait.until(_raise_both, handle_exceptions=(DummyException2,), **_timeout)  # type: ignore
+        wait.until(_raise_both, handle_exceptions=(DummyException2,), **_timeout)
 
     # ultimate test tuple :)
     i = 0
     with pytest.raises(wait.TimeoutExpired):
-        wait.until(_raise_both, handle_exceptions=(DummyException2, DummyException), **_timeout)  # type: ignore
+        wait.until(_raise_both, handle_exceptions=(DummyException2, DummyException), **_timeout)
 
 
 def _verify_backoff_output(backoff: Backoff, expected_results: List[float]) -> None:

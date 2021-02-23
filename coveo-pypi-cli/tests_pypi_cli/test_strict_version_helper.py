@@ -115,9 +115,9 @@ def test_strict_version_helper_not_equal(version1: str, version2: str) -> None:
     ),
 )
 def test_strict_version_helper_bump_version(version: str, next_release: str) -> None:
-    version = StrictVersionHelper(version)
-    version.bump_next_release()
-    assert version == StrictVersionHelper(next_release)
+    version_helper = StrictVersionHelper(version)
+    version_helper.bump_next_release()
+    assert version_helper == StrictVersionHelper(next_release)
 
 
 @UnitTest
@@ -134,6 +134,6 @@ def test_strict_version_helper_bump_version(version: str, next_release: str) -> 
     ),
 )
 def test_strict_version_helper_bump_prerelease(version: str, next_prerelease: str) -> None:
-    version = StrictVersionHelper(version)
-    version.bump_next_prerelease()
-    assert version == StrictVersionHelper(next_prerelease)
+    version_helper = StrictVersionHelper(version)
+    version_helper.bump_next_prerelease()
+    assert version_helper == StrictVersionHelper(next_prerelease)

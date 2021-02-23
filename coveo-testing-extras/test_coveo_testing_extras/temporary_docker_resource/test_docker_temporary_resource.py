@@ -5,6 +5,7 @@ from unittest import mock
 from unittest.mock import MagicMock
 from uuid import uuid4
 
+
 from coveo_functools import wait
 from coveo_systools.platforms import LINUX
 from coveo_testing.markers import UnitTest
@@ -17,6 +18,7 @@ from coveo_testing_extras.temporary_resource.docker_container import (
     DOCKER_USE_PUBLISHED_PORTS,
 )
 import pytest
+from _pytest.logging import LogCaptureFixture
 import requests
 
 from test_coveo_testing_extras.markers import DockerTest
@@ -70,7 +72,9 @@ def webserver_mock_image() -> Generator[None, None, None]:
 
 @pytest.fixture
 @pytest.mark.usefixtures(webserver_mock_image.__name__)
-def webserver_mock_container(caplog) -> Generator[TemporaryWebServerMockContainer, None, None]:
+def webserver_mock_container(
+    caplog: LogCaptureFixture,
+) -> Generator[TemporaryWebServerMockContainer, None, None]:
     caplog.set_level(logging.DEBUG)
     container = TemporaryWebServerMockContainer()
     with container.auto_delete():
