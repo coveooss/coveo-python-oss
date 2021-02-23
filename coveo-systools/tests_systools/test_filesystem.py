@@ -28,13 +28,13 @@ def test_find_application() -> None:
 @UnitTest
 def test_git_root() -> None:
     git_root = find_repo_root(__file__)
-    assert (git_root / '.github').exists()
-    assert (git_root / 'coveo-systools').is_dir()
+    assert (git_root / ".github").exists()
+    assert (git_root / "coveo-systools").is_dir()
 
 
 @UnitTest
 def test_find_paths() -> None:
-    query = Path('pyproject.toml'), find_repo_root(__file__)
+    query = Path("pyproject.toml"), find_repo_root(__file__)
 
     def _count(iterator: Iterator[Path]) -> int:
         return len(list(iterator))
