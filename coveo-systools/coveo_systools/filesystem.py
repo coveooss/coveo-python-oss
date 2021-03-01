@@ -47,6 +47,7 @@ def find_paths(
                       or relative:      Path('../python-folder')
                       or very specific: Path('python-folder/pyproject.toml')
         search_from: Search will start in this folder.
+                     When a file is specified, its folder is used.
                      When not specified, the current working directory is used.
         in root: Include results directly in search_from.
         in_parents: Include results in search_from's parent folders.
@@ -56,10 +57,11 @@ def find_paths(
         search_from = Path(".")
 
     if not search_from.is_dir():
-        raise FileNotFoundError(f"Cannot search from ({search_from}): not an existing directory.")
+        search_from = search_from.parent
 
-    if in_root and (search_from / path_to_find).exists():
-        yield (search_from / path_to_find).resolve()
+    root_path: Path = search_from / path_to_find
+    if in_root and root_path.exists():
+        yield root_path.resolve()
 
     if in_parents:
         current = search_from.parent
@@ -72,7 +74,7 @@ def find_paths(
                 break
 
     if in_children:
-        yield from search_from.rglob(str(path_to_find))
+        yield from filter(lambda path: path != root_path, search_from.rglob(str(path_to_find)))
 
 
 def find_application(
@@ -102,6 +104,8 @@ def _which_git() -> Optional[Path]:
 def _find_repo_root(path: Path) -> Path:
     """internal, lru_cache implemented to work vs multiple repos (requires absolute paths)"""
     assert path.is_absolute()
+    if path.is_file():
+        path = path.parent
 
     git = _which_git()
     git_error: Optional[DetailedCalledProcessError] = None
