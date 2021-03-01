@@ -62,7 +62,7 @@ def test_test_id_threads(request: SubRequest) -> None:
                 queue.put(sequence)
 
     threads = []
-    queue = Queue()
+    queue: Queue = Queue()
     for _ in range(10):
         thread = threading.Thread(target=_thread, args=(queue,))
         thread.run()

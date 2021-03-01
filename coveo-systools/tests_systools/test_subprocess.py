@@ -15,7 +15,7 @@ from coveo_systools.subprocess import (
 
 
 def _forge_test_exception(
-    original_exception: CalledProcessError, **kwargs
+    original_exception: CalledProcessError, **kwargs: Any
 ) -> DetailedCalledProcessError:
     """forge a DetailedCalledProcessError exception using python's exception handlers."""
     try:

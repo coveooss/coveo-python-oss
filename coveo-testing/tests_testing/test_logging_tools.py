@@ -2,8 +2,7 @@
 
 from contextlib import contextmanager
 import logging
-from typing import Tuple, Iterable
-from typing_extensions import ContextManager
+from typing import Tuple, Iterable, Generator
 from uuid import uuid4
 
 import pytest
@@ -28,7 +27,7 @@ def _get_test_strings(amount: int) -> Tuple[str, ...]:
 
 
 @contextmanager
-def _to_raise_or_not_to_raise(*, raises: bool) -> ContextManager[None]:
+def _to_raise_or_not_to_raise(*, raises: bool) -> Generator[None, None, None]:
     """shorthand to cut on repetitions / simplify code."""
     __tracebackhide__ = True
     if raises:
