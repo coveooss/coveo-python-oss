@@ -129,8 +129,10 @@ Essentially, the behavior we're looking for:
 
 # pydev (development environment)
 
-A repo-wide `pyproject.toml` is available at the root, which refers to the projects by path. 
-This is a development bootstrap for development convenience, so that one can work in any of the projects of the repository without having to configure multiple environments in the IDE.
+Projects marked as pydev behave as "one ring to rule them all"; its pyproject.toml file links most/all the 
+python projects in a repository for developer convenience, so that one can work in any of the projects of the 
+repository without having to configure multiple environments in the IDE). 
+
 
 ## How to enable pydev
 

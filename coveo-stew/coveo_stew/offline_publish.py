@@ -132,6 +132,9 @@ class _OfflinePublish:
 
     def _store_dependencies_in_wheelhouse(self) -> None:
         """ Store the dependency wheels in the wheelhouse. """
+        # temporary mitigation of circular import
+        from coveo_stew.discovery import find_pyproject
+
         # prepare the pip wheel call
         to_download: Set[Package] = set()
         index_urls: Set[str] = set()
@@ -141,7 +144,7 @@ class _OfflinePublish:
                 continue  # could be a dev dependency, or something the dev installed
             if requirement in self._local_projects:
                 # we can build this one from disk
-                local_dependency = self.project.find_pyproject(requirement)
+                local_dependency = find_pyproject(requirement)
                 self._store_setup_dependencies_in_wheelhouse(local_dependency)
                 local_dependency.build(self.wheelhouse)
             else:

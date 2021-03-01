@@ -6,13 +6,14 @@ from typing import Set, Iterable, List, Union, Generator
 
 import click
 from coveo_functools.finalizer import finalizer
+from coveo_stew.discovery import find_pyproject, discover_pyprojects
 from coveo_systools.filesystem import find_repo_root
 from coveo_styles.styles import echo, ExitWithFailure, install_pretty_exception_hook
 
 from coveo_stew.ci.runner import ContinuousIntegrationRunner, RunnerStatus
 from coveo_stew.exceptions import CheckFailed, RequirementsOutdated, PythonProjectNotFound
 from coveo_stew.offline_publish import offline_publish
-from coveo_stew.pydev import PyDev, NotPyDevProject
+from coveo_stew.pydev import is_pydev_project, pull_and_write_dev_requirements
 from coveo_stew.stew import PythonProject, PythonEnvironment
 
 
@@ -38,9 +39,9 @@ def _pull_dev_requirements(
 ) -> Generator[Path, None, None]:
     """Writes the dev-dependencies of pydev projects' local dependencies into pydev's pyproject.toml file."""
     dry_run_text = "(dry run) " if dry_run else ""
-    for pydev_project in PyDev.find_pyprojects(verbose=verbose):
+    for pydev_project in discover_pyprojects(predicate=is_pydev_project, verbose=verbose):
         echo.step(f"Analyzing dev requirements for {pydev_project}")
-        if pydev_project.pull_dev_requirements(dry_run=dry_run):
+        if pull_and_write_dev_requirements(pydev_project, dry_run=dry_run):
             echo.outcome(
                 f"{dry_run_text}Updated {pydev_project.package.name} with new dev requirements."
             )
@@ -67,7 +68,7 @@ def check_outdated(verbose: bool = False) -> None:
     echo.step("Analyzing all pyproject.toml files and artifacts:")
     outdated: Set[Path] = set()
     try:
-        for project in PythonProject.find_pyprojects(verbose=verbose):
+        for project in discover_pyprojects(verbose=verbose):
             echo.noise(project, item=True)
             if not project.lock_path.exists() or project.lock_is_outdated:
                 outdated.add(project.lock_path)
@@ -100,7 +101,7 @@ def fix_outdated(verbose: bool = False) -> None:
     updated: Set[Path] = set()
     with finalizer(_echo_updated, updated):
         try:
-            for project in PythonProject.find_pyprojects(verbose=verbose):
+            for project in discover_pyprojects(verbose=verbose):
                 echo.noise(project, item=True)
                 if project.lock_if_needed():
                     updated.add(project.lock_path)
@@ -121,7 +122,7 @@ def bump(verbose: bool = False) -> None:
     updated: Set[Path] = set()
     with finalizer(_echo_updated, updated):
         try:
-            for project in PythonProject.find_pyprojects(verbose=verbose):
+            for project in discover_pyprojects(verbose=verbose):
                 echo.step(f"Bumping {project.lock_path}")
                 if project.bump():
                     updated.add(project.toml_path)
@@ -152,7 +153,7 @@ def build(
         IF specified:               "directory/*.whl"
     """
     try:
-        project = PythonProject.find_pyproject(project_name, verbose=verbose)
+        project = find_pyproject(project_name, verbose=verbose)
     except PythonProjectNotFound as exception:
         raise ExitWithFailure from exception
 
@@ -177,9 +178,8 @@ def build(
 
 @stew.command()
 @click.argument("project_name", default=None, required=False)
-@click.option("--install/--no-install", default=True)
 @click.option("--verbose", is_flag=True, default=False)
-def fresh_eggs(project_name: str = None, install: bool = True, verbose: bool = False) -> None:
+def fresh_eggs(project_name: str = None, verbose: bool = False) -> None:
     """
     Removes the egg-info from project folders.
 
@@ -193,23 +193,17 @@ def fresh_eggs(project_name: str = None, install: bool = True, verbose: bool = F
     won't be updated between runs. This is when this tool comes in handy.
     """
     echo.step("Removing *.egg-info folders.")
+    deleted = False
     try:
-        for project in PythonProject.find_pyprojects(query=project_name, verbose=verbose):
+        for project in discover_pyprojects(query=project_name, verbose=verbose):
             if project.remove_egg_info():
                 echo.outcome("Deleted: ", project.egg_path, item=True)
+                deleted = True
     except PythonProjectNotFound as exception:
         raise ExitWithFailure from exception
 
-    if install:
-        try:
-            pydev = PyDev(Path("."))
-        except NotPyDevProject:
-            echo.suggest(
-                "The environment was not refreshed. You may want to call 'poetry install'."
-            )
-        else:
-            echo.step(f"Refreshing {pydev} environment...")
-            pydev.install()
+    if deleted:
+        echo.suggest("Environments were not refreshed. You may want to call 'poetry install'.")
 
     echo.success()
 
@@ -264,9 +258,7 @@ def mypy(
     """Launches mypy over the repo.
     extra-mypy-options: values must look like --switch or --config=value
     """
-    projects = PythonProject.find_pyprojects(
-        query=project_name, exact_match=exact_match, verbose=verbose
-    )
+    projects = discover_pyprojects(query=project_name, exact_match=exact_match, verbose=verbose)
 
     echo.step("Type checking in progress...")
     failed: List[ContinuousIntegrationRunner] = []
@@ -308,12 +300,12 @@ def mypy(
 def locate(project_name: str, verbose: bool = False) -> None:
     """Locate a python project (in the whole git repo) and print the directory containing the pyproject.toml file."""
     try:
-        echo.passthrough(PythonProject.find_pyproject(project_name, verbose=verbose).project_path)
+        echo.passthrough(find_pyproject(project_name, verbose=verbose).project_path)
     except PythonProjectNotFound as exception:
         # check for partial matches to guide the user
         partial_matches = (
             project.package.name
-            for project in PythonProject.find_pyprojects(query=project_name, verbose=verbose)
+            for project in discover_pyprojects(query=project_name, verbose=verbose)
         )
         try:
             raise ExitWithFailure(
@@ -335,7 +327,7 @@ def refresh(project_name: str = None, exact_match: bool = False, verbose: bool =
     echo.step("Refreshing python project environments...")
     pydev_projects = []
     try:
-        for project in PythonProject.find_pyprojects(
+        for project in discover_pyprojects(
             query=project_name, exact_match=exact_match, verbose=verbose
         ):
             if project.options.pydev:
@@ -366,7 +358,7 @@ def ci(
 ) -> None:
     failures = []
     try:
-        for project in PythonProject.find_pyprojects(
+        for project in discover_pyprojects(
             query=project_name, exact_match=exact_match, verbose=verbose
         ):
             echo.step(project.package.name, pad_after=False)

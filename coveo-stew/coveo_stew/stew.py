@@ -6,7 +6,8 @@ import re
 import shutil
 from shutil import rmtree
 import sys
-from typing import Generator, Optional, Type, Any, List
+from typing import Generator, Optional, Any, List
+import warnings
 
 from coveo_functools.casing import flexfactory
 from coveo_itertools.lookups import dict_lookup
@@ -18,10 +19,10 @@ from poetry.factory import Factory
 from coveo_stew.ci.config import ContinuousIntegrationConfig
 from coveo_stew.ci.runner import RunnerStatus
 from coveo_stew.environment import PythonEnvironment, coveo_stew_environment, PythonTool
-from coveo_stew.exceptions import PythonProjectNotFound, PythonProjectException
+from coveo_stew.exceptions import PythonProjectException
 from coveo_stew.metadata.stew_api import StewPackage
 from coveo_stew.metadata.poetry_api import PoetryAPI
-from coveo_stew.metadata.pyproject_api import PythonProjectAPI, T_PythonProject
+from coveo_stew.metadata.pyproject_api import PythonProjectAPI
 from coveo_stew.metadata.python_api import PythonFile
 from coveo_stew.utils import load_toml_from_path
 
@@ -77,30 +78,25 @@ class PythonProject(PythonProjectAPI):
         return path.relative_to(self.project_path)
 
     @classmethod
-    def find_pyproject_paths(cls, path: Path) -> Generator[Path, None, None]:
-        """Subclasses may override this to change/filter discovery."""
-        yield from path.rglob(f"{PythonFile.PyProjectToml}")
-
-    @classmethod
     def find_pyproject(
-        cls: Type[T_PythonProject], project_name: str, path: Path = None, *, verbose: bool = False
-    ) -> T_PythonProject:
-        project = next(
-            cls.find_pyprojects(path, query=project_name, exact_match=True, verbose=verbose), None
+        cls, project_name: str, path: Path = None, *, verbose: bool = False
+    ) -> "PythonProject":
+        warnings.warn(
+            "This functionality moved to the `coveo_stew.discovery` module.", DeprecationWarning
         )
-        if not project:
-            raise PythonProjectNotFound(f"{project_name} cannot be found in {path}")
-        return project
+        from coveo_stew.discovery import find_pyproject
+
+        return find_pyproject(project_name, path, verbose=verbose)
 
     @classmethod
     def find_pyprojects(
-        cls: Type[T_PythonProject],
+        cls,
         path: Path = None,
         *,
         query: str = None,
         exact_match: bool = False,
         verbose: bool = False,
-    ) -> Generator[T_PythonProject, None, None]:
+    ) -> Generator["PythonProject", None, None]:
         """Factory; scan a path (recursive) and return a PythonProject instance for each pyproject.toml
 
         Parameters:
@@ -109,35 +105,12 @@ class PythonProject(PythonProjectAPI):
             exact_match: turns query into an exact match (except for - and _). Recommended use: CI scripts
             verbose: output more details to command line
         """
-        if not path:
-            path = find_repo_root(default=".")
+        warnings.warn(
+            "This functionality moved to the `coveo_stew.discovery` module.", DeprecationWarning
+        )
+        from coveo_stew.discovery import discover_pyprojects
 
-        if exact_match and not query:
-            raise PythonProjectNotFound("An exact match was requested but no query was provided.")
-
-        count_projects = 0
-        for poetry_file in cls.find_pyproject_paths(path):
-            project = cls(poetry_file, verbose=verbose)
-            if verbose:
-                echo.noise("PyProject found: ", project)
-
-            if (
-                not query
-                or (exact_match and project.package.name == query)
-                or (
-                    not exact_match
-                    and query.replace("-", "_").lower() in project.package.safe_name.lower()
-                )
-            ):
-                count_projects += 1
-                yield project
-
-        if count_projects == 0:
-            raise PythonProjectNotFound(
-                f"Cannot find any project that could match {query}"
-                if query
-                else "No python projects were found."
-            )
+        yield from discover_pyprojects(path, query=query, exact_match=exact_match, verbose=verbose)
 
     @property
     def lock_is_outdated(self) -> bool:
