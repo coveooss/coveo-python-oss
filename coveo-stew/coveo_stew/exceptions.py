@@ -9,6 +9,10 @@ class CannotLoadProject(PythonProjectException):
     ...
 
 
+class NotAPoetryProject(PythonProjectException):
+    ...
+
+
 class RequirementsOutdated(PythonProjectException):
     ...
 
