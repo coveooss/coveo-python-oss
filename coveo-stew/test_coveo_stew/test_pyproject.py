@@ -1,13 +1,17 @@
 from os import PathLike
 from pathlib import Path
-from coveo_stew.offline_publish import offline_publish
+from textwrap import dedent
 
 from coveo_systools.filesystem import pushd
 from coveo_testing.markers import UnitTest, Integration
 from coveo_testing.parametrize import parametrize
 from poetry.core.packages import Package
+import pytest
 
+from coveo_stew.exceptions import NotAPoetryProject
+from coveo_stew.offline_publish import offline_publish
 from coveo_stew.stew import PythonProject
+
 from test_coveo_stew.pyprojet_mock.fixtures import pyproject_mock
 
 _ = pyproject_mock  # mark the fixture as used
@@ -80,3 +84,22 @@ def test_pyproject_publish(pyproject_mock: PythonProject, tmpdir: PathLike) -> N
         "black",
     ):
         assert any(publish_location.rglob(f"{required_file}-*")), f"Cannot find {required_file}"
+
+
+@UnitTest
+def test_toml_not_a_poetry_project(tmp_path: Path) -> None:
+    assert tmp_path.exists()
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text(
+        dedent(
+            """\
+    [tool.flit]
+    foo = "bar"
+
+    [tool.stew.ci]
+    mypy = false
+    """
+        )
+    )
+    with pytest.raises(NotAPoetryProject):
+        _ = PythonProject(pyproject)

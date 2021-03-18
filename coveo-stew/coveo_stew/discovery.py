@@ -4,7 +4,7 @@ from typing import Generator, Callable
 from coveo_styles.styles import echo
 from coveo_systools.filesystem import find_repo_root, find_paths
 
-from coveo_stew.exceptions import PythonProjectNotFound
+from coveo_stew.exceptions import PythonProjectNotFound, NotAPoetryProject
 from coveo_stew.metadata.python_api import PythonFile
 from coveo_stew.stew import PythonProject
 
@@ -51,7 +51,11 @@ def discover_pyprojects(
 
     count_projects = 0
     for file in paths:
-        project = PythonProject(file, verbose=verbose)
+        try:
+            project = PythonProject(file, verbose=verbose)
+        except NotAPoetryProject:
+            continue
+
         if verbose:
             echo.noise("PyProject found: ", project)
 

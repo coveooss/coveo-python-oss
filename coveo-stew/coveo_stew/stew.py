@@ -19,7 +19,7 @@ from poetry.factory import Factory
 from coveo_stew.ci.config import ContinuousIntegrationConfig
 from coveo_stew.ci.runner import RunnerStatus
 from coveo_stew.environment import PythonEnvironment, coveo_stew_environment, PythonTool
-from coveo_stew.exceptions import PythonProjectException
+from coveo_stew.exceptions import PythonProjectException, NotAPoetryProject
 from coveo_stew.metadata.stew_api import StewPackage
 from coveo_stew.metadata.poetry_api import PoetryAPI
 from coveo_stew.metadata.pyproject_api import PythonProjectAPI
@@ -40,9 +40,13 @@ class PythonProject(PythonProjectAPI):
 
         toml_content = load_toml_from_path(self.toml_path)
 
-        self.package: PoetryAPI = flexfactory(
-            PoetryAPI, **dict_lookup(toml_content, "tool", "poetry"), _pyproject=self
-        )
+        try:
+            self.package: PoetryAPI = flexfactory(
+                PoetryAPI, **dict_lookup(toml_content, "tool", "poetry"), _pyproject=self
+            )
+        except KeyError as exception:
+            raise NotAPoetryProject from exception
+
         self.egg_path: Path = self.project_path / f"{self.package.safe_name}.egg-info"
 
         self.options: StewPackage = flexfactory(
