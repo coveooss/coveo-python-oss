@@ -75,11 +75,32 @@ pytest = false
 offline-build = false
 ```
 
-The value type of these items is designed to be extensible. For instance, the pytest runner allows you to configure the markers for the ci run:
+### runner options
+
+The value type of these items is designed to be extensible.
+
+#### pytest options
 
 ```
 [tool.stew.ci]
-pytest = { marker_expression = 'not docker_tests' }
+
+# configure the markers to test
+pytest = { marker-expression = 'not docker_tests' }
+
+# disable the doctests
+pytest = { doctest-modules = False }
+```
+
+#### mypy options
+
+```
+[tool.stew.ci]
+
+# disable stew's strict mypy config (i.e.: let mypy find its config)
+mypy = { set-config = False } 
+
+# use a specific config (path relative to `pyproject.toml`'s folder)
+mypy = { set-config = "mypy.ini" }
 ```
 
 

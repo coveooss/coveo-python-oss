@@ -1,10 +1,10 @@
 from pathlib import Path
 import pkg_resources
 import re
-from typing import Generator
+from typing import Generator, Union, Optional
 
+from coveo_stew.metadata.pyproject_api import PythonProjectAPI
 from coveo_styles.styles import echo
-from coveo_systools.filesystem import find_paths
 from coveo_systools.subprocess import check_output
 
 from coveo_stew.ci.runner import ContinuousIntegrationRunner, RunnerStatus
@@ -17,21 +17,19 @@ class MypyRunner(ContinuousIntegrationRunner):
     check_failed_exit_codes = [1]
     outputs_own_report = True
 
-    def _mypy_config_path(self) -> Path:
+    def __init__(self, *, set_config: Union[str, bool] = True, _pyproject: PythonProjectAPI) -> None:
+        super().__init__(_pyproject=_pyproject)
+        self.set_config = set_config
+
+    def _mypy_config_path(self) -> Optional[Path]:
         """Returns the path to the mypy config file."""
-        try:
-            return next(
-                find_paths(
-                    Path("mypy.ini"),
-                    self._pyproject.project_path,
-                    in_root=True,
-                    in_parents=True,
-                    in_children=True,
-                )
-            )
-        except StopIteration:
-            # none can be found; using our own opinionated version.
+        if not self.set_config:
+            return None
+
+        if self.set_config is True:
             return Path(pkg_resources.resource_filename("coveo_stew", "package_resources/mypy.ini"))
+
+        return self._pyproject.project_path / self.set_config
 
     def _find_typed_folders(self) -> Generator[Path, None, None]:
         """Yield the folders of this project that should be type-checked."""
@@ -57,17 +55,24 @@ class MypyRunner(ContinuousIntegrationRunner):
             environment if environment.mypy_executable.exists() else coveo_stew_environment
         )
 
-        command = mypy_environment.build_command(
+        args = [
             PythonTool.Mypy,
             # the --python-executable switch tells mypy in which environment the imports should be followed.
             "--python-executable",
             environment.python_executable,
-            "--config-file",
-            self._mypy_config_path(),
             "--cache-dir",
             self._pyproject.project_path / ".mypy_cache",
             "--show-error-codes",
             f"--junit-xml={self.report_path(environment)}",
+        ]
+
+        mypy_config = self._mypy_config_path()
+        if mypy_config:
+            args.append("--config-file")
+            args.append(mypy_config)
+
+        command = mypy_environment.build_command(
+            *args,
             *extra_args,  # any extra argument provided by the caller
             *typed_folders,  # what to lint
         )
