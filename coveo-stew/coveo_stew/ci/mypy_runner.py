@@ -17,7 +17,9 @@ class MypyRunner(ContinuousIntegrationRunner):
     check_failed_exit_codes = [1]
     outputs_own_report = True
 
-    def __init__(self, *, set_config: Union[str, bool] = True, _pyproject: PythonProjectAPI) -> None:
+    def __init__(
+        self, *, set_config: Union[str, bool] = True, _pyproject: PythonProjectAPI
+    ) -> None:
         super().__init__(_pyproject=_pyproject)
         self.set_config = set_config
 
@@ -29,6 +31,7 @@ class MypyRunner(ContinuousIntegrationRunner):
         if self.set_config is True:
             return Path(pkg_resources.resource_filename("coveo_stew", "package_resources/mypy.ini"))
 
+        assert isinstance(self.set_config, str)  # mypy
         return self._pyproject.project_path / self.set_config
 
     def _find_typed_folders(self) -> Generator[Path, None, None]:
@@ -56,7 +59,6 @@ class MypyRunner(ContinuousIntegrationRunner):
         )
 
         args = [
-            PythonTool.Mypy,
             # the --python-executable switch tells mypy in which environment the imports should be followed.
             "--python-executable",
             environment.python_executable,
@@ -72,6 +74,7 @@ class MypyRunner(ContinuousIntegrationRunner):
             args.append(mypy_config)
 
         command = mypy_environment.build_command(
+            PythonTool.Mypy,
             *args,
             *extra_args,  # any extra argument provided by the caller
             *typed_folders,  # what to lint
