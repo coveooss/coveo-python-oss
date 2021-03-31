@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Generator, Callable
 
 from coveo_styles.styles import echo
-from coveo_systools.filesystem import find_repo_root, find_paths, pushd
+from coveo_systools.filesystem import find_repo_root, find_paths
 
 from coveo_stew.exceptions import PythonProjectNotFound, NotAPoetryProject
 from coveo_stew.metadata.python_api import PythonFile
@@ -42,14 +42,6 @@ def discover_pyprojects(
     """
     if not path:
         path = find_repo_root(default=".")
-
-    try:
-        # is this a git repo?
-        find_repo_root(path)
-    except FileNotFoundError:
-        is_git_repo = False
-    else:
-        is_git_repo = True
 
     if exact_match and not query:
         raise PythonProjectNotFound("An exact match was requested but no query was provided.")
