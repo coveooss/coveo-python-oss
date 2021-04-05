@@ -1,4 +1,3 @@
-
 from coveo_systools.subprocess import check_output, DetailedCalledProcessError
 
 from coveo_stew.ci.runner import ContinuousIntegrationRunner, RunnerStatus
