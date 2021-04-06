@@ -1,14 +1,15 @@
 from abc import abstractmethod
 from enum import Enum, auto
 from pathlib import Path
-from typing import List
+from typing import List, Optional, Callable
+
+from coveo_systools.subprocess import DetailedCalledProcessError
+from coveo_styles.styles import echo
+from junit_xml import TestCase
 
 from coveo_stew.ci.reporting import generate_report
 from coveo_stew.environment import PythonEnvironment
 from coveo_stew.metadata.pyproject_api import PythonProjectAPI
-from coveo_styles.styles import echo
-from coveo_systools.subprocess import DetailedCalledProcessError
-from junit_xml import TestCase
 
 
 class RunnerStatus(Enum):
@@ -25,6 +26,9 @@ class ContinuousIntegrationRunner:
     status: RunnerStatus = RunnerStatus.NotRan
     check_failed_exit_codes: List[int] = []
     outputs_own_report: bool = False  # set to True if the runner produces its own report.
+
+    # implementations may provide an auto fix routine.
+    _auto_fix_routine: Optional[Callable[[PythonEnvironment], None]] = None
 
     def __init__(self, *, _pyproject: PythonProjectAPI) -> None:
         """Implementations may add additional keyword args."""
@@ -46,19 +50,16 @@ class ContinuousIntegrationRunner:
             self._last_output.extend(exception.decode_stderr().split("\n"))
             self.status = RunnerStatus.CheckFailed
 
-        if auto_fix and (self.status == RunnerStatus.CheckFailed):
-            try:
-                echo.noise("Errors founds; launching auto-fix routine.")
-                self.auto_fix(environment)
-            except NotImplementedError:
-                pass
+        if all((auto_fix, self.supports_auto_fix, self.status == RunnerStatus.CheckFailed)):
+            echo.noise("Errors founds; launching auto-fix routine.")
+            self._auto_fix_routine(environment)
+
+            # it should pass now!
+            self.launch(environment, *extra_args)
+            if self.status == RunnerStatus.CheckFailed:
+                echo.error("The auto fix routine was launched but the check is still failing.")
             else:
-                # it should pass now!
-                self.launch(environment, *extra_args)
-                if self.status == RunnerStatus.CheckFailed:
-                    echo.error("The auto fix routine was launched but the check is still failing.")
-                else:
-                    echo.success("Auto fix was a success. Good job soldier!")
+                echo.success("Auto fix was a success. Good job soldier!")
 
         if not self.outputs_own_report:
             self._output_generic_report(environment)
@@ -70,13 +71,14 @@ class ContinuousIntegrationRunner:
     def name(self) -> str:
         """The friendly name of this runner."""
 
+    @property
+    def supports_auto_fix(self) -> bool:
+        """Does this runner support autofix?"""
+        return self._auto_fix_routine is not None
+
     @abstractmethod
     def _launch(self, environment: PythonEnvironment, *extra_args: str) -> RunnerStatus:
         """Launch the continuous integration check using the given environment and store the output."""
-
-    def auto_fix(self, environment: PythonEnvironment) -> None:
-        """Launch the auto_fix routine if the runner implements it."""
-        raise NotImplementedError
 
     def echo_last_failures(self) -> None:
         """Echo the failures of the last run to the user. If there was no failure, do nothing."""

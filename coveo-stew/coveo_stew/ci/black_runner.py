@@ -1,5 +1,3 @@
-from typing import Dict, Any
-
 from coveo_systools.subprocess import check_output, DetailedCalledProcessError
 
 from coveo_stew.ci.runner import ContinuousIntegrationRunner, RunnerStatus
@@ -8,11 +6,16 @@ from coveo_stew.environment import (
     PythonTool,
     coveo_stew_environment,
 )
+from coveo_stew.metadata.pyproject_api import PythonProjectAPI
 
 
 class BlackRunner(ContinuousIntegrationRunner):
     name: str = "black"
     check_failed_exit_codes = [1]
+
+    def __init__(self, *, _pyproject: PythonProjectAPI) -> None:
+        super().__init__(_pyproject=_pyproject)
+        self._auto_fix_routine = self.reformat_files
 
     def _launch(self, environment: PythonEnvironment, *extra_args: str) -> RunnerStatus:
         try:
@@ -22,7 +25,7 @@ class BlackRunner(ContinuousIntegrationRunner):
             self._launch_internal(environment, "--check", *extra_args)
         return RunnerStatus.Success
 
-    def auto_fix(self, environment: PythonEnvironment) -> None:
+    def reformat_files(self, environment: PythonEnvironment) -> None:
         self._launch_internal(environment, "--quiet")
 
     def _launch_internal(self, environment: PythonEnvironment, *extra_args: str) -> None:

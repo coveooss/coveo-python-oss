@@ -1,14 +1,15 @@
 from typing import TypeVar, Any, Dict, Optional, Iterator, Union, Type
 
 from coveo_functools.casing import flexfactory
-from coveo_stew.ci.black_runner import BlackRunner
 
+from coveo_stew.ci.black_runner import BlackRunner
 from coveo_stew.ci.mypy_runner import MypyRunner
 from coveo_stew.ci.poetry_runners import PoetryCheckRunner
 from coveo_stew.ci.stew_runners import CheckOutdatedRunner, OfflineInstallRunner
 from coveo_stew.ci.pytest_runner import PytestRunner
 from coveo_stew.ci.runner import ContinuousIntegrationRunner
 from coveo_stew.metadata.pyproject_api import PythonProjectAPI
+
 
 T = TypeVar("T")
 
@@ -53,6 +54,9 @@ class ContinuousIntegrationConfig:
 
     @property
     def runners(self) -> Iterator[ContinuousIntegrationRunner]:
-        return filter(
+        runners = filter(
             lambda runner: isinstance(runner, ContinuousIntegrationRunner), self.__dict__.values()
         )
+        # if e.g. mypy finds errors and then black fixes the file, the line numbers from mypy may no longer
+        # be valid.
+        yield from sorted(runners, key=lambda runner: 0 if runner.supports_auto_fix else 1)
