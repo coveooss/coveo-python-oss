@@ -2,7 +2,7 @@
 
 from pathlib import Path
 import re
-from typing import Set, Iterable, List, Union, Generator
+from typing import Set, Iterable, List, Union, Generator, Final
 
 import click
 from coveo_functools.finalizer import finalizer
@@ -10,7 +10,6 @@ from coveo_stew.discovery import find_pyproject, discover_pyprojects
 from coveo_systools.filesystem import find_repo_root
 from coveo_styles.styles import echo, ExitWithFailure, install_pretty_exception_hook
 
-from coveo_stew.ci.runner import ContinuousIntegrationRunner, RunnerStatus
 from coveo_stew.exceptions import CheckFailed, RequirementsOutdated, PythonProjectNotFound
 from coveo_stew.offline_publish import offline_publish
 from coveo_stew.pydev import is_pydev_project, pull_and_write_dev_requirements
@@ -245,56 +244,6 @@ def _beautify_mypy_output(
 
 
 @stew.command()
-@click.argument("project_name", default=None, required=False)
-@click.option("--extra-mypy-option", multiple=True)
-@click.option("--exact-match/--no-exact-match", default=False)
-@click.option("--verbose", is_flag=True, default=False)
-def mypy(
-    project_name: str = None,
-    exact_match: bool = False,
-    verbose: bool = False,
-    extra_mypy_option: List[str] = None,
-) -> None:
-    """Launches mypy over the repo.
-    extra-mypy-options: values must look like --switch or --config=value
-    """
-    projects = discover_pyprojects(query=project_name, exact_match=exact_match, verbose=verbose)
-
-    echo.step("Type checking in progress...")
-    failed: List[ContinuousIntegrationRunner] = []
-    exceptions: List[Exception] = []
-    extra_mypy_option = extra_mypy_option or []
-    try:
-        for project in projects:
-            if project.ci.mypy:
-                for environment in project.virtual_environments(create_default_if_missing=True):
-                    try:
-                        if (
-                            project.ci.mypy.launch(environment, *extra_mypy_option)
-                            is RunnerStatus.Success
-                        ):
-                            echo.success("mypy passed: ", project)
-                        else:
-                            failed.append(project.ci.mypy)
-                    except Exception as ex:
-                        failed.append(project.ci.mypy)
-                        exceptions.append(ex)
-    except PythonProjectNotFound as no_project_found_exception:
-        raise ExitWithFailure from no_project_found_exception
-
-    if failed or exceptions:
-        for runner in failed:
-            runner.echo_last_failures()
-        for exception in exceptions:
-            echo.error(exception, pad_after=True, pad_before=True)
-        raise ExitWithFailure(failures=failed) from CheckFailed(
-            f"{len(failed)} project(s) failed type checking."
-        )
-
-    echo.success("All projects passed type checking.")
-
-
-@stew.command()
 @click.argument("project_name")
 @click.option("--verbose", is_flag=True, default=False)
 def locate(project_name: str, verbose: bool = False) -> None:
@@ -352,9 +301,14 @@ def refresh(project_name: str = None, exact_match: bool = False, verbose: bool =
 @click.argument("project_name", default=None, required=False)
 @click.option("--exact-match/--no-exact-match", default=False)
 @click.option("--fix/--no-fix", default=False)
+@click.option("--check", multiple=True, default=None)
 @click.option("--verbose", is_flag=True, default=False)
 def ci(
-    project_name: str = None, exact_match: bool = False, fix: bool = False, verbose: bool = False
+    project_name: str = None,
+    exact_match: bool = False,
+    fix: bool = False,
+    check: List[str] = None,
+    verbose: bool = False,
 ) -> None:
     failures = []
     try:
@@ -362,7 +316,7 @@ def ci(
             query=project_name, exact_match=exact_match, verbose=verbose
         ):
             echo.step(project.package.name, pad_after=False)
-            if not project.launch_continuous_integration(auto_fix=fix):
+            if not project.launch_continuous_integration(auto_fix=fix, checks=check):
                 failures.append(project)
     except PythonProjectNotFound as exception:
         raise ExitWithFailure from exception

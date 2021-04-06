@@ -6,7 +6,7 @@ import re
 import shutil
 from shutil import rmtree
 import sys
-from typing import Generator, Optional, Any, List
+from typing import Generator, Optional, Any, List, Tuple
 import warnings
 
 from coveo_functools.casing import flexfactory
@@ -17,7 +17,7 @@ from coveo_systools.subprocess import check_run, DetailedCalledProcessError
 from poetry.factory import Factory
 
 from coveo_stew.ci.config import ContinuousIntegrationConfig
-from coveo_stew.ci.runner import RunnerStatus
+from coveo_stew.ci.runner import ContinuousIntegrationRunner, RunnerStatus
 from coveo_stew.environment import PythonEnvironment, coveo_stew_environment, PythonTool
 from coveo_stew.exceptions import PythonProjectException, NotAPoetryProject
 from coveo_stew.metadata.stew_api import StewPackage
@@ -200,13 +200,19 @@ class PythonProject(PythonProjectAPI):
 
         return target
 
-    def launch_continuous_integration(self, auto_fix: bool = False) -> bool:
+    def launch_continuous_integration(
+        self, auto_fix: bool = False, checks: List[str] = None
+    ) -> bool:
         """Launch all continuous integration runners on the project."""
         if self.ci.disabled:
             return True
 
+        checks = [check.lower() for check in checks or []]
         exceptions: List[DetailedCalledProcessError] = []
         for runner in self.ci.runners:
+            if checks and runner.name.lower() not in checks:
+                continue
+
             for environment in self.virtual_environments(create_default_if_missing=True):
                 try:
                     echo.normal(
@@ -233,7 +239,10 @@ class PythonProject(PythonProjectAPI):
                 echo.warning(f"{len(exceptions)} exceptions found; raising first one.")
             raise exceptions[0]
 
-        return all(runner.status is RunnerStatus.Success for runner in self.ci.runners)
+        allowed_statuses: Tuple[RunnerStatus, ...] = (
+            (RunnerStatus.Success, RunnerStatus.NotRan) if checks else (RunnerStatus.Success,)
+        )
+        return all(runner.status in allowed_statuses for runner in self.ci.runners)
 
     def install(self, remove_untracked: bool = True, quiet: bool = False) -> None:
         """
