@@ -1,25 +1,24 @@
 """Interact with python projects programmatically."""
-from contextlib import contextmanager
 
+from contextlib import contextmanager
 import os
 from pathlib import Path
 import re
 import shutil
 from shutil import rmtree
 import sys
-from typing import Generator, Optional, Any, List, Tuple, ContextManager
+from typing import Generator, Optional, Any, List, Tuple
 import warnings
 
 from coveo_functools.casing import flexfactory
 from coveo_itertools.lookups import dict_lookup
-from coveo_stew.ci.last_failed import LastFailed
 from coveo_styles.styles import echo
 from coveo_systools.filesystem import find_repo_root, CannotFindRepoRoot
 from coveo_systools.subprocess import check_run, DetailedCalledProcessError
 from poetry.factory import Factory
 
 from coveo_stew.ci.config import ContinuousIntegrationConfig
-from coveo_stew.ci.runner import ContinuousIntegrationRunner, RunnerStatus
+from coveo_stew.ci.runner import RunnerStatus
 from coveo_stew.environment import PythonEnvironment, coveo_stew_environment, PythonTool
 from coveo_stew.exceptions import PythonProjectException, NotAPoetryProject
 from coveo_stew.metadata.stew_api import StewPackage
