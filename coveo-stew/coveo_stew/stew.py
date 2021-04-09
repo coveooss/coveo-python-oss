@@ -1,4 +1,5 @@
 """Interact with python projects programmatically."""
+from contextlib import contextmanager
 
 import os
 from pathlib import Path
@@ -6,11 +7,12 @@ import re
 import shutil
 from shutil import rmtree
 import sys
-from typing import Generator, Optional, Any, List, Tuple
+from typing import Generator, Optional, Any, List, Tuple, ContextManager
 import warnings
 
 from coveo_functools.casing import flexfactory
 from coveo_itertools.lookups import dict_lookup
+from coveo_stew.ci.last_failed import LastFailed
 from coveo_styles.styles import echo
 from coveo_systools.filesystem import find_repo_root, CannotFindRepoRoot
 from coveo_systools.subprocess import check_run, DetailedCalledProcessError
@@ -76,6 +78,7 @@ class PythonProject(PythonProjectAPI):
             repo_root = None
 
         self.repo_root: Optional[Path] = repo_root
+        self._cached_activated_environment: Optional[PythonEnvironment] = None
 
     def relative_path(self, path: Path) -> Path:
         """returns the relative path of a path vs the project folder."""
@@ -122,6 +125,23 @@ class PythonProject(PythonProjectAPI):
         if not self.lock_path.exists():
             return False
         return not self.poetry.locker.is_fresh()
+
+    @property
+    def activated_environment(self) -> Optional[PythonEnvironment]:
+        """The environment activated for a project.
+
+        Note: cached for performance, could theoretically become out-of-sync with reality, either due to a bug,
+        or because someone called `poetry env use` while we were working :shrug:
+
+        To prevent out of sync:
+            - Use the context manager `self._activate_poetry_environment`
+            - or use the `environment` argument of `self.poetry_run`
+        """
+        if self._cached_activated_environment is None:
+            activated = self.poetry_run("env", "info", "--path", capture_output=True, breakout_of_venv=True).strip()
+            if activated:
+                self._cached_activated_environment = PythonEnvironment(activated)
+        return self._cached_activated_environment
 
     def virtual_environments(
         self, *, create_default_if_missing: bool = False
@@ -244,7 +264,7 @@ class PythonProject(PythonProjectAPI):
         )
         return all(runner.status in allowed_statuses for runner in self.ci.runners)
 
-    def install(self, remove_untracked: bool = True, quiet: bool = False) -> None:
+    def install(self, *, environment: PythonEnvironment = None, remove_untracked: bool = True, quiet: bool = False) -> None:
         """
         Performs a 'poetry install --remove-untracked' on the project. If an environment is provided, target it.
         """
@@ -253,7 +273,8 @@ class PythonProject(PythonProjectAPI):
             command.append("--remove-untracked")
         if quiet:
             command.append("--quiet")
-        self.poetry_run(*command)
+
+        self.poetry_run(*command, environment=environment)
 
     def remove_egg_info(self) -> bool:
         """Removes the egg-info (editable project hook) from the folder. Returns True if we removed it."""
@@ -277,7 +298,7 @@ class PythonProject(PythonProjectAPI):
         return False
 
     def poetry_run(
-        self, *commands: Any, capture_output: bool = False, breakout_of_venv: bool = True
+        self, *commands: Any, capture_output: bool = False, breakout_of_venv: bool = True, environment: PythonEnvironment = None
     ) -> Optional[str]:
         """internal run-a-poetry-command."""
         # we use the poetry executable from our dependencies, not from the project's environment!
@@ -291,13 +312,33 @@ class PythonProject(PythonProjectAPI):
         if breakout_of_venv:
             environment_variables.pop("VIRTUAL_ENV", None)
 
-        return check_run(
-            *poetry_env.build_command(PythonTool.Poetry, *commands, "-vv" if self.verbose else ""),
-            working_directory=self.project_path,
-            capture_output=capture_output,
-            verbose=self.verbose,
-            env=environment_variables,
-        )
+        with self._activate_poetry_environment(environment):
+            return check_run(
+                *poetry_env.build_command(PythonTool.Poetry, *commands, "-vv" if self.verbose else ""),
+                working_directory=self.project_path,
+                capture_output=capture_output,
+                verbose=self.verbose,
+                env=environment_variables,
+            )
+
+    @contextmanager
+    def _activate_poetry_environment(self, environment: PythonEnvironment = None) -> Generator[None, None, None]:
+        """ Context manager that can be used to run a block of code in a particular environment. """
+        if not environment:
+            # `self.activated_environment` uses us without an environment specified; prevents infinite recursion
+            yield; return
+
+        current_environment = self.activated_environment
+        if current_environment == environment:
+            yield; return
+
+        try:
+            self.poetry_run('env', 'use', environment.python_executable)
+            yield
+        finally:
+            if current_environment:
+                self.poetry_run('env', 'use', current_environment.python_executable)
+
 
     def __str__(self) -> str:
         return f"{self.package.name} [{self.toml_path}]"

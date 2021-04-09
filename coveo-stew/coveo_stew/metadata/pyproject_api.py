@@ -30,7 +30,7 @@ class PythonProjectAPI(Protocol):
     ) -> List["PythonEnvironment"]:
         ...
 
-    def install(self, *, remove_untracked: bool = True, quiet: bool = False) -> None:
+    def install(self, *, environment: "PythonEnvironment" = None, remove_untracked: bool = True, quiet: bool = False) -> None:
         ...
 
     def build(self, target_path: Path) -> Path:

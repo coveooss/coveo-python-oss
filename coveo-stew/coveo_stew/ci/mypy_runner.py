@@ -51,7 +51,7 @@ class MypyRunner(ContinuousIntegrationRunner):
             return RunnerStatus.Error
 
         # mypy needs the dependencies installed in an environment in order to inspect them.
-        self._pyproject.install(quiet=True)
+        self._pyproject.install(quiet=True, environment=environment)
 
         # projects may opt to use coveo-stew's mypy version by not including mypy in their dependencies.
         mypy_environment = (
