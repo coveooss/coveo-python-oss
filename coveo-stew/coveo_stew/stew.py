@@ -270,7 +270,7 @@ class PythonProject(PythonProjectAPI):
         command = ["install"]
         if remove_untracked:
             command.append("--remove-untracked")
-        if quiet:
+        if quiet and not self.verbose:
             command.append("--quiet")
 
         self.poetry_run(*command, environment=environment)
