@@ -22,7 +22,8 @@ class PytestRunner(ContinuousIntegrationRunner):
 
     def _launch(self, environment: PythonEnvironment, *extra_args: str) -> RunnerStatus:
         if not environment.pytest_executable.exists():
-            self._pyproject.install(environment=environment)
+            self._last_output.append("pytest executable could not be found")
+            return RunnerStatus.Error
 
         command = environment.build_command(
             PythonTool.Pytest,
