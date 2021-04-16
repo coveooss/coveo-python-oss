@@ -11,6 +11,7 @@ from coveo_systools.filesystem import safe_text_write
 import tomlkit
 from tomlkit.items import item as toml_item, Item as TomlItem
 
+from coveo_stew.configuration import DRY_RUN
 from coveo_stew.exceptions import PythonProjectException
 from coveo_stew.stew import PythonProject
 
@@ -24,7 +25,7 @@ def is_pydev_project(project: PythonProject) -> bool:
     return project.options.pydev
 
 
-def pull_and_write_dev_requirements(project: PythonProject, *, dry_run: bool = False) -> bool:
+def pull_and_write_dev_requirements(project: PythonProject) -> bool:
     """Pulls the dev requirement from dependencies into pydev's dev requirements."""
     if not project.options.pydev:
         raise NotPyDevProject(f"{project.project_path}: Not a PyDev project.")
@@ -48,9 +49,9 @@ def pull_and_write_dev_requirements(project: PythonProject, *, dry_run: bool = F
         project.toml_path,
         "\n".join(_format_toml(tomlkit.dumps(toml))),
         only_if_changed=True,
-        dry_run=dry_run,
+        dry_run=bool(DRY_RUN),
     ):
-        if not dry_run and project.lock_if_needed():
+        if not DRY_RUN and project.lock_if_needed():
             project.install()
         return True
     return False
