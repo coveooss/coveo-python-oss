@@ -12,7 +12,6 @@ if TYPE_CHECKING:
 
 
 class PythonProjectAPI(Protocol):
-    verbose: bool
     project_path: Path
     toml_path: Path
     package: "PoetryAPI"
@@ -22,7 +21,7 @@ class PythonProjectAPI(Protocol):
     poetry: Poetry
     repo_root: Optional[Path]
 
-    def __init__(self, project_path: Path, *, verbose: bool = False) -> None:
+    def __init__(self, project_path: Path) -> None:
         ...
 
     def virtual_environments(

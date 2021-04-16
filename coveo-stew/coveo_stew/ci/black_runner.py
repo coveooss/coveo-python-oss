@@ -1,6 +1,7 @@
 from coveo_systools.subprocess import check_output, DetailedCalledProcessError
 
 from coveo_stew.ci.runner import ContinuousIntegrationRunner, RunnerStatus
+from coveo_stew.configuration import VERBOSE
 from coveo_stew.environment import (
     PythonEnvironment,
     PythonTool,
@@ -35,7 +36,5 @@ class BlackRunner(ContinuousIntegrationRunner):
         )
         command = black_environment.build_command(PythonTool.Black, ".", *extra_args)
         check_output(
-            *command,
-            working_directory=self._pyproject.project_path,
-            verbose=self._pyproject.verbose
+            *command, working_directory=self._pyproject.project_path, verbose=bool(VERBOSE)
         )

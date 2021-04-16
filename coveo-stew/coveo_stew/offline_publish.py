@@ -7,6 +7,7 @@ from coveo_styles.styles import echo
 from coveo_systools.subprocess import check_call, check_output
 from poetry.core.packages import Package
 
+from coveo_stew.configuration import VERBOSE
 from coveo_stew.environment import PythonEnvironment, PythonTool
 from coveo_stew.exceptions import PythonProjectException
 from coveo_stew.metadata.pyproject_api import PythonProjectAPI
@@ -55,7 +56,7 @@ class _OfflinePublish:
         self.environment = environment
         self.wheelhouse = wheelhouse
         self._check_call = functools.partial(
-            check_call if self.verbose else check_output, verbose=self.verbose
+            check_call if VERBOSE else check_output, verbose=bool(VERBOSE)
         )
 
         self._valid_packages: Optional[Set[str]] = None
@@ -68,10 +69,6 @@ class _OfflinePublish:
             package.name: package
             for package in self.project.poetry.locker.locked_repository().packages
         }
-
-    @property
-    def verbose(self) -> bool:
-        return self.project.verbose
 
     @property
     def valid_packages(self) -> Set[str]:
@@ -94,7 +91,7 @@ class _OfflinePublish:
                         *pip_freeze_environment.build_command(
                             PythonTool.Pip, "list", "--format", "json", *_DEFAULT_PIP_OPTIONS
                         ),
-                        verbose=self.verbose,
+                        verbose=bool(VERBOSE),
                     )
                 ),
             )

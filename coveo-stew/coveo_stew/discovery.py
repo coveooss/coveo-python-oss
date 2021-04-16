@@ -4,6 +4,7 @@ from typing import Generator, Callable
 from coveo_styles.styles import echo
 from coveo_systools.filesystem import find_repo_root, find_paths
 
+from coveo_stew.configuration import VERBOSE
 from coveo_stew.exceptions import PythonProjectNotFound, NotAPoetryProject
 from coveo_stew.metadata.python_api import PythonFile
 from coveo_stew.stew import PythonProject
@@ -12,11 +13,9 @@ from coveo_stew.stew import PythonProject
 Predicate = Callable[[PythonProject], object]
 
 
-def find_pyproject(project_name: str, path: Path = None, *, verbose: bool = False) -> PythonProject:
+def find_pyproject(project_name: str, path: Path = None) -> PythonProject:
     """Find a python project in path using the exact project name"""
-    project = next(
-        discover_pyprojects(path, query=project_name, exact_match=True, verbose=verbose), None
-    )
+    project = next(discover_pyprojects(path, query=project_name, exact_match=True), None)
     if not project:
         raise PythonProjectNotFound(f"{project_name} cannot be found in {path}")
     return project
@@ -27,7 +26,6 @@ def discover_pyprojects(
     *,
     query: str = None,
     exact_match: bool = False,
-    verbose: bool = False,
     predicate: Predicate = None,
 ) -> Generator[PythonProject, None, None]:
     """
@@ -52,11 +50,11 @@ def discover_pyprojects(
     count_projects = 0
     for file in paths:
         try:
-            project = PythonProject(file, verbose=verbose)
+            project = PythonProject(file)
         except NotAPoetryProject:
             continue
 
-        if verbose:
+        if VERBOSE:
             echo.noise("PyProject found: ", project)
 
         if predicate(project) and (

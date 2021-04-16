@@ -2,6 +2,7 @@
 
 from contextlib import contextmanager
 import os
+from coveo_stew.configuration import CI_MODE, VERBOSE
 from pathlib import Path
 import re
 import shutil
@@ -21,18 +22,17 @@ from coveo_stew.ci.config import ContinuousIntegrationConfig
 from coveo_stew.ci.runner import RunnerStatus
 from coveo_stew.environment import PythonEnvironment, coveo_stew_environment, PythonTool
 from coveo_stew.exceptions import PythonProjectException, NotAPoetryProject
-from coveo_stew.metadata.stew_api import StewPackage
 from coveo_stew.metadata.poetry_api import PoetryAPI
 from coveo_stew.metadata.pyproject_api import PythonProjectAPI
 from coveo_stew.metadata.python_api import PythonFile
+from coveo_stew.metadata.stew_api import StewPackage
 from coveo_stew.utils import load_toml_from_path
 
 
 class PythonProject(PythonProjectAPI):
     """Access the information within a pyproject.toml file and operate on them."""
 
-    def __init__(self, project_path: Path, *, verbose: bool = False) -> None:
-        self.verbose = verbose
+    def __init__(self, project_path: Path) -> None:
         self.project_path: Path = (
             project_path if project_path.is_dir() else project_path.parent
         ).absolute()
@@ -84,24 +84,17 @@ class PythonProject(PythonProjectAPI):
         return path.relative_to(self.project_path)
 
     @classmethod
-    def find_pyproject(
-        cls, project_name: str, path: Path = None, *, verbose: bool = False
-    ) -> "PythonProject":
+    def find_pyproject(cls, project_name: str, path: Path = None) -> "PythonProject":
         warnings.warn(
             "This functionality moved to the `coveo_stew.discovery` module.", DeprecationWarning
         )
         from coveo_stew.discovery import find_pyproject
 
-        return find_pyproject(project_name, path, verbose=verbose)
+        return find_pyproject(project_name, path)
 
     @classmethod
     def find_pyprojects(
-        cls,
-        path: Path = None,
-        *,
-        query: str = None,
-        exact_match: bool = False,
-        verbose: bool = False,
+        cls, path: Path = None, *, query: str = None, exact_match: bool = False
     ) -> Generator["PythonProject", None, None]:
         """Factory; scan a path (recursive) and return a PythonProject instance for each pyproject.toml
 
@@ -116,7 +109,7 @@ class PythonProject(PythonProjectAPI):
         )
         from coveo_stew.discovery import discover_pyprojects
 
-        yield from discover_pyprojects(path, query=query, exact_match=exact_match, verbose=verbose)
+        yield from discover_pyprojects(path, query=query, exact_match=exact_match)
 
     @property
     def lock_is_outdated(self) -> bool:
@@ -278,7 +271,7 @@ class PythonProject(PythonProjectAPI):
         command = ["install"]
         if remove_untracked:
             command.append("--remove-untracked")
-        if quiet and not self.verbose:
+        if quiet and not VERBOSE:
             command.append("--quiet")
 
         self.poetry_run(*command, environment=environment)
@@ -325,12 +318,9 @@ class PythonProject(PythonProjectAPI):
 
         with self._activate_poetry_environment(environment):
             return check_run(
-                *poetry_env.build_command(
-                    PythonTool.Poetry, *commands, "-vv" if self.verbose else ""
-                ),
+                *poetry_env.build_command(PythonTool.Poetry, *commands, "-vv" if VERBOSE else ""),
                 working_directory=self.project_path,
                 capture_output=capture_output,
-                verbose=self.verbose,
                 env=environment_variables,
             )
 

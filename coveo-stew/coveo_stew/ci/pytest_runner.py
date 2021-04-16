@@ -41,7 +41,7 @@ class PytestRunner(ContinuousIntegrationRunner):
             *command,
             *extra_args,
             working_directory=self._pyproject.project_path,
-            verbose=self._pyproject.verbose,
+            verbose=bool(VERBOSE),
         )
 
         return RunnerStatus.Success

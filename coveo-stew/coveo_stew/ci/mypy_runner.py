@@ -3,12 +3,13 @@ import pkg_resources
 import re
 from typing import Generator, Union, Optional
 
-from coveo_stew.metadata.pyproject_api import PythonProjectAPI
 from coveo_styles.styles import echo
 from coveo_systools.subprocess import check_output
 
 from coveo_stew.ci.runner import ContinuousIntegrationRunner, RunnerStatus
+from coveo_stew.configuration import VERBOSE
 from coveo_stew.environment import PythonEnvironment, PythonTool, coveo_stew_environment
+from coveo_stew.metadata.pyproject_api import PythonProjectAPI
 from coveo_stew.metadata.python_api import PythonFile
 
 
@@ -77,13 +78,13 @@ class MypyRunner(ContinuousIntegrationRunner):
             *typed_folders,  # what to lint
         )
 
-        if self._pyproject.verbose:
+        if VERBOSE:
             echo.normal(command)
 
         check_output(
             *command,
             working_directory=self._pyproject.project_path,
-            verbose=self._pyproject.verbose,
+            verbose=bool(VERBOSE),
         )
         return RunnerStatus.Success
 

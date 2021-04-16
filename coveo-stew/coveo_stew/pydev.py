@@ -76,7 +76,7 @@ def _dev_dependencies_of_dependencies(
     # we only care about local non-dev dependencies from the project.
     for dependency in filter(lambda _: _.is_local, project.package.dependencies.values()):
         assert not dependency.path.is_absolute()
-        project = PythonProject(project.project_path / dependency.path, verbose=project.verbose)
+        project = PythonProject(project.project_path / dependency.path)
         new = set(project.package.dev_dependencies).difference(seen)
         seen.update(new)
         for dev_dependency in (project.package.dev_dependencies[_] for _ in new):
