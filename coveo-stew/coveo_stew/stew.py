@@ -149,9 +149,8 @@ class PythonProject(PythonProjectAPI):
     ) -> List[PythonEnvironment]:
         """The project's virtual environments.
 
-        create_default_if_missing: When no environments are found, create an empty environment using what poetry
-            would use by default. The environment will have the interpreter, pip, setuptools, pkg-resources and
-            the current project installed. No other dependencies will be installed.
+        create_default_if_missing: When no environments are found, the environment will be created with all
+            dependencies installed.
         """
         environments = []
         for str_path in self.poetry_run(
