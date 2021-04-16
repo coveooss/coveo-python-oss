@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional, TYPE_CHECKING, List
+from typing import Optional, TYPE_CHECKING, Iterator
 from typing_extensions import Protocol
 
 from poetry.poetry import Poetry
@@ -27,7 +27,7 @@ class PythonProjectAPI(Protocol):
 
     def virtual_environments(
         self, *, create_default_if_missing: bool = False
-    ) -> List["PythonEnvironment"]:
+    ) -> Iterator["PythonEnvironment"]:
         ...
 
     def install(

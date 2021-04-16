@@ -303,12 +303,19 @@ def refresh(project_name: str = None, exact_match: bool = False, verbose: bool =
 @click.option("--fix/--no-fix", default=False)
 @click.option("--check", multiple=True, default=None)
 @click.option("--verbose", is_flag=True, default=False)
+@click.option(
+    "--quick",
+    is_flag=True,
+    default=False,
+    help="Do not call 'poetry install --remove-untracked' before testing.",
+)
 def ci(
     project_name: str = None,
     exact_match: bool = False,
     fix: bool = False,
     check: List[str] = None,
     verbose: bool = False,
+    quick: bool = False,
 ) -> None:
     failures = []
     try:
@@ -316,7 +323,7 @@ def ci(
             query=project_name, exact_match=exact_match, verbose=verbose
         ):
             echo.step(project.package.name, pad_after=False)
-            if not project.launch_continuous_integration(auto_fix=fix, checks=check):
+            if not project.launch_continuous_integration(auto_fix=fix, checks=check, quick=quick):
                 failures.append(project)
     except PythonProjectNotFound as exception:
         raise ExitWithFailure from exception
