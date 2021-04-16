@@ -2,14 +2,15 @@
 
 from pathlib import Path
 import re
-from typing import Set, Iterable, List, Union, Generator, Final
+from typing import Set, Iterable, List, Union, Generator, Optional
 
 import click
 from coveo_functools.finalizer import finalizer
-from coveo_stew.discovery import find_pyproject, discover_pyprojects
-from coveo_systools.filesystem import find_repo_root
 from coveo_styles.styles import echo, ExitWithFailure, install_pretty_exception_hook
+from coveo_systools.filesystem import find_repo_root
 
+from coveo_stew.configuration import VERBOSE, CI_MODE, DRY_RUN
+from coveo_stew.discovery import find_pyproject, discover_pyprojects
 from coveo_stew.exceptions import CheckFailed, RequirementsOutdated, PythonProjectNotFound
 from coveo_stew.offline_publish import offline_publish
 from coveo_stew.pydev import is_pydev_project, pull_and_write_dev_requirements
@@ -17,6 +18,20 @@ from coveo_stew.stew import PythonProject, PythonEnvironment
 
 
 _COMMANDS_THAT_SKIP_INTRO_EMOJIS = ["locate"]
+
+
+def _set_global_options(
+    *,
+    verbose: Optional[bool] = None,
+    ci_mode: Optional[bool] = None,
+    dry_run: Optional[bool] = None,
+) -> None:
+    if verbose is not None:
+        VERBOSE.value = verbose
+    if ci_mode is not None:
+        CI_MODE.value = ci_mode
+    if dry_run is not None:
+        DRY_RUN.value = dry_run
 
 
 def _echo_updated(updated: Set[Path]) -> None:
@@ -33,18 +48,16 @@ def _echo_updated(updated: Set[Path]) -> None:
             echo.noise(updated_path, item=True)
 
 
-def _pull_dev_requirements(
-    dry_run: bool = False, verbose: bool = False
-) -> Generator[Path, None, None]:
+def _pull_dev_requirements() -> Generator[Path, None, None]:
     """Writes the dev-dependencies of pydev projects' local dependencies into pydev's pyproject.toml file."""
-    dry_run_text = "(dry run) " if dry_run else ""
-    for pydev_project in discover_pyprojects(predicate=is_pydev_project, verbose=verbose):
+    dry_run_text = "(dry run) " if DRY_RUN else ""
+    for pydev_project in discover_pyprojects(predicate=is_pydev_project):
         echo.step(f"Analyzing dev requirements for {pydev_project}")
-        if pull_and_write_dev_requirements(pydev_project, dry_run=dry_run):
+        if pull_and_write_dev_requirements(pydev_project):
             echo.outcome(
                 f"{dry_run_text}Updated {pydev_project.package.name} with new dev requirements."
             )
-            if not dry_run:
+            if not DRY_RUN:
                 echo.outcome("Lock file and virtual environment updated !!thumbs_up!!\n")
             yield pydev_project.toml_path
         else:
@@ -61,13 +74,14 @@ def stew(ctx: click.Context) -> None:
 
 
 @stew.command()
-@click.option("--verbose", is_flag=True, default=False)
-def check_outdated(verbose: bool = False) -> None:
+@click.option("--verbose", is_flag=True, default=None)
+def check_outdated(verbose: Optional[bool] = None) -> None:
     """Return error code 1 if toml/lock are not in sync."""
+    _set_global_options(verbose=verbose)
     echo.step("Analyzing all pyproject.toml files and artifacts:")
     outdated: Set[Path] = set()
     try:
-        for project in discover_pyprojects(verbose=verbose):
+        for project in discover_pyprojects():
             echo.noise(project, item=True)
             if not project.lock_path.exists() or project.lock_is_outdated:
                 outdated.add(project.lock_path)
@@ -75,7 +89,7 @@ def check_outdated(verbose: bool = False) -> None:
         raise ExitWithFailure from exception
 
     try:
-        outdated.update(_pull_dev_requirements(dry_run=True, verbose=verbose))
+        outdated.update(_pull_dev_requirements())
     except PythonProjectNotFound:
         pass  # no pydev projects found.
 
@@ -89,23 +103,24 @@ def check_outdated(verbose: bool = False) -> None:
 
 
 @stew.command()
-@click.option("--verbose", is_flag=True, default=False)
-def fix_outdated(verbose: bool = False) -> None:
+@click.option("--verbose", is_flag=True, default=None)
+def fix_outdated(verbose: Optional[bool] = None) -> None:
     """Scans the whole repo and updates outdated pyproject-related files.
 
     Updates:
         - Lock files, only if their pyproject.toml was updated.
     """
+    _set_global_options(verbose=verbose)
     echo.step("Synchronizing all outdated lock files:")
     updated: Set[Path] = set()
     with finalizer(_echo_updated, updated):
         try:
-            for project in discover_pyprojects(verbose=verbose):
+            for project in discover_pyprojects():
                 echo.noise(project, item=True)
                 if project.lock_if_needed():
                     updated.add(project.lock_path)
             try:
-                updated.update(_pull_dev_requirements(dry_run=False, verbose=verbose))
+                updated.update(_pull_dev_requirements())
             except PythonProjectNotFound:
                 pass  # no pydev projects found
         except PythonProjectNotFound as exception:
@@ -115,13 +130,14 @@ def fix_outdated(verbose: bool = False) -> None:
 
 
 @stew.command()
-@click.option("--verbose", is_flag=True, default=False)
-def bump(verbose: bool = False) -> None:
+@click.option("--verbose", is_flag=True, default=None)
+def bump(verbose: Optional[bool] = None) -> None:
     """Bumps locked versions for all pyprojects."""
+    _set_global_options(verbose=verbose)
     updated: Set[Path] = set()
     with finalizer(_echo_updated, updated):
         try:
-            for project in discover_pyprojects(verbose=verbose):
+            for project in discover_pyprojects():
                 echo.step(f"Bumping {project.lock_path}")
                 if project.bump():
                     updated.add(project.toml_path)
@@ -135,12 +151,12 @@ def bump(verbose: bool = False) -> None:
 @click.argument("project_name")
 @click.option("--directory", default=None)
 @click.option("--python", default=None)
-@click.option("--verbose", is_flag=True, default=False)
+@click.option("--verbose", is_flag=True, default=None)
 def build(
     project_name: str,
     directory: Union[str, Path] = None,
     python: Union[str, Path] = None,
-    verbose: bool = False,
+    verbose: Optional[bool] = None,
 ) -> None:
     """
     Store all dependencies of a python project into a local directory, according to its poetry.lock,
@@ -151,8 +167,9 @@ def build(
         IF unspecified and no repo: "pyproject_folder/.wheels/*.whl"
         IF specified:               "directory/*.whl"
     """
+    _set_global_options(verbose=verbose)
     try:
-        project = find_pyproject(project_name, verbose=verbose)
+        project = find_pyproject(project_name)
     except PythonProjectNotFound as exception:
         raise ExitWithFailure from exception
 
@@ -177,8 +194,8 @@ def build(
 
 @stew.command()
 @click.argument("project_name", default=None, required=False)
-@click.option("--verbose", is_flag=True, default=False)
-def fresh_eggs(project_name: str = None, verbose: bool = False) -> None:
+@click.option("--verbose", is_flag=True, default=None)
+def fresh_eggs(project_name: str = None, verbose: Optional[bool] = None) -> None:
     """
     Removes the egg-info from project folders.
 
@@ -191,10 +208,11 @@ def fresh_eggs(project_name: str = None, verbose: bool = False) -> None:
     Some behaviors (such as console entrypoints) are bootstrapped into the egg-info at install time, and
     won't be updated between runs. This is when this tool comes in handy.
     """
+    _set_global_options(verbose=verbose)
     echo.step("Removing *.egg-info folders.")
     deleted = False
     try:
-        for project in discover_pyprojects(query=project_name, verbose=verbose):
+        for project in discover_pyprojects(query=project_name):
             if project.remove_egg_info():
                 echo.outcome("Deleted: ", project.egg_path, item=True)
                 deleted = True
@@ -208,12 +226,14 @@ def fresh_eggs(project_name: str = None, verbose: bool = False) -> None:
 
 
 @stew.command()
-@click.option("--dry-run/--no-dry-run", default=False)
-@click.option("--verbose", is_flag=True, default=False)
-def pull_dev_requirements(dry_run: bool = False, verbose: bool = False) -> None:
+@click.option("--dry-run", is_flag=True, default=None)
+@click.option("--verbose", is_flag=True, default=None)
+def pull_dev_requirements(dry_run: Optional[bool] = None, verbose: Optional[bool] = None) -> None:
     """Writes the dev-dependencies of pydev projects' local dependencies into pydev's pyproject.toml file."""
+    _set_global_options(verbose=verbose, dry_run=dry_run)
+
     try:
-        list(_pull_dev_requirements(dry_run=dry_run, verbose=verbose))
+        list(_pull_dev_requirements())
     except PythonProjectNotFound as exception:
         raise ExitWithFailure from exception
 
@@ -245,16 +265,16 @@ def _beautify_mypy_output(
 
 @stew.command()
 @click.argument("project_name")
-@click.option("--verbose", is_flag=True, default=False)
-def locate(project_name: str, verbose: bool = False) -> None:
+@click.option("--verbose", is_flag=True, default=None)
+def locate(project_name: str, verbose: Optional[bool] = None) -> None:
     """Locate a python project (in the whole git repo) and print the directory containing the pyproject.toml file."""
+    _set_global_options(verbose=verbose)
     try:
-        echo.passthrough(find_pyproject(project_name, verbose=verbose).project_path)
+        echo.passthrough(find_pyproject(project_name).project_path)
     except PythonProjectNotFound as exception:
         # check for partial matches to guide the user
         partial_matches = (
-            project.package.name
-            for project in discover_pyprojects(query=project_name, verbose=verbose)
+            project.package.name for project in discover_pyprojects(query=project_name)
         )
         try:
             raise ExitWithFailure(
@@ -270,15 +290,16 @@ def locate(project_name: str, verbose: bool = False) -> None:
 
 @stew.command()
 @click.argument("project_name", default=None, required=False)
-@click.option("--exact-match/--no-exact-match", default=False)
-@click.option("--verbose", is_flag=True, default=False)
-def refresh(project_name: str = None, exact_match: bool = False, verbose: bool = False) -> None:
+@click.option("--exact-match", is_flag=True, default=None)
+@click.option("--verbose", is_flag=True, default=None)
+def refresh(
+    project_name: str = None, exact_match: bool = None, verbose: Optional[bool] = None
+) -> None:
+    _set_global_options(verbose=verbose)
     echo.step("Refreshing python project environments...")
     pydev_projects = []
     try:
-        for project in discover_pyprojects(
-            query=project_name, exact_match=exact_match, verbose=verbose
-        ):
+        for project in discover_pyprojects(query=project_name, exact_match=exact_match):
             if project.options.pydev:
                 pydev_projects.append(project)
                 continue  # do these at the end
@@ -299,22 +320,23 @@ def refresh(project_name: str = None, exact_match: bool = False, verbose: bool =
 
 @stew.command()
 @click.argument("project_name", default=None, required=False)
-@click.option("--exact-match/--no-exact-match", default=False)
+@click.option("--exact-match", is_flag=True, default=None)
 @click.option("--fix/--no-fix", default=False)
 @click.option("--check", multiple=True, default=None)
-@click.option("--verbose", is_flag=True, default=False)
+@click.option("--verbose", is_flag=True, default=None)
 def ci(
     project_name: str = None,
-    exact_match: bool = False,
+    exact_match: Optional[bool] = None,
     fix: bool = False,
     check: List[str] = None,
-    verbose: bool = False,
+    verbose: Optional[bool] = None,
 ) -> None:
+    """Launches continuous integration runners on all environments."""
+    _set_global_options(verbose=verbose, ci_mode=exact_match)
+
     failures = []
     try:
-        for project in discover_pyprojects(
-            query=project_name, exact_match=exact_match, verbose=verbose
-        ):
+        for project in discover_pyprojects(query=project_name, exact_match=exact_match):
             echo.step(project.package.name, pad_after=False)
             if not project.launch_continuous_integration(auto_fix=fix, checks=check):
                 failures.append(project)

@@ -229,6 +229,8 @@ class PythonProject(PythonProjectAPI):
 
             for environment in self.virtual_environments(create_default_if_missing=True):
                 try:
+                    if CI_MODE:
+                        self.install(environment=environment)
                     echo.normal(
                         f"{runner} ({environment.pretty_python_version})", emoji="hourglass"
                     )
