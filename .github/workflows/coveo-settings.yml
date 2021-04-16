@@ -1,8 +1,9 @@
 name: coveo-settings
 on:
-  push:
-    paths:
-      - 'coveo-settings/**'
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - main
   workflow_dispatch: {}
 
 jobs:
