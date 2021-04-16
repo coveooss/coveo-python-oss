@@ -1,8 +1,9 @@
 name: coveo-itertools
 on:
-  push:
-    paths:
-      - 'coveo-itertools/**'
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - main
   workflow_dispatch: {}
 
 jobs:

@@ -1,8 +1,9 @@
 name: coveo-styles
 on:
-  push:
-    paths:
-      - 'coveo-styles/**'
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - main
   workflow_dispatch: {}
 
 jobs:

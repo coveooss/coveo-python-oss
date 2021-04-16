@@ -1,8 +1,9 @@
 name: coveo-testing
 on:
-  push:
-    paths:
-      - 'coveo-testing/**'
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - main
   workflow_dispatch: {}
 
 jobs:
