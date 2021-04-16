@@ -162,8 +162,8 @@ class PythonProject(PythonProjectAPI):
                 environments.append(PythonEnvironment(path))
 
         if not environments and create_default_if_missing:
-            # when we call `poetry run <cmd>` on a project, poetry will create the environment if it doesn't exist.
-            self.poetry_run("run", "python", "--version")
+            # install the environment using poetry's default by calling `poetry install`
+            self.install()
             environments = self.virtual_environments()
 
         return environments
