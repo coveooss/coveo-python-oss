@@ -18,11 +18,12 @@ black = { version = "20.8b1", allow-prereleases = true }
 click = "*"
 coveo-functools = { version = "^1.0.0" }
 coveo-itertools = { version = "^1.0.0" }
+coveo-settings = { version = "^1.0.0" }
 coveo-systools = { version = "^1.0.0" }
 coveo-styles = { version = "^1.0.0" }
 junit-xml = "*"
 mypy = "*"
-poetry = "^1.1.4"
+poetry = "^1.1.6"
 toml = "*"
 typing_extensions = "*"
 
@@ -30,8 +31,9 @@ typing_extensions = "*"
 [tool.poetry.dev-dependencies]
 coveo-functools = { path = "../coveo-functools/", develop = true }
 coveo-itertools = { path = "../coveo-itertools/", develop = true }
-coveo-systools = { path = "../coveo-systools/", develop = true }
+coveo-settings = { path = "../coveo-settings/", develop = true }
 coveo-styles = { path = "../coveo-styles/", develop = true }
+coveo-systools = { path = "../coveo-systools/", develop = true }
 coveo-testing = { path = "../coveo-testing/", develop = true }
 pytest = "*"
 
