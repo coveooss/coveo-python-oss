@@ -1,10 +1,12 @@
 """ Tests the settings classes. """
 
+from typing import Any, Type
 import json
 import os
 
 import pytest
 from coveo_testing.markers import UnitTest
+from coveo_testing.parametrize import parametrize
 
 from coveo_settings.settings import (
     mock_config_value,
@@ -15,6 +17,7 @@ from coveo_settings.settings import (
     BoolSetting,
     IntSetting,
     FloatSetting,
+    Setting,
 )
 
 
@@ -476,3 +479,44 @@ def test_setting_fallback_cast() -> None:
     assert int(IntSetting("test", lambda: "1")) == 1
     assert float(FloatSetting("test", lambda: "0.1")) == 0.1
     assert DictSetting("test", lambda: '{"ut-pass": true}').value == {"ut-pass": True}
+
+
+@UnitTest
+def test_setting_set_value() -> None:
+    setting = BoolSetting("test")
+    assert not setting
+    setting.value = True
+    assert setting
+
+
+@UnitTest
+def test_setting_unset_value_resets_behavior() -> None:
+    setting = StringSetting("test", fallback="foo")
+    setting.value = None
+    assert setting.value == "foo"
+
+
+@UnitTest
+def test_setting_set_value_overrides_fallback() -> None:
+    setting = IntSetting("test", fallback=1)
+    assert int(setting) == 1
+    setting.value = 0
+    assert int(setting) == 0
+
+
+@UnitTest
+@parametrize(
+    ("klass", "raw_value", "converted_value"),
+    (
+        (BoolSetting, "yes", True),
+        (BoolSetting, "no", False),
+        (BoolSetting, None, None),
+        (IntSetting, "1", 1),
+    ),
+)
+def test_setting_set_value_cast_and_validate(
+    klass: Type[Setting], raw_value: str, converted_value: Any
+) -> None:
+    setting = klass("test")
+    setting.value = raw_value
+    assert setting.value == converted_value
