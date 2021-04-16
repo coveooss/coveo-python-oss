@@ -230,7 +230,7 @@ class PythonProject(PythonProjectAPI):
             for environment in self.virtual_environments(create_default_if_missing=True):
                 try:
                     if CI_MODE:
-                        self.install(environment=environment)
+                        self.install(environment=environment, remove_untracked=bool(CI_MODE))
                     echo.normal(
                         f"{runner} ({environment.pretty_python_version})", emoji="hourglass"
                     )
