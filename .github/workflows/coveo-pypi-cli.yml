@@ -1,8 +1,9 @@
 name: coveo-pypi-cli
 on:
-  push:
-    paths:
-      - 'coveo-pypi-cli/**'
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - main
   workflow_dispatch: {}
 
 jobs:

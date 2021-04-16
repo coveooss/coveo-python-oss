@@ -1,8 +1,9 @@
 name: coveo-stew
 on:
-  push:
-    paths:
-      - 'coveo-stew/**'
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - main
   workflow_dispatch: {}
 
 jobs:
