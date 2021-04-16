@@ -1,8 +1,9 @@
 name: coveo-functools
 on:
-  push:
-    paths:
-      - 'coveo-functools/**'
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - main
   workflow_dispatch: {}
 
 jobs:
