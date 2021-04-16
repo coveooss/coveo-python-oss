@@ -1,6 +1,7 @@
+from coveo_systools.subprocess import check_output
+
 from coveo_stew.ci.runner import ContinuousIntegrationRunner, RunnerStatus
 from coveo_stew.environment import PythonEnvironment, PythonTool, coveo_stew_environment
-from coveo_systools.subprocess import check_output
 
 
 class PoetryCheckRunner(ContinuousIntegrationRunner):
