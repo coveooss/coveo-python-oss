@@ -1,4 +1,5 @@
 from coveo_stew.ci.runner import ContinuousIntegrationRunner, RunnerStatus
+from coveo_stew.configuration import VERBOSE
 from coveo_stew.environment import PythonEnvironment, PythonTool
 from coveo_stew.metadata.pyproject_api import PythonProjectAPI
 from coveo_systools.subprocess import check_output
@@ -21,10 +22,6 @@ class PytestRunner(ContinuousIntegrationRunner):
         self.doctest_modules: bool = doctest_modules
 
     def _launch(self, environment: PythonEnvironment, *extra_args: str) -> RunnerStatus:
-        if not environment.pytest_executable.exists():
-            self._last_output.append("pytest executable could not be found")
-            return RunnerStatus.Error
-
         command = environment.build_command(
             PythonTool.Pytest,
             "--durations=5",
