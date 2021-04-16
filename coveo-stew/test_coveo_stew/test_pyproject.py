@@ -55,9 +55,9 @@ def test_pyproject_locker(pyproject_mock: PythonProject) -> None:
 
 @Integration
 def test_pyproject_virtual_environment(pyproject_mock: PythonProject) -> None:
-    assert not pyproject_mock.virtual_environments()
+    assert not list(pyproject_mock.virtual_environments())
     assert not pyproject_mock.current_environment_belongs_to_project()
-    assert len(pyproject_mock.virtual_environments(create_default_if_missing=True)) == 1
+    assert len(list(pyproject_mock.virtual_environments(create_default_if_missing=True))) == 1
 
 
 @Integration
@@ -70,7 +70,7 @@ def test_pyproject_publish(pyproject_mock: PythonProject, tmpdir: PathLike) -> N
         offline_publish(
             pyproject_mock,
             publish_location,
-            pyproject_mock.virtual_environments(create_default_if_missing=True)[0],
+            next(pyproject_mock.virtual_environments(create_default_if_missing=True)),
         )
     assert publish_location.exists()
 

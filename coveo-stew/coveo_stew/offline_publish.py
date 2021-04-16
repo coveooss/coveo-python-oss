@@ -76,12 +76,12 @@ class _OfflinePublish:
     @property
     def valid_packages(self) -> Set[str]:
         if self._valid_packages is None:
-            if self.environment in self.project.virtual_environments():
+            if self.environment in list(self.project.virtual_environments()):
                 pip_freeze_environment = self.environment
             else:
-                pip_freeze_environment = self.project.virtual_environments(
-                    create_default_if_missing=True
-                ).pop()
+                pip_freeze_environment = next(
+                    self.project.virtual_environments(create_default_if_missing=True)
+                )
                 echo.warning(
                     f"The executable {self.environment} is not part of this project. "
                     f'To fix this, run "poetry env use {self.environment.python_executable}". '

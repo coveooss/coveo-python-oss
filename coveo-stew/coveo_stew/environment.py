@@ -34,6 +34,12 @@ class PythonEnvironment:
         """
         self._python_version: Optional[str] = None
 
+        # code uses these to mark envs as installed/activated to cut down on steps.
+        # not the cleanest way; works for now.
+        self.installed: bool = False
+        self.activated: bool = False
+        self.cleaned: bool = False
+
         python_path = Path(environment_path)
         if python_path.is_dir():
             python_path = (python_path / self._prefix / "python").with_suffix(self._suffix)
