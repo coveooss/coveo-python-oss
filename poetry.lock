@@ -244,7 +244,7 @@ coveo-styles = "^1.0.0"
 coveo-systools = "^1.0.0"
 junit-xml = "*"
 mypy = "*"
-poetry = "^1.1.4"
+poetry = "^1.1.6"
 toml = "*"
 typing_extensions = "*"
 
