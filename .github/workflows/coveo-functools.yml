@@ -54,7 +54,7 @@ jobs:
         with:
           python-version: 3.9
 
-      - name: Publish to pypi
+      - name: Publish to pypi.org
         uses: ./.github/workflows/actions/publish-to-pypi
         with:
           project-name: ${{ github.workflow }}
