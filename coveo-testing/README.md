@@ -17,7 +17,8 @@ This project is used as the test base for all other projects in this repository.
 
 Therefore, it cannot depend on any of them.
 
-More complex use cases may be implemented in the `coveo-testing-extras` project. That's also where you can depend on projects that depend on `coveo-testing`. 
+More complex use cases may be implemented in the `coveo-testing-extras` project. 
+That's also where you can depend on projects that depend on `coveo-testing`. 
 
 
 # pytest markers and auto-registration
