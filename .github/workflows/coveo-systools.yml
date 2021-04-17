@@ -1,10 +1,17 @@
 name: coveo-systools
+
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
   push:
     branches:
       - main
+    paths:
+      - 'coveo-systools/**'
+
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'coveo-systools/**'
+
   workflow_dispatch: {}
 
 jobs:

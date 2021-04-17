@@ -1,10 +1,17 @@
 name: coveo-testing-extras
+
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
   push:
     branches:
       - main
+    paths:
+      - 'coveo-testing-extras/**'
+
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'coveo-testing-extras/**'
+
   workflow_dispatch: {}
 
 jobs:

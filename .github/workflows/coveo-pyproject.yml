@@ -1,10 +1,17 @@
 name: coveo-stew
+
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
   push:
     branches:
       - main
+    paths:
+      - 'coveo-stew/**'
+
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'coveo-stew/**'
+
   workflow_dispatch: {}
 
 jobs:
