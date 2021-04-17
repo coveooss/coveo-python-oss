@@ -12,6 +12,7 @@ on:
     types: [opened, synchronize, reopened]
     paths:
       - 'coveo-example-library/**'
+      - '.github/workflows/**'
 
   workflow_dispatch: {}
 
