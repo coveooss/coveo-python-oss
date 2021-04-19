@@ -7,7 +7,7 @@ import re
 import shutil
 from shutil import rmtree
 import sys
-from typing import Generator, Optional, Any, List, Tuple
+from typing import Generator, Optional, Any, List, Tuple, Iterator, Dict
 import warnings
 
 from coveo_functools.casing import flexfactory
@@ -77,7 +77,7 @@ class PythonProject(PythonProjectAPI):
             repo_root = None
 
         self.repo_root: Optional[Path] = repo_root
-        self._cached_activated_environment: Optional[PythonEnvironment] = None
+        self._cached_environments: Optional[Dict[Path, PythonEnvironment]] = None
 
     def relative_path(self, path: Path) -> Path:
         """returns the relative path of a path vs the project folder."""
@@ -136,36 +136,67 @@ class PythonProject(PythonProjectAPI):
             - Use the context manager `self._activate_poetry_environment`
             - or use the `environment` argument of `self.poetry_run`
         """
-        if self._cached_activated_environment is None:
-            activated = self.poetry_run(
-                "env", "info", "--path", capture_output=True, breakout_of_venv=True
-            ).strip()
-            if activated:
-                self._cached_activated_environment = PythonEnvironment(activated)
-        return self._cached_activated_environment
+        return next(
+            (environment for environment in self.virtual_environments() if environment.activated),
+            None,
+        )
 
     def virtual_environments(
         self, *, create_default_if_missing: bool = False
-    ) -> List[PythonEnvironment]:
-        """The project's virtual environments.
+    ) -> Iterator[PythonEnvironment]:
+        """The project's virtual environments. These are cached for performance.
 
-        create_default_if_missing: When no environments are found, the environment will be created with all
-            dependencies installed.
+        create_default_if_missing: When no environments are found, install the environment using what poetry
+            would use by default.
         """
-        environments = []
+        reevaluate = self._cached_environments is None or all(
+            (
+                # we already have a cache
+                self._cached_environments is not None,
+                # but it's empty
+                not self._cached_environments,
+                # and we are supposed to create one
+                create_default_if_missing,
+            )
+        )
+
+        if reevaluate:
+            self._refresh_virtual_environment_cache()
+            if not self._cached_environments and create_default_if_missing:
+                self.install()
+                self._refresh_virtual_environment_cache()
+
+        yield from self._cached_environments.values()
+
+    def _refresh_virtual_environment_cache(self) -> None:
+        if self._cached_environments is None:
+            self._cached_environments = {}
+
+        for path in self._get_virtual_environment_paths():
+            if path not in self._cached_environments:
+                self._cached_environments[path] = PythonEnvironment(path)
+
+        # reprocess all environments to set the activated_environment one correctly
+        try:
+            activated_environment: Optional[PythonEnvironment] = PythonEnvironment(
+                self.poetry_run("env", "info", "--path", capture_output=True, breakout_of_venv=True)
+            )
+        except DetailedCalledProcessError as exception:
+            if exception.returncode != 1:
+                raise
+            activated_environment = None
+
+        for environment in self._cached_environments.values():
+            environment.activated = (
+                (environment == activated_environment) if activated_environment else False
+            )
+
+    def _get_virtual_environment_paths(self) -> Iterator[Path]:
         for str_path in self.poetry_run(
             "env", "list", "--full-path", capture_output=True, breakout_of_venv=True
         ).split("\n"):
             if str_path.strip():
-                path = Path(str_path.replace("(Activated)", "").strip())
-                environments.append(PythonEnvironment(path))
-
-        if not environments and create_default_if_missing:
-            # install the environment using poetry's default by calling `poetry install`
-            self.install()
-            environments = self.virtual_environments()
-
-        return environments
+                yield Path(str_path.replace("(Activated)", "").strip())
 
     def current_environment_belongs_to_project(self) -> bool:
         """True if we're running from one of the project's virtual envs.
@@ -221,7 +252,7 @@ class PythonProject(PythonProjectAPI):
         return target
 
     def launch_continuous_integration(
-        self, auto_fix: bool = False, checks: List[str] = None
+        self, auto_fix: bool = False, checks: List[str] = None, quick: bool = False
     ) -> bool:
         """Launch all continuous integration runners on the project."""
         if self.ci.disabled:
@@ -229,11 +260,13 @@ class PythonProject(PythonProjectAPI):
 
         checks = [check.lower() for check in checks or []]
         exceptions: List[DetailedCalledProcessError] = []
-        for runner in self.ci.runners:
-            if checks and runner.name.lower() not in checks:
-                continue
+        for environment in self.virtual_environments(create_default_if_missing=True):
+            if not quick:
+                self.install(environment=environment, remove_untracked=True)
+            for runner in self.ci.runners:
+                if checks and runner.name.lower() not in checks:
+                    continue
 
-            for environment in self.virtual_environments(create_default_if_missing=True):
                 try:
                     echo.normal(
                         f"{runner} ({environment.pretty_python_version})", emoji="hourglass"
@@ -268,19 +301,31 @@ class PythonProject(PythonProjectAPI):
         self,
         *,
         environment: PythonEnvironment = None,
-        remove_untracked: bool = True,
+        remove_untracked: bool = False,
         quiet: bool = False,
     ) -> None:
         """
         Performs a 'poetry install --remove-untracked' on the project. If an environment is provided, target it.
         """
+        target_environment = environment or self.activated_environment
+        if target_environment and target_environment.installed:
+            # this environment was already installed
+            if not (remove_untracked and not target_environment.cleaned):
+                # return unless we are cleaning a non-cleaned environment
+                return
+
         command = ["install"]
         if remove_untracked:
             command.append("--remove-untracked")
         if quiet and not self.verbose:
             command.append("--quiet")
 
-        self.poetry_run(*command, environment=environment)
+        self.poetry_run(*command, environment=target_environment)
+
+        self._refresh_virtual_environment_cache()
+        affected_environment = target_environment or self.activated_environment
+        affected_environment.installed = True
+        affected_environment.cleaned |= remove_untracked
 
     def remove_egg_info(self) -> bool:
         """Removes the egg-info (editable project hook) from the folder. Returns True if we removed it."""

@@ -1,9 +1,10 @@
 name: coveo-example-library
 on:
+  pull_request:
+    types: [opened, synchronize, reopened]
   push:
-    paths:
-      - 'coveo-example-library/**'
-      - '.github/workflows/**'
+    branches:
+      - main
   workflow_dispatch: {}
 
 jobs:
