@@ -334,12 +334,17 @@ class PythonProject(PythonProjectAPI):
             return True
         return False
 
-    def refresh(self) -> None:
-        """Removes a virtual environment and then performs install."""
+    def refresh(self, environment: Optional[PythonEnvironment] = None) -> None:
+        """
+        Without an environment specified, the active one will be used if it exists.
+
+        - Removes the egg-info folder from the source
+        - Calls `poetry lock` if there were changes to pyproject.toml
+        - Creates/Installs/Cleans the environment with remove-untracked
+        """
         self.remove_egg_info()
-        self.poetry_run("env", "remove", "python", breakout_of_venv=True)
         self.lock_if_needed()
-        self.install()
+        self.install(environment=environment, remove_untracked=True)
 
     def lock_if_needed(self) -> bool:
         """Lock if needed, return True if ran."""
