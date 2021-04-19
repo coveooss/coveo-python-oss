@@ -1,6 +1,7 @@
 # coveo-python-oss
 
-This repository is a collection of useful, general-purpose python libraries made by Coveo.
+This repository is a collection of useful, general-purpose python libraries
+made by Coveo.
 
 
 ## Conventions and rules (aka The Boilerplate™)

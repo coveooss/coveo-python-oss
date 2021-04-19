@@ -98,6 +98,7 @@ class Setting(SupportsInt, SupportsFloat, Generic[T]):
         self._key: str = key
         self._alternate_keys: Collection[str] = alternate_keys or tuple()
         self._fallback = fallback
+        self._override: Optional[ConfigValue] = None
         # validate fallback value, but skip callables to promote lazy evaluation
         if fallback is not None and not callable(fallback):
             self.cast_and_validate(fallback)
@@ -111,6 +112,17 @@ class Setting(SupportsInt, SupportsFloat, Generic[T]):
     def value(self) -> Optional[T]:
         """ Returns the value of the setting in the appropriate type, or None when not set. """
         return self._get_value()
+
+    @value.setter
+    def value(self, value: Optional[ConfigValue]) -> None:
+        """Sets the value so that it overrides environment or fallback, if any.
+
+        This is useful in CLI applications to propagate global flags such as "DryRun" or "Verbose".
+
+        If it is `None`, the normal behavior is restored (reading from environment + fallback).
+        To simulate/override as "unset", use `mock_config_value` with `None` instead.
+        """
+        self._override = value
 
     @property
     def fallback(self) -> Optional[ConfigValue]:
@@ -138,14 +150,17 @@ class Setting(SupportsInt, SupportsFloat, Generic[T]):
 
     def _get_value(self) -> Optional[T]:
         """ Internal gets-a-value. """
-        value = _find_setting(self.key, *self._alternate_keys)
+        value = (
+            _find_setting(self.key, *self._alternate_keys)
+            if self._override is None
+            else self._override
+        )
         if value is None:
             value = self.fallback
 
         if value is None:
             return None
 
-        assert value is not None  # mypy
         return self.cast_and_validate(value)
 
     def _raise_if_missing(self) -> None:
@@ -287,6 +302,6 @@ class DictSetting(Setting[dict]):  # pylint: disable=inherit-non-class
 def mock_config_value(
     setting: Setting, value: Optional[ConfigValue]
 ) -> Generator[None, None, None]:
-    """ Mocks a setting value during a block of code so that value getters are ignored. """
+    """ Mocks a setting value during a block of code so that it always returns `value`. """
     with patch.object(setting, "_get_value", return_value=value):
         yield
