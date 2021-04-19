@@ -1,10 +1,17 @@
 name: coveo-testing
+
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
   push:
     branches:
       - main
+    paths:
+      - 'coveo-testing/**'
+
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'coveo-testing/**'
+
   workflow_dispatch: {}
 
 jobs:
@@ -27,8 +34,8 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Run pyproject ci
-        uses: ./.github/workflows/actions/pyproject-ci
+      - name: Run stew ci
+        uses: ./.github/workflows/actions/stew-ci
         with:
           project-name: ${{ github.workflow }}
 

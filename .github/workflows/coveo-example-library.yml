@@ -1,10 +1,19 @@
 name: coveo-example-library
+
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
   push:
     branches:
       - main
+    paths:
+      - 'coveo-example-library/**'
+      - '.github/workflows/**'
+
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'coveo-example-library/**'
+      - '.github/workflows/**'
+
   workflow_dispatch: {}
 
 jobs:
@@ -27,8 +36,8 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Run pyproject ci
-        uses: ./.github/workflows/actions/pyproject-ci
+      - name: Run stew ci
+        uses: ./.github/workflows/actions/stew-ci
         with:
           project-name: ${{ github.workflow }}
 
