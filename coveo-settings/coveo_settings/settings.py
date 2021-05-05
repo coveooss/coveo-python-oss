@@ -108,8 +108,8 @@ class Setting(SupportsInt, SupportsFloat, Generic[T]):
         self._alternate_keys: Collection[str] = alternate_keys or tuple()
         self._fallback = fallback
         self._override: Optional[ConfigValue] = None
-        # validate fallback value, but skip callables to promote lazy evaluation
         self._sensitive = sensitive
+        # validate fallback value, but skip callables to promote lazy evaluation
         # cast fallback values so that it breaks on import (e.g.: during tests)
         # however, do not trigger any callables or validation to promote a just-in-time evaluation at runtime
         if fallback is not None and not callable(fallback):
@@ -174,8 +174,8 @@ class Setting(SupportsInt, SupportsFloat, Generic[T]):
             raise MandatoryConfigurationError(f'Mandatory config item "{self.key}" is missing.')
 
     def _pretty_repr(self, value: Optional[ConfigValue]) -> str:
-        value_str = 'sensitive' if self._sensitive else "<not-set>" if value is None else value
-        return f'{self.__class__.__name__}[{self.key}] = {value_str}'
+        value_str = "<sensitive>" if self._sensitive else "<not-set>" if value is None else value
+        return f"{self.__class__.__name__}[{self.key}] = {value_str}"
 
     def __repr__(self) -> str:
         """ Returns a readable representation of the item for debugging. """
