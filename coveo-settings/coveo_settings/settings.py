@@ -174,7 +174,8 @@ class Setting(SupportsInt, SupportsFloat, Generic[T]):
             raise MandatoryConfigurationError(f'Mandatory config item "{self.key}" is missing.')
 
     def _pretty_repr(self, value: Optional[ConfigValue]) -> str:
-        return f'{self.__class__.__name__}[{self.key}] = {"<not-set>" if value is None else value}'
+        value_str = 'sensitive' if self._sensitive else "<not-set>" if value is None else value
+        return f'{self.__class__.__name__}[{self.key}] = {value_str}'
 
     def __repr__(self) -> str:
         """ Returns a readable representation of the item for debugging. """
