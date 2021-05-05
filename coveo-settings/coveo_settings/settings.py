@@ -146,18 +146,6 @@ class Setting(SupportsInt, SupportsFloat, Generic[T]):
     def _cast(value: ConfigValue) -> T:
         """ Casts a value to the appropriate type. """
 
-    def _get_raw_value(self) -> Optional[ConfigValue]:
-        """Returns the raw value/fallback/override of this setting, else None."""
-        value = (
-            _find_setting(self.key, *self._alternate_keys)
-            if self._override is None
-            else self._override
-        )
-        if value is None and self._fallback is not None:
-            value = self._fallback() if callable(self._fallback) else self._fallback
-
-        return value
-
     def _cast_or_raise(self, value: ConfigValue) -> T:
         """ Cast the value or raise an exception. """
         try:
@@ -170,6 +158,18 @@ class Setting(SupportsInt, SupportsFloat, Generic[T]):
     def _cast_and_validate(self, value: ConfigValue) -> T:
         """ Cast and validate the value or raise an exception. """
         return self._cast_or_raise(value)
+
+    def _get_raw_value(self) -> Optional[ConfigValue]:
+        """Returns the raw value/fallback/override of this setting, else None."""
+        value = (
+            _find_setting(self.key, *self._alternate_keys)
+            if self._override is None
+            else self._override
+        )
+        if value is None and self._fallback is not None:
+            value = self._fallback() if callable(self._fallback) else self._fallback
+
+        return value
 
     def _raise_if_missing(self) -> None:
         """ Raises an MandatoryConfigurationError exception if the setting is required but missing. """
