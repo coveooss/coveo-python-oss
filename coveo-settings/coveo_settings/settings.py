@@ -122,7 +122,7 @@ class Setting(SupportsInt, SupportsFloat, Generic[T]):
     @property
     def value(self) -> Optional[T]:
         """ Returns the validated value of the setting, or None when not set. """
-        value = self._get_raw_value()
+        value = self._get_value()
         return None if value is None else self._cast_or_raise(value)
 
     @value.setter
@@ -139,7 +139,7 @@ class Setting(SupportsInt, SupportsFloat, Generic[T]):
     @property
     def is_set(self) -> bool:
         """ Indicates if the value is set (values with defaults are always set unless mocked). """
-        return self._get_raw_value() is not None
+        return self._get_value() is not None
 
     @staticmethod
     @abstractmethod
@@ -155,7 +155,7 @@ class Setting(SupportsInt, SupportsFloat, Generic[T]):
                 f"{self._pretty_repr(value)}: Conversion to desired type failed."
             ) from exception
 
-    def _get_raw_value(self) -> Optional[ConfigValue]:
+    def _get_value(self) -> Optional[ConfigValue]:
         """Returns the raw value/fallback/override of this setting, else None."""
         value = (
             _find_setting(self.key, *self._alternate_keys)
@@ -177,7 +177,7 @@ class Setting(SupportsInt, SupportsFloat, Generic[T]):
 
     def __repr__(self) -> str:
         """ Returns a readable representation of the item for debugging. """
-        return self._pretty_repr(self._get_raw_value())
+        return self._pretty_repr(self._get_value())
 
     def __eq__(self, other: Any) -> bool:
         """ Indicates if the value is equal to another one. """
@@ -310,5 +310,5 @@ def mock_config_value(
     setting: Setting, value: Optional[ConfigValue]
 ) -> Generator[None, None, None]:
     """ Mocks a setting value during a block of code so that it always returns `value`. """
-    with patch.object(setting, "_get_raw_value", return_value=value):
+    with patch.object(setting, "_get_value", return_value=value):
         yield
