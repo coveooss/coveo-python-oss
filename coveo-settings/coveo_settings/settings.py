@@ -101,6 +101,7 @@ class Setting(SupportsInt, SupportsFloat, Generic[T]):
         key: str,
         fallback: Optional[Union[ConfigValue, Callable[[], Optional[ConfigValue]]]] = None,
         alternate_keys: Optional[Collection[str]] = None,
+        sensitive: bool = False,
     ) -> None:
         """ Initializes a setting. """
         self._key: str = key
@@ -108,6 +109,7 @@ class Setting(SupportsInt, SupportsFloat, Generic[T]):
         self._fallback = fallback
         self._override: Optional[ConfigValue] = None
         # validate fallback value, but skip callables to promote lazy evaluation
+        self._sensitive = sensitive
         # cast fallback values so that it breaks on import (e.g.: during tests)
         # however, do not trigger any callables or validation to promote a just-in-time evaluation at runtime
         if fallback is not None and not callable(fallback):
