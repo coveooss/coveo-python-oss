@@ -1,11 +1,12 @@
 """ Tests the settings classes. """
-
-from typing import Any, Type
 import json
 import os
+from contextlib import contextmanager
+from unittest.mock import MagicMock
+from typing import Any, Type, Optional, Generator, Final
 
 import pytest
-from coveo_testing.markers import UnitTest
+from coveo_testing.markers import UnitTest, Integration
 from coveo_testing.parametrize import parametrize
 
 from coveo_settings.settings import (
@@ -20,6 +21,7 @@ from coveo_settings.settings import (
     Setting,
     MandatoryConfigurationError,
     TypeConversionConfigurationError,
+    ValidationConfigurationError,
 )
 
 
@@ -28,6 +30,17 @@ def _clean_environment_variable(*environment_variable_name: str) -> None:
     for variable_name in environment_variable_name:
         if variable_name in os.environ:
             del os.environ[variable_name]
+
+
+@contextmanager
+def _clean_environment_context(*environment_variable_name: str) -> Generator[None, None, None]:
+    """ Context manager for the above function. """
+    try:
+        _clean_environment_variable(*environment_variable_name)
+        yield
+    except Exception:
+        _clean_environment_variable(*environment_variable_name)
+        raise
 
 
 @UnitTest
@@ -522,6 +535,86 @@ def test_setting_set_value_cast_and_validate(
     setting = klass("test")
     setting.value = raw_value
     assert setting.value == converted_value
+
+
+@UnitTest
+def test_setting_validation_callback_lazy() -> None:
+    validate_mock = MagicMock()
+    setting = AnySetting("test", validation=validate_mock, fallback="foo")
+    assert setting.is_set
+    validate_mock.assert_not_called()
+
+    assert not setting.is_valid
+    validate_mock.assert_called()
+
+
+@UnitTest
+def test_setting_validation_callback_failure() -> None:
+    def validate(_: str) -> Optional[str]:
+        return "error"
+
+    setting = AnySetting("test", validation=validate, fallback="foo")
+    assert not setting.is_valid
+    with pytest.raises(ValidationConfigurationError):
+        _ = setting.value
+    with pytest.raises(ValidationConfigurationError):
+        _ = str(setting)
+
+
+_SUCCESS: Final[str] = "success"
+
+
+def _validate(value: str) -> Optional[str]:
+    return None if _SUCCESS in value else "some error message"
+
+
+@UnitTest
+def test_setting_validation_callback() -> None:
+    assert not AnySetting("test", validation=_validate, fallback="oops").is_valid
+    setting = AnySetting("test", validation=_validate, fallback=_SUCCESS)
+    assert setting.is_set
+    assert setting.is_valid
+    assert str(setting) == setting.value == _SUCCESS
+
+
+@UnitTest
+def test_setting_validation_callback_cache() -> None:
+    validate_mock = MagicMock(return_value=None)
+    setting = AnySetting("test", validation=validate_mock, fallback="foo")
+
+    validate_mock.assert_not_called()
+    for _ in range(5):
+        assert setting.is_valid
+    validate_mock.assert_called_once()
+    validate_mock.reset_mock()
+
+    setting.value = "bar"
+    for _ in range(5):
+        assert setting.is_valid
+    validate_mock.assert_called_once()
+
+
+@Integration
+def test_setting_validation_callback_environ() -> None:
+    setting = StringSetting("test_setting_validation", validation=_validate)
+
+    with _clean_environment_context(setting.key):
+        assert not setting.is_set
+        assert not setting.is_valid
+
+        os.environ[setting.key] = _SUCCESS
+        assert setting.is_set
+        assert setting.is_valid
+        assert str(setting) == setting.value == _SUCCESS
+
+        os.environ[setting.key] = "failure"
+        assert setting.is_set
+        assert not setting.is_valid
+
+        with pytest.raises(ValidationConfigurationError):
+            _ = setting.value
+        with pytest.raises(ValidationConfigurationError):
+            _ = str(setting)
 
 
 @UnitTest

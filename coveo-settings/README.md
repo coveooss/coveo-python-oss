@@ -18,9 +18,13 @@ When accessed, the values are automatically converted to the desired type:
 - `IntSetting` and `FloatSetting` are self-explanatory
 - `DictSetting` allows you to use JSON maps
 
-If the input cannot be converted to the value type, an `InvalidConfiguration` exception is raised.
+If the input cannot be converted to the value type, an `TypeConversionConfigurationError` exception is raised.
 
 A default (fallback) value may be specified. The fallback may be a `callable`.
+
+A validation callback may be specified for custom logic and error messages.
+
+A setting can be set as sensitive for logging purposes. When logging, use repr(setting) to get the correct representation.
 
 
 ## Accessing the value
@@ -40,10 +44,22 @@ assert use_ssl in [True, False]
 use_ssl = DATABASE_USE_SSL.value
 assert use_ssl in [True, False, None]
 
-# use "is_set" as a shorthand for "value is not None": 
+# use "is_set" to check if there is a value set for this setting; skips validation check
 if DATABASE_USE_SSL.is_set:
     use_ssl = bool(DATABASE_USE_SSL)
+
+# use "is_valid" to verify if the value passes the validation callback. implies is_set.
+if not DATABASE_USE_SSL.is_valid:
+    ...
 ```
+
+
+## Setting the value
+
+You can override the value using `setting.value = "some value"` and clear the override with `setting.value = None`. 
+Clearing the override resumes the normal behavior of the environment variables and the fallback value, if set.
+
+This is typically used as a way to propagate CLI switches globally.
 
 
 ## Loose environment key matching
