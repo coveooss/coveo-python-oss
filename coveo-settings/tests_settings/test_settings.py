@@ -32,7 +32,7 @@ def _clean_environment_variable(*environment_variable_name: str) -> None:
 def test_setting_empty() -> None:
     """ Tests the empty behavior of the AnySetting class. """
     test_setting = AnySetting("ut")
-    assert test_setting.fallback is None
+    assert test_setting._fallback is None
     assert test_setting.value is None
     assert not test_setting.is_set
 
@@ -53,7 +53,7 @@ def test_setting_not_empty() -> None:
     """ Tests the not-empty behavior of the AnySetting class. """
     default_value = "value"
     test_setting = AnySetting("ut", fallback=default_value)
-    assert test_setting.fallback == default_value
+    assert test_setting._fallback == default_value
     assert test_setting.value == default_value
     assert test_setting == default_value
     assert default_value == test_setting  # both sides
@@ -177,7 +177,7 @@ def test_setting_environment_variable() -> None:
 
     test_setting = AnySetting(environment_variable)
     assert test_setting.key == environment_variable
-    assert test_setting.fallback is None
+    assert test_setting._fallback is None
     assert test_setting.value is None
     assert not test_setting.is_set
     assert not test_setting
@@ -188,7 +188,7 @@ def test_setting_environment_variable() -> None:
     assert test_setting == test_value
     assert test_setting.is_set
     assert test_setting.value == test_value
-    assert test_setting.fallback is None
+    assert test_setting._fallback is None
 
     del os.environ[environment_variable]
     assert not test_setting.is_set
