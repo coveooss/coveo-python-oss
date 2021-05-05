@@ -18,6 +18,8 @@ from coveo_settings.settings import (
     IntSetting,
     FloatSetting,
     Setting,
+    MandatoryConfigurationError,
+    TypeConversionConfigurationError,
 )
 
 
@@ -36,7 +38,7 @@ def test_setting_empty() -> None:
     assert test_setting.value is None
     assert not test_setting.is_set
 
-    with pytest.raises(InvalidConfiguration):
+    with pytest.raises(MandatoryConfigurationError):
         # you cannot == a setting that doesn't exist.
         assert test_setting.__eq__(None)
 
@@ -199,7 +201,7 @@ def test_setting_environment_variable() -> None:
 def test_string_setting() -> None:
     """ Tests the behavior of the StringSetting class. """
     for unsupported_value in ("", [], {}, set(), object()):
-        with pytest.raises(InvalidConfiguration):
+        with pytest.raises(TypeConversionConfigurationError):
             StringSetting("ut", fallback=unsupported_value)  # type: ignore
 
     test_setting = StringSetting("ut")
