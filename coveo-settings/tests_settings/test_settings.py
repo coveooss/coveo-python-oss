@@ -38,9 +38,8 @@ def _clean_environment_context(*environment_variable_name: str) -> Generator[Non
     try:
         _clean_environment_variable(*environment_variable_name)
         yield
-    except Exception:
+    finally:
         _clean_environment_variable(*environment_variable_name)
-        raise
 
 
 @UnitTest
