@@ -123,7 +123,7 @@ class Setting(SupportsInt, SupportsFloat, Generic[T]):
     def value(self) -> Optional[T]:
         """ Returns the validated value of the setting, or None when not set. """
         value = self._get_raw_value()
-        return None if value is None else self._cast_and_validate(value)
+        return None if value is None else self._cast_or_raise(value)
 
     @value.setter
     def value(self, value: Optional[ConfigValue]) -> None:
@@ -154,10 +154,6 @@ class Setting(SupportsInt, SupportsFloat, Generic[T]):
             raise TypeConversionConfigurationError(
                 f"{self._pretty_repr(value)}: Conversion to desired type failed."
             ) from exception
-
-    def _cast_and_validate(self, value: ConfigValue) -> T:
-        """ Cast and validate the value or raise an exception. """
-        return self._cast_or_raise(value)
 
     def _get_raw_value(self) -> Optional[ConfigValue]:
         """Returns the raw value/fallback/override of this setting, else None."""
