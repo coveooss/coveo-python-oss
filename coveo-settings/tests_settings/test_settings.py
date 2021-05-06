@@ -1,11 +1,12 @@
 """ Tests the settings classes. """
-
-from typing import Any, Type
 import json
 import os
+from contextlib import contextmanager
+from unittest.mock import MagicMock
+from typing import Any, Type, Optional, Generator, Final
 
 import pytest
-from coveo_testing.markers import UnitTest
+from coveo_testing.markers import UnitTest, Integration
 from coveo_testing.parametrize import parametrize
 
 from coveo_settings.settings import (
@@ -18,6 +19,9 @@ from coveo_settings.settings import (
     IntSetting,
     FloatSetting,
     Setting,
+    MandatoryConfigurationError,
+    TypeConversionConfigurationError,
+    ValidationConfigurationError,
 )
 
 
@@ -28,15 +32,25 @@ def _clean_environment_variable(*environment_variable_name: str) -> None:
             del os.environ[variable_name]
 
 
+@contextmanager
+def _clean_environment_context(*environment_variable_name: str) -> Generator[None, None, None]:
+    """ Removes one or many environment variables before and after running the block. """
+    try:
+        _clean_environment_variable(*environment_variable_name)
+        yield
+    finally:
+        _clean_environment_variable(*environment_variable_name)
+
+
 @UnitTest
 def test_setting_empty() -> None:
     """ Tests the empty behavior of the AnySetting class. """
     test_setting = AnySetting("ut")
-    assert test_setting.fallback is None
+    assert test_setting._fallback is None
     assert test_setting.value is None
     assert not test_setting.is_set
 
-    with pytest.raises(InvalidConfiguration):
+    with pytest.raises(MandatoryConfigurationError):
         # you cannot == a setting that doesn't exist.
         assert test_setting.__eq__(None)
 
@@ -53,7 +67,7 @@ def test_setting_not_empty() -> None:
     """ Tests the not-empty behavior of the AnySetting class. """
     default_value = "value"
     test_setting = AnySetting("ut", fallback=default_value)
-    assert test_setting.fallback == default_value
+    assert test_setting._fallback == default_value
     assert test_setting.value == default_value
     assert test_setting == default_value
     assert default_value == test_setting  # both sides
@@ -177,7 +191,7 @@ def test_setting_environment_variable() -> None:
 
     test_setting = AnySetting(environment_variable)
     assert test_setting.key == environment_variable
-    assert test_setting.fallback is None
+    assert test_setting._fallback is None
     assert test_setting.value is None
     assert not test_setting.is_set
     assert not test_setting
@@ -188,7 +202,7 @@ def test_setting_environment_variable() -> None:
     assert test_setting == test_value
     assert test_setting.is_set
     assert test_setting.value == test_value
-    assert test_setting.fallback is None
+    assert test_setting._fallback is None
 
     del os.environ[environment_variable]
     assert not test_setting.is_set
@@ -199,7 +213,7 @@ def test_setting_environment_variable() -> None:
 def test_string_setting() -> None:
     """ Tests the behavior of the StringSetting class. """
     for unsupported_value in ("", [], {}, set(), object()):
-        with pytest.raises(InvalidConfiguration):
+        with pytest.raises(TypeConversionConfigurationError):
             StringSetting("ut", fallback=unsupported_value)  # type: ignore
 
     test_setting = StringSetting("ut")
@@ -520,3 +534,95 @@ def test_setting_set_value_cast_and_validate(
     setting = klass("test")
     setting.value = raw_value
     assert setting.value == converted_value
+
+
+@UnitTest
+def test_setting_validation_callback_lazy() -> None:
+    validate_mock = MagicMock()
+    setting = AnySetting("test", validation=validate_mock, fallback="foo")
+    assert setting.is_set
+    validate_mock.assert_not_called()
+
+    assert not setting.is_valid
+    validate_mock.assert_called()
+
+
+@UnitTest
+def test_setting_validation_callback_failure() -> None:
+    def validate(_: str) -> Optional[str]:
+        return "error"
+
+    setting = AnySetting("test", validation=validate, fallback="foo")
+    assert not setting.is_valid
+    with pytest.raises(ValidationConfigurationError):
+        _ = setting.value
+    with pytest.raises(ValidationConfigurationError):
+        _ = str(setting)
+
+
+_SUCCESS: Final[str] = "success"
+
+
+def _validate(value: str) -> Optional[str]:
+    return None if _SUCCESS in value else "some error message"
+
+
+@UnitTest
+def test_setting_validation_callback() -> None:
+    assert not AnySetting("test", validation=_validate, fallback="oops").is_valid
+    setting = AnySetting("test", validation=_validate, fallback=_SUCCESS)
+    assert setting.is_set
+    assert setting.is_valid
+    assert str(setting) == setting.value == _SUCCESS
+
+
+@UnitTest
+def test_setting_validation_callback_cache() -> None:
+    validate_mock = MagicMock(return_value=None)
+    setting = AnySetting("test", validation=validate_mock, fallback="foo")
+
+    validate_mock.assert_not_called()
+    for _ in range(5):
+        assert setting.is_valid
+    validate_mock.assert_called_once()
+    validate_mock.reset_mock()
+
+    setting.value = "bar"
+    for _ in range(5):
+        assert setting.is_valid
+    validate_mock.assert_called_once()
+
+
+@Integration
+def test_setting_validation_callback_environ() -> None:
+    setting = StringSetting("test_setting_validation", validation=_validate)
+
+    with _clean_environment_context(setting.key):
+        assert not setting.is_set
+        assert not setting.is_valid
+
+        os.environ[setting.key] = _SUCCESS
+        assert setting.is_set
+        assert setting.is_valid
+        assert str(setting) == setting.value == _SUCCESS
+
+        os.environ[setting.key] = "failure"
+        assert setting.is_set
+        assert not setting.is_valid
+
+        with pytest.raises(ValidationConfigurationError):
+            _ = setting.value
+        with pytest.raises(ValidationConfigurationError):
+            _ = str(setting)
+
+
+@UnitTest
+def test_setting_sensitive() -> None:
+    setting = StringSetting("any", fallback="foo", sensitive=True)
+    assert setting.value == "foo"
+    assert "sensitive" in repr(setting)
+    assert "foo" not in repr(setting)
+
+    setting._sensitive = False
+    assert "sensitive" not in repr(setting)
+    assert "foo" in repr(setting)

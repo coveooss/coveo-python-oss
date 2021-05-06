@@ -12,12 +12,12 @@ keys like `redis.host` as `REDIS_HOST`, `__REDIS...host_`, `RedisHost` or `REDIS
 
 This module contains no setters for a good reason; they're reserved for UTs!
 """
-
 import json
 import logging
 import os
 from abc import abstractmethod
 from contextlib import contextmanager
+from copy import copy
 from typing import (
     Any,
     Dict,
@@ -37,7 +37,9 @@ from unittest.mock import patch
 
 ConfigValue = Union[str, int, float, bool, dict]
 ConfigDict = Dict[str, ConfigValue]
-T = TypeVar("T")  # pylint: disable=invalid-name
+T = TypeVar("T", str, int, float, bool, dict)
+ValidationCallback = Callable[[T], str]
+
 
 log = logging.getLogger(__name__)
 
@@ -45,7 +47,19 @@ ENVIRONMENT_VARIABLE_SEPARATORS = "._"
 
 
 class InvalidConfiguration(Exception):
-    """Thrown when a setting item is not or badly configured."""
+    """Thrown when a setting item is badly configured."""
+
+
+class TypeConversionConfigurationError(InvalidConfiguration):
+    """Thrown when a setting cannot be converted to the appropariate type."""
+
+
+class MandatoryConfigurationError(InvalidConfiguration):
+    """Thrown when a mandatory configuration value isn't set."""
+
+
+class ValidationConfigurationError(InvalidConfiguration):
+    """Thrown when a value fails a custom validation."""
 
 
 def _find_setting(*keys: str) -> Optional[ConfigValue]:
@@ -72,6 +86,11 @@ def _find_setting(*keys: str) -> Optional[ConfigValue]:
     return None
 
 
+def _no_validation(_: ConfigValue) -> Optional[str]:
+    """Default validation callback"""
+    return None
+
+
 class Setting(SupportsInt, SupportsFloat, Generic[T]):
     """
     Base class for magic type-checked settings.
@@ -91,17 +110,24 @@ class Setting(SupportsInt, SupportsFloat, Generic[T]):
     def __init__(
         self,
         key: str,
-        fallback: Union[ConfigValue, Callable[[], Optional[ConfigValue]]] = None,
-        alternate_keys: Collection[str] = None,
+        fallback: Optional[Union[ConfigValue, Callable[[], Optional[ConfigValue]]]] = None,
+        alternate_keys: Optional[Collection[str]] = None,
+        sensitive: bool = False,
+        validation: ValidationCallback = _no_validation,
     ) -> None:
         """ Initializes a setting. """
         self._key: str = key
         self._alternate_keys: Collection[str] = alternate_keys or tuple()
         self._fallback = fallback
         self._override: Optional[ConfigValue] = None
-        # validate fallback value, but skip callables to promote lazy evaluation
+        self._validation_callback: ValidationCallback = validation
+        self._sensitive = sensitive
+        self._cache_validated: Optional[T] = None
+        self._last_value: Optional[ConfigValue] = None
+        # cast fallback values so that it breaks on import (e.g.: during tests)
+        # however, do not trigger any callables or validation to promote a just-in-time evaluation at runtime
         if fallback is not None and not callable(fallback):
-            self.cast_and_validate(fallback)
+            self._cast_or_raise(fallback)
 
     @property
     def key(self) -> str:
@@ -110,8 +136,9 @@ class Setting(SupportsInt, SupportsFloat, Generic[T]):
 
     @property
     def value(self) -> Optional[T]:
-        """ Returns the value of the setting in the appropriate type, or None when not set. """
-        return self._get_value()
+        """ Returns the validated value of the setting, or None when not set. """
+        value = self._get_value()
+        return None if value is None else self._cast_and_validate(value)
 
     @value.setter
     def value(self, value: Optional[ConfigValue]) -> None:
@@ -125,52 +152,78 @@ class Setting(SupportsInt, SupportsFloat, Generic[T]):
         self._override = value
 
     @property
-    def fallback(self) -> Optional[ConfigValue]:
-        """ Returns the fallback value, if set. """
-        return self._fallback() if callable(self._fallback) else self._fallback
+    def is_set(self) -> bool:
+        """
+        Indicates if the value is set (values with defaults are always set unless mocked).
+        This doesn't mean the value is valid.
+        """
+        return self._get_value() is not None
 
     @property
-    def is_set(self) -> bool:
-        """ Indicates if the value is set (values with defaults are always set unless mocked). """
-        return self.value is not None
+    def is_valid(self) -> bool:
+        """ True if value is set and valid. """
+        try:
+            return self.value is not None
+        except InvalidConfiguration:
+            return False
 
     @staticmethod
     @abstractmethod
-    def cast(value: Optional[ConfigValue]) -> T:
+    def _cast(value: ConfigValue) -> T:
         """ Casts a value to the appropriate type. """
 
-    def cast_and_validate(self, value: Optional[ConfigValue]) -> T:
-        """ Casts the value and wraps exceptions into an InvalidConfig exception. """
+    def _cast_or_raise(self, value: ConfigValue) -> T:
+        """ Cast the value or raise an exception. """
         try:
-            return self.cast(value)
+            return self._cast(value)
         except (TypeError, ValueError) as exception:
-            raise InvalidConfiguration(
-                f"An invalid configuration value was provided to {self.__class__.__name__}."
+            raise TypeConversionConfigurationError(
+                f"{self._pretty_repr(value)}: Conversion to desired type failed."
             ) from exception
 
-    def _get_value(self) -> Optional[T]:
-        """ Internal gets-a-value. """
+    def _validate_or_raise(self, value: T) -> T:
+        """ Launches the custom validation callback on a value. Raises ValidationConfigurationError on failure. """
+        if self._cache_validated != value:
+            error_message = self._validation_callback(value)
+            if error_message:
+                raise ValidationConfigurationError(f"{self._pretty_repr(value)}: {error_message}")
+            self._cache_validated = copy(value)
+        return value
+
+    def _cast_and_validate(self, value: ConfigValue) -> T:
+        """ Cast and validate the value or raise an exception. """
+        return self._validate_or_raise(self._cast_or_raise(value))
+
+    def _get_value(self) -> Optional[ConfigValue]:
+        """Returns the raw value/fallback/override of this setting, else None."""
         value = (
             _find_setting(self.key, *self._alternate_keys)
             if self._override is None
             else self._override
         )
-        if value is None:
-            value = self.fallback
+        if value is None and self._fallback is not None:
+            value = self._fallback() if callable(self._fallback) else self._fallback
 
-        if value is None:
-            return None
-
-        return self.cast_and_validate(value)
+        self._last_value = copy(value)
+        return value
 
     def _raise_if_missing(self) -> None:
-        """ Raises an InvalidConfiguration exception if the setting is required but missing. """
+        """ Raises an MandatoryConfigurationError exception if the setting is required but missing. """
         if not self.is_set:
-            raise InvalidConfiguration(f'Mandatory config item "{self.key}" is missing.')
+            raise MandatoryConfigurationError(f'Mandatory config item "{self.key}" is missing.')
 
-    def __repr__(self) -> str:  # pragma: no cover
-        """ Returns a readable representation of the item when None, for debugging. """
-        return f"<{self.key}> {self.value}"
+    def _pretty_repr(self, value: Optional[ConfigValue]) -> str:
+        value_str = "<not-set>" if value is None else "<sensitive>" if self._sensitive else value
+        return f"{self.__class__.__name__}[{self.key}] = {value_str}"
+
+    def __repr__(self) -> str:
+        """ Returns a readable representation of the item for debugging. """
+        # we are overly careful in not triggering mechanics (e.g.: _get_value()) from here.
+        # value is only shown if already computed.
+        value = next(
+            v for v in (self._cache_validated, self._last_value, "<not-evaluated>") if v is not None
+        )
+        return self._pretty_repr(value)
 
     def __eq__(self, other: Any) -> bool:
         """ Indicates if the value is equal to another one. """
@@ -204,7 +257,7 @@ class AnySetting(Setting[Any]):  # pylint: disable=inherit-non-class
     """ Setting class that performs no conversion. """
 
     @staticmethod
-    def cast(value: Optional[ConfigValue]) -> T:
+    def _cast(value: ConfigValue) -> T:
         """ Always use the provided value with no conversion. """
         return value  # type: ignore
 
@@ -221,7 +274,7 @@ class BoolSetting(Setting[bool]):  # pylint: disable=inherit-non-class
     FALSE_VALUES = ("false", "no", "0")
 
     @staticmethod
-    def cast(value: Optional[ConfigValue]) -> bool:
+    def _cast(value: ConfigValue) -> bool:
         """ Converts any supported value to a bool. """
         value = str(value).lower()
         if value not in BoolSetting.TRUE_VALUES + BoolSetting.FALSE_VALUES:
@@ -234,7 +287,7 @@ class StringSetting(Setting[str]):  # pylint: disable=inherit-non-class
     """ Setting that handles string values. """
 
     @staticmethod
-    def cast(value: Optional[ConfigValue]) -> str:
+    def _cast(value: ConfigValue) -> str:
         """ Converts a value to a string. """
         if not isinstance(value, (str, bool, int, float)):
             raise ValueError(f"Cannot convert objects of type {type(value)}.")
@@ -252,7 +305,7 @@ class IntSetting(Setting[int]):  # pylint: disable=inherit-non-class
     """ Setting that handles int values. """
 
     @staticmethod
-    def cast(value: Optional[ConfigValue]) -> int:
+    def _cast(value: ConfigValue) -> int:
         """ Converts the value to an int. """
         # check for the presence of a float before converting it. This is the easiest way to catch
         # edge cases such as "0.0"
@@ -266,7 +319,7 @@ class FloatSetting(Setting[float]):  # pylint: disable=inherit-non-class
     """ Setting that handles float values. """
 
     @staticmethod
-    def cast(value: Optional[ConfigValue]) -> float:
+    def _cast(value: ConfigValue) -> float:
         """ Converts the value to a float. """
         if not isinstance(value, (str, float, int)) or isinstance(value, bool):
             raise ValueError
@@ -290,7 +343,7 @@ class DictSetting(Setting[dict]):  # pylint: disable=inherit-non-class
         return iter(self.value or {})
 
     @staticmethod
-    def cast(value: Optional[ConfigValue]) -> dict:
+    def _cast(value: ConfigValue) -> dict:
         """ Converts the value to a dictionary. """
         if isinstance(value, str):
             value = json.loads(value)
