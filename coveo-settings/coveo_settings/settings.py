@@ -220,7 +220,7 @@ class Setting(SupportsInt, SupportsFloat, Generic[T]):
         # we are overly careful in not triggering mechanics (e.g.: _get_value()) from here.
         # value is only shown if already computed.
         value = next(
-            _ for _ in (self._cache_validated, self._last_value, "<not-evaluated>") if _ is not None
+            v for v in (self._cache_validated, self._last_value, "<not-evaluated>") if v is not None
         )
         return self._pretty_repr(value)
 
