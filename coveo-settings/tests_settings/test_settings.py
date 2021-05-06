@@ -522,3 +522,15 @@ def test_setting_set_value_cast_and_validate(
     setting = klass("test")
     setting.value = raw_value
     assert setting.value == converted_value
+
+
+@UnitTest
+def test_setting_sensitive() -> None:
+    setting = StringSetting("any", fallback="foo", sensitive=True)
+    assert setting.value == "foo"
+    assert "sensitive" in repr(setting)
+    assert "foo" not in repr(setting)
+
+    setting._sensitive = False
+    assert "sensitive" not in repr(setting)
+    assert "foo" in repr(setting)
