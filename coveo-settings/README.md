@@ -24,7 +24,8 @@ A default (fallback) value may be specified. The fallback may be a `callable`.
 
 A validation callback may be specified for custom logic and error messages.
 
-A setting can be set as sensitive for logging purposes. When logging, use repr(setting) to get the correct representation.
+**A setting can be set as sensitive for logging purposes. When logging, use repr(setting) to get the correct representation.**
+
 
 
 ## Accessing the value
