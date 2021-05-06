@@ -12,12 +12,12 @@ keys like `redis.host` as `REDIS_HOST`, `__REDIS...host_`, `RedisHost` or `REDIS
 
 This module contains no setters for a good reason; they're reserved for UTs!
 """
-
 import json
 import logging
 import os
 from abc import abstractmethod
 from contextlib import contextmanager
+from copy import copy
 from typing import (
     Any,
     Dict,
@@ -37,7 +37,9 @@ from unittest.mock import patch
 
 ConfigValue = Union[str, int, float, bool, dict]
 ConfigDict = Dict[str, ConfigValue]
-T = TypeVar("T")  # pylint: disable=invalid-name
+T = TypeVar("T", str, int, float, bool, dict)
+ValidationCallback = Callable[[T], str]
+
 
 log = logging.getLogger(__name__)
 
@@ -54,6 +56,10 @@ class TypeConversionConfigurationError(InvalidConfiguration):
 
 class MandatoryConfigurationError(InvalidConfiguration):
     """Thrown when a mandatory configuration value isn't set."""
+
+
+class ValidationConfigurationError(InvalidConfiguration):
+    """Thrown when a value fails a custom validation."""
 
 
 def _find_setting(*keys: str) -> Optional[ConfigValue]:
@@ -80,6 +86,11 @@ def _find_setting(*keys: str) -> Optional[ConfigValue]:
     return None
 
 
+def _no_validation(_: ConfigValue) -> Optional[str]:
+    """Default validation callback"""
+    return None
+
+
 class Setting(SupportsInt, SupportsFloat, Generic[T]):
     """
     Base class for magic type-checked settings.
@@ -102,14 +113,17 @@ class Setting(SupportsInt, SupportsFloat, Generic[T]):
         fallback: Optional[Union[ConfigValue, Callable[[], Optional[ConfigValue]]]] = None,
         alternate_keys: Optional[Collection[str]] = None,
         sensitive: bool = False,
+        validation: ValidationCallback = _no_validation,
     ) -> None:
         """ Initializes a setting. """
         self._key: str = key
         self._alternate_keys: Collection[str] = alternate_keys or tuple()
         self._fallback = fallback
         self._override: Optional[ConfigValue] = None
+        self._validation_callback: ValidationCallback = validation
         self._sensitive = sensitive
-        # validate fallback value, but skip callables to promote lazy evaluation
+        self._cache_validated: Optional[T] = None
+        self._last_value: Optional[ConfigValue] = None
         # cast fallback values so that it breaks on import (e.g.: during tests)
         # however, do not trigger any callables or validation to promote a just-in-time evaluation at runtime
         if fallback is not None and not callable(fallback):
@@ -124,7 +138,7 @@ class Setting(SupportsInt, SupportsFloat, Generic[T]):
     def value(self) -> Optional[T]:
         """ Returns the validated value of the setting, or None when not set. """
         value = self._get_value()
-        return None if value is None else self._cast_or_raise(value)
+        return None if value is None else self._cast_and_validate(value)
 
     @value.setter
     def value(self, value: Optional[ConfigValue]) -> None:
@@ -139,8 +153,19 @@ class Setting(SupportsInt, SupportsFloat, Generic[T]):
 
     @property
     def is_set(self) -> bool:
-        """ Indicates if the value is set (values with defaults are always set unless mocked). """
+        """
+        Indicates if the value is set (values with defaults are always set unless mocked).
+        This doesn't mean the value is valid.
+        """
         return self._get_value() is not None
+
+    @property
+    def is_valid(self) -> bool:
+        """ True if value is set and valid. """
+        try:
+            return self.value is not None
+        except InvalidConfiguration:
+            return False
 
     @staticmethod
     @abstractmethod
@@ -156,6 +181,19 @@ class Setting(SupportsInt, SupportsFloat, Generic[T]):
                 f"{self._pretty_repr(value)}: Conversion to desired type failed."
             ) from exception
 
+    def _validate_or_raise(self, value: T) -> T:
+        """ Launches the custom validation callback on a value. Raises ValidationConfigurationError on failure. """
+        if self._cache_validated != value:
+            error_message = self._validation_callback(value)
+            if error_message:
+                raise ValidationConfigurationError(f"{self._pretty_repr(value)}: {error_message}")
+            self._cache_validated = copy(value)
+        return value
+
+    def _cast_and_validate(self, value: ConfigValue) -> T:
+        """ Cast and validate the value or raise an exception. """
+        return self._validate_or_raise(self._cast_or_raise(value))
+
     def _get_value(self) -> Optional[ConfigValue]:
         """Returns the raw value/fallback/override of this setting, else None."""
         value = (
@@ -166,6 +204,7 @@ class Setting(SupportsInt, SupportsFloat, Generic[T]):
         if value is None and self._fallback is not None:
             value = self._fallback() if callable(self._fallback) else self._fallback
 
+        self._last_value = copy(value)
         return value
 
     def _raise_if_missing(self) -> None:
@@ -179,7 +218,12 @@ class Setting(SupportsInt, SupportsFloat, Generic[T]):
 
     def __repr__(self) -> str:
         """ Returns a readable representation of the item for debugging. """
-        return self._pretty_repr(self._get_value())
+        # we are overly careful in not triggering mechanics (e.g.: _get_value()) from here.
+        # value is only shown if already computed.
+        value = next(
+            v for v in (self._cache_validated, self._last_value, "<not-evaluated>") if v is not None
+        )
+        return self._pretty_repr(value)
 
     def __eq__(self, other: Any) -> bool:
         """ Indicates if the value is equal to another one. """
