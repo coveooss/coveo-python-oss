@@ -34,7 +34,7 @@ def _clean_environment_variable(*environment_variable_name: str) -> None:
 
 @contextmanager
 def _clean_environment_context(*environment_variable_name: str) -> Generator[None, None, None]:
-    """ Context manager for the above function. """
+    """ Removes one or many environment variables before and after running the block. """
     try:
         _clean_environment_variable(*environment_variable_name)
         yield
