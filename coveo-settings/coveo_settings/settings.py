@@ -37,8 +37,9 @@ from unittest.mock import patch
 
 ConfigValue = Union[str, int, float, bool, dict]
 ConfigDict = Dict[str, ConfigValue]
-T = TypeVar("T")  # pylint: disable=invalid-name
+T = TypeVar("T", str, int, float, bool, dict)
 ValidationCallback = Callable[[T], str]
+
 
 log = logging.getLogger(__name__)
 
