@@ -71,6 +71,17 @@ Matching the key of the environment variable `project.database.ssl` is done very
 - dots and underscores are ignored completely (`foo_bar` and `f__ooba.r` are equal)
     - useful for some runners that don't support dots in environment variable keys
     
+## Use ready validation
+
+You can quickly validate that a string is in a specific list like this:
+
+```python
+from coveo_settings.settings import StringSetting
+from coveo_settings.validation import InSequence
+
+ENV = StringSetting("environment", fallback="dev", validation=InSequence("prod", "staging", "dev"))
+```
+
 
 ## Mocking
 
