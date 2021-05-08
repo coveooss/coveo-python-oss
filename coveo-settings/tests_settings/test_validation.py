@@ -1,7 +1,13 @@
 import pytest
 
 from coveo_testing.markers import UnitTest
-from coveo_settings.settings import StringSetting, ValidationConfigurationError
+from coveo_settings.settings import (
+    StringSetting,
+    ValidationConfigurationError,
+    IntSetting,
+    FloatSetting,
+    ValidationCallbackError,
+)
 from coveo_settings.validation import InSequence
 
 
@@ -36,3 +42,21 @@ def test_validation_in_sequence_negative() -> None:
     with pytest.raises(ValidationConfigurationError) as excinfo:
         test_setting_sensitive.value
     assert "third" not in str(excinfo.value)
+
+
+def test_validation_magic() -> None:
+    assert isinstance(IntSetting("ut", validation=[1, 2, 3])._validation_callback, InSequence)
+
+
+def test_validation_magic_iterable_success() -> None:
+    assert FloatSetting("ut", fallback=1.0, validation=[1.0, 2, 3]).value == 1.0
+
+
+def test_validation_magic_iterable_failure() -> None:
+    with pytest.raises(ValidationConfigurationError):
+        _ = StringSetting("ut", fallback="hey", validation=["nope"]).value
+
+
+def test_validation_magic_iterable_failure_if_string() -> None:
+    with pytest.raises(ValidationCallbackError):
+        _ = StringSetting("ut", validation="no strings allowed")
