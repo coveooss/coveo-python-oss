@@ -20,13 +20,11 @@ from contextlib import contextmanager
 from copy import copy
 from typing import (
     Any,
-    Dict,
     Optional,
     Union,
     SupportsInt,
     SupportsFloat,
     Generic,
-    TypeVar,
     Iterator,
     Generator,
     Collection,
@@ -34,11 +32,8 @@ from typing import (
 )
 from unittest.mock import patch
 
-
-ConfigValue = Union[str, int, float, bool, dict]
-ConfigDict = Dict[str, ConfigValue]
-T = TypeVar("T", str, int, float, bool, dict)
-ValidationCallback = Callable[[T], str]
+from .annotations import ConfigValue, T, Validation, ValidationCallback
+from .validation import InSequence
 
 
 log = logging.getLogger(__name__)
@@ -51,7 +46,7 @@ class InvalidConfiguration(Exception):
 
 
 class TypeConversionConfigurationError(InvalidConfiguration):
-    """Thrown when a setting cannot be converted to the appropariate type."""
+    """Thrown when a setting cannot be converted to the appropriate type."""
 
 
 class MandatoryConfigurationError(InvalidConfiguration):
@@ -60,6 +55,10 @@ class MandatoryConfigurationError(InvalidConfiguration):
 
 class ValidationConfigurationError(InvalidConfiguration):
     """Thrown when a value fails a custom validation."""
+
+
+class ValidationCallbackError(InvalidConfiguration):
+    """Thrown when a validation type is not supported."""
 
 
 def _find_setting(*keys: str) -> Optional[ConfigValue]:
@@ -113,14 +112,16 @@ class Setting(SupportsInt, SupportsFloat, Generic[T]):
         fallback: Optional[Union[ConfigValue, Callable[[], Optional[ConfigValue]]]] = None,
         alternate_keys: Optional[Collection[str]] = None,
         sensitive: bool = False,
-        validation: ValidationCallback = _no_validation,
+        validation: Validation = _no_validation,
     ) -> None:
         """ Initializes a setting. """
         self._key: str = key
         self._alternate_keys: Collection[str] = alternate_keys or tuple()
         self._fallback = fallback
         self._override: Optional[ConfigValue] = None
-        self._validation_callback: ValidationCallback = validation
+        self._validation_callback: ValidationCallback = self._resolve_validation_callback(
+            validation
+        )
         self._sensitive = sensitive
         self._cache_validated: Optional[T] = None
         self._last_value: Optional[ConfigValue] = None
@@ -206,6 +207,19 @@ class Setting(SupportsInt, SupportsFloat, Generic[T]):
 
         self._last_value = copy(value)
         return value
+
+    def _resolve_validation_callback(self, validation: Validation) -> ValidationCallback:
+        if callable(validation):
+            return validation
+
+        try:
+            if isinstance(validation, str):
+                raise TypeError(validation)
+            iterable = iter(validation)
+        except TypeError as exception:
+            raise ValidationCallbackError("Unsupported validation callback type") from exception
+
+        return InSequence(*iterable)
 
     def _raise_if_missing(self) -> None:
         """ Raises an MandatoryConfigurationError exception if the setting is required but missing. """
