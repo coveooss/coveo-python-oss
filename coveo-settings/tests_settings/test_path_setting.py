@@ -28,3 +28,18 @@ def test_path_setting_conversion_error(path: ConfigValue) -> None:
 def test_path_setting_not_set() -> None:
     with pytest.raises(MandatoryConfigurationError):
         _ = Path(PathSetting("test"))
+
+
+truediv_test_data = parametrize(
+    ("folder", "filename"), [("/temp/folder", "foo.txt"), ("relative/paths", "../file.txt")]
+)
+
+
+@truediv_test_data
+def test_path_truediv(folder: str, filename: str) -> None:
+    assert PathSetting("test", fallback=folder) / filename == folder / Path(filename)
+
+
+@truediv_test_data
+def test_path_rtruediv(folder: str, filename: str) -> None:
+    assert folder / PathSetting("test", fallback=filename) == Path(folder) / filename

@@ -1,5 +1,6 @@
 from os import PathLike
 from pathlib import Path
+from typing import Any
 
 from coveo_settings.annotations import ConfigValue
 from coveo_settings.setting_abc import Setting
@@ -34,3 +35,11 @@ class PathSetting(Setting[Path], PathLike):
     def _cast(value: ConfigValue) -> Path:
         """Converts the value to a Path."""
         return Path(value)  # type: ignore[arg-type]
+
+    def __truediv__(self, other: Any) -> Path:
+        self._raise_if_missing()
+        return self.value / other  # type: ignore[no-any-return]
+
+    def __rtruediv__(self, other: Any) -> Path:
+        self._raise_if_missing()
+        return other / self.value  # type: ignore[no-any-return]

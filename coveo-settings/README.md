@@ -17,7 +17,7 @@ When accessed, the values are automatically converted to the desired type:
 - `BoolSetting` is either True or False, but accepts "yes|no|true|false|1|0" as input (case-insensitive, of course)
 - `IntSetting` and `FloatSetting` are self-explanatory
 - `DictSetting` allows you to use JSON maps
-- `PathSetting` gives a Path instance, and also implements PathLike
+- `PathSetting` gives a Path instance, and also implements PathLike and the `/` operator
 
 If the input cannot be converted to the value type, an `TypeConversionConfigurationError` exception is raised.
 
