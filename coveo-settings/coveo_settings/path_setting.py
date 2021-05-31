@@ -32,5 +32,5 @@ class PathSetting(Setting[Path], PathLike):
 
     @staticmethod
     def _cast(value: ConfigValue) -> Path:
-        """Converts the value to a dictionary."""
+        """Converts the value to a Path."""
         return Path(value)  # type: ignore[arg-type]
