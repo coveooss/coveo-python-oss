@@ -17,7 +17,7 @@ class CannotFindRepoRoot(Exception):
 
 
 @contextmanager
-def pushd(working_directory: Union[Path, str]) -> Iterator[None]:
+def pushd(working_directory: Union[os.PathLike, str]) -> Iterator[None]:
     """Change the current working directory for a block of code."""
     cwd = os.getcwd()
     try:
@@ -128,7 +128,9 @@ def _find_repo_root(path: Path) -> Path:
     ) from git_error
 
 
-def find_repo_root(path: Union[Path, str] = ".", *, default: Union[str, Path] = None) -> Path:
+def find_repo_root(
+    path: Union[os.PathLike, str] = ".", *, default: Union[str, os.PathLike] = None
+) -> Path:
     """Will find the root of a git repo based on the provided path.
 
     Will raise FileNotFoundError if it cannot be found.
