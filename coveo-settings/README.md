@@ -3,7 +3,7 @@
 Whenever you want the user to be able to configure something through an environment variable, this module has your back:
 
 ```python
-from coveo_settings.settings import StringSetting, BoolSetting
+from coveo_settings import StringSetting, BoolSetting
 
 DATABASE_URL = StringSetting('project.database.url')
 DATABASE_USE_SSL = BoolSetting('project.database.ssl')
@@ -34,7 +34,7 @@ A validation callback may be specified for custom logic and error messages.
 There are various ways to obtain the value:
 
 ```python
-from coveo_settings.settings import StringSetting, BoolSetting
+from coveo_settings import BoolSetting
 
 DATABASE_USE_SSL = BoolSetting('project.database.ssl')
 
@@ -56,14 +56,6 @@ if not DATABASE_USE_SSL.is_valid:
 ```
 
 
-## Setting the value
-
-You can override the value using `setting.value = "some value"` and clear the override with `setting.value = None`. 
-Clearing the override resumes the normal behavior of the environment variables and the fallback value, if set.
-
-This is typically used as a way to propagate CLI switches globally.
-
-
 ## Loose environment key matching
 
 Matching the key of the environment variable `project.database.ssl` is done very loosely:
@@ -71,7 +63,8 @@ Matching the key of the environment variable `project.database.ssl` is done very
 - case-insensitive
 - dots and underscores are ignored completely (`foo_bar` and `f__ooba.r` are equal)
     - useful for some runners that don't support dots in environment variable keys
-    
+
+
 ## Use ready validation
 
 You can quickly validate that a string is in a specific list like this:
@@ -84,12 +77,22 @@ ENV = StringSetting("environment", fallback="dev", validation=InSequence("prod",
 ```
 
 
+## Setting the value
+
+You can override the value using `setting.value = "some value"` and clear the override with `setting.value = None`. 
+Clearing the override resumes the normal behavior of the environment variables and the fallback value, if set.
+
+This is typically used as a way to propagate CLI switches globally.
+For mocking scenarios, refer to the `Mocking` section below.
+
+
 ## Mocking
 
 When you need a setting value for a test, use the `mock_config_value` context manager:
 
 ```python
-from coveo_settings.settings import mock_config_value, StringSetting
+from coveo_settings import StringSetting
+from coveo_settings.mock import mock_config_value
 
 SETTING = StringSetting(...)
 
@@ -101,7 +104,8 @@ with mock_config_value(SETTING, 'new-value'):
 You can also clear the value:
 
 ```python
-from coveo_settings.settings import mock_config_value, StringSetting
+from coveo_settings import StringSetting
+from coveo_settings.mock import mock_config_value
 
 SETTING = StringSetting(..., fallback='test')
 
