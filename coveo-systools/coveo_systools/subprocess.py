@@ -1,6 +1,7 @@
 """Adds much needed magic and features over the builtin subprocess machinery."""
 
 import logging
+from os import PathLike
 from pathlib import Path
 import subprocess
 from typing import Union, Any, Optional, cast, List, Dict, Tuple, Iterable
@@ -151,7 +152,7 @@ class _CallProtocol(Protocol):
 
 def check_run(
     *command: Any,
-    working_directory: Union[Path, str] = ".",
+    working_directory: Union[PathLike, str] = ".",
     capture_output: bool = False,
     verbose: bool = False,
     **kwargs: Any,
@@ -192,14 +193,20 @@ def check_run(
 
 
 def check_call(
-    *command: Any, working_directory: Union[Path, str] = ".", verbose: bool = False, **kwargs: Any
+    *command: Any,
+    working_directory: Union[PathLike, str] = ".",
+    verbose: bool = False,
+    **kwargs: Any,
 ) -> Optional[str]:
     """Proxy for subprocess.check_call"""
     return check_run(*command, working_directory=working_directory, verbose=verbose, **kwargs)
 
 
 def check_output(
-    *command: Any, working_directory: Union[Path, str] = ".", verbose: bool = False, **kwargs: Any
+    *command: Any,
+    working_directory: Union[PathLike, str] = ".",
+    verbose: bool = False,
+    **kwargs: Any,
 ) -> Optional[str]:
     """Proxy for subprocess.check_output"""
     return check_run(
@@ -232,6 +239,6 @@ def cast_command_line_argument_from_number(value: Union[int, float]) -> str:
     return str(value)
 
 
-@cast_command_line_argument_to_string.register(Path)
+@cast_command_line_argument_to_string.register(PathLike)  # PathLike is "runtime checkable"
 def cast_command_line_argument_from_path(value: Path) -> str:
     return str(value)
