@@ -2,7 +2,7 @@ from os import PathLike
 from pathlib import Path
 
 from coveo_settings.annotations import ConfigValue
-from coveo_settings.settings import Setting
+from coveo_settings.setting_abc import Setting
 
 
 class PathSetting(Setting[Path], PathLike):

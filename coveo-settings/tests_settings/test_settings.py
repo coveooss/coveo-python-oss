@@ -1,4 +1,5 @@
 """ Tests the settings classes. """
+
 import json
 import os
 from contextlib import contextmanager
@@ -6,23 +7,26 @@ from unittest.mock import MagicMock
 from typing import Any, Type, Optional, Generator, Final
 
 import pytest
-from coveo_testing.markers import UnitTest, Integration
-from coveo_testing.parametrize import parametrize
 
-from coveo_settings.settings import (
-    mock_config_value,
+from coveo_settings import (
     DictSetting,
-    InvalidConfiguration,
     AnySetting,
     StringSetting,
     BoolSetting,
     IntSetting,
     FloatSetting,
     Setting,
+)
+from coveo_settings.exceptions import (
     MandatoryConfigurationError,
     TypeConversionConfigurationError,
+    InvalidConfiguration,
     ValidationConfigurationError,
 )
+from coveo_settings.mock import mock_config_value
+
+from coveo_testing.markers import UnitTest, Integration
+from coveo_testing.parametrize import parametrize
 
 
 def _clean_environment_variable(*environment_variable_name: str) -> None:
@@ -281,7 +285,7 @@ def test_bool_setting() -> None:
     environment_variable = "ut.test.bool.settings"
 
     # test supported True values
-    for value in ("True", "trUe", "1", 1, True, "yes"):
+    for value in ("True", "trUe", "1", 1, True, "yes", "Y"):
         test_setting = BoolSetting("ut", fallback=value)  # type: ignore
         assert isinstance(test_setting.value, bool)
         assert test_setting
@@ -294,7 +298,7 @@ def test_bool_setting() -> None:
         assert test_setting
 
     # test supported False values
-    for value in ("False", "falSe", "0", 0, False, "no"):
+    for value in ("False", "falSe", "0", 0, False, "no", "n"):
         test_setting = BoolSetting("ut", fallback=value)  # type: ignore
         assert isinstance(test_setting.value, bool)
         assert not test_setting
