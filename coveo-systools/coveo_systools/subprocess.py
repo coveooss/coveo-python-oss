@@ -240,5 +240,5 @@ def cast_command_line_argument_from_number(value: Union[int, float]) -> str:
 
 
 @cast_command_line_argument_to_string.register(PathLike)  # PathLike is "runtime checkable"
-def cast_command_line_argument_from_path(value: Path) -> str:
+def cast_command_line_argument_from_path(value: PathLike) -> str:
     return str(value)
