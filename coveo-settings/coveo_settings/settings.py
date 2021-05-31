@@ -245,7 +245,7 @@ class Setting(SupportsInt, SupportsFloat, Generic[T]):
         equal = other == self.value
         if isinstance(equal, bool):
             return equal
-        return NotImplemented  # pragma: no cover
+        return NotImplemented
 
     def __bool__(self) -> bool:
         """ Indicates if the value is True (in python's terms). Missing values are False. """
@@ -259,15 +259,15 @@ class Setting(SupportsInt, SupportsFloat, Generic[T]):
     def __int__(self) -> int:
         """ Returns the value, blindly converted to int. """
         self._raise_if_missing()
-        return int(self.value)  # type: ignore
+        return int(self.value)  # type: ignore[call-overload, no-any-return]
 
     def __float__(self) -> float:
         """ Return the value, blindly converted to float. """
         self._raise_if_missing()
-        return float(self.value)  # type: ignore
+        return float(self.value)  # type: ignore[arg-type]
 
 
-class AnySetting(Setting[Any]):  # pylint: disable=inherit-non-class
+class AnySetting(Setting[Any]):
     """ Setting class that performs no conversion. """
 
     @staticmethod
@@ -276,7 +276,7 @@ class AnySetting(Setting[Any]):  # pylint: disable=inherit-non-class
         return value  # type: ignore
 
 
-class BoolSetting(Setting[bool]):  # pylint: disable=inherit-non-class
+class BoolSetting(Setting[bool]):
     """
     Setting that handles bool values.
 
@@ -297,7 +297,7 @@ class BoolSetting(Setting[bool]):  # pylint: disable=inherit-non-class
         return value in BoolSetting.TRUE_VALUES
 
 
-class StringSetting(Setting[str]):  # pylint: disable=inherit-non-class
+class StringSetting(Setting[str]):
     """ Setting that handles string values. """
 
     @staticmethod
@@ -315,7 +315,7 @@ class StringSetting(Setting[str]):  # pylint: disable=inherit-non-class
         return value
 
 
-class IntSetting(Setting[int]):  # pylint: disable=inherit-non-class
+class IntSetting(Setting[int]):
     """ Setting that handles int values. """
 
     @staticmethod
@@ -329,7 +329,7 @@ class IntSetting(Setting[int]):  # pylint: disable=inherit-non-class
         return int(value)
 
 
-class FloatSetting(Setting[float]):  # pylint: disable=inherit-non-class
+class FloatSetting(Setting[float]):
     """ Setting that handles float values. """
 
     @staticmethod
@@ -341,7 +341,7 @@ class FloatSetting(Setting[float]):  # pylint: disable=inherit-non-class
         return float(value)
 
 
-class DictSetting(Setting[dict]):  # pylint: disable=inherit-non-class
+class DictSetting(Setting[dict]):
     """ Setting that handles a dictionary value. """
 
     def __getitem__(self, k: str) -> Any:
