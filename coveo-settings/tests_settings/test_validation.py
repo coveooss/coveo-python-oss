@@ -1,13 +1,9 @@
 import pytest
 
 from coveo_testing.markers import UnitTest
-from coveo_settings.settings import (
-    StringSetting,
-    ValidationConfigurationError,
-    IntSetting,
-    FloatSetting,
-    ValidationCallbackError,
-)
+
+from coveo_settings import StringSetting, IntSetting, FloatSetting
+from coveo_settings.exceptions import ValidationConfigurationError, ValidationCallbackError
 from coveo_settings.validation import InSequence
 
 

@@ -1,6 +1,6 @@
 from typing import Optional
 
-from .annotations import ConfigValue
+from coveo_settings.annotations import ConfigValue
 
 
 class InSequence:

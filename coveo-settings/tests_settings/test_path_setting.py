@@ -2,9 +2,9 @@ from pathlib import Path
 
 import pytest
 
-from coveo_settings.path_setting import PathSetting
+from coveo_settings import PathSetting
 from coveo_settings.annotations import ConfigValue
-from coveo_settings.settings import TypeConversionConfigurationError, MandatoryConfigurationError
+from coveo_settings.exceptions import TypeConversionConfigurationError, MandatoryConfigurationError
 
 from coveo_testing.parametrize import parametrize
 
