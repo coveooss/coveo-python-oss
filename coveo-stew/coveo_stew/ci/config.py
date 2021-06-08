@@ -1,3 +1,4 @@
+from coveo_stew.ci.pydocstyle_runner import PydocStyleRunner
 from typing import TypeVar, Any, Dict, Optional, Iterator, Union, Type
 
 from coveo_functools.casing import flexfactory
@@ -27,6 +28,7 @@ class ContinuousIntegrationConfig:
         pytest: CIConfig = False,
         offline_build: CIConfig = False,
         black: CIConfig = False,
+        pydocstyle: CIConfig = False,
         _pyproject: PythonProjectAPI
     ):
         self._pyproject = _pyproject
@@ -43,6 +45,7 @@ class ContinuousIntegrationConfig:
             OfflineInstallRunner, offline_build
         )
         self.black: Optional[BlackRunner] = self._flexfactory(BlackRunner, black)
+        self.pydocstyle: Optional[PydocStyleRunner] = self._flexfactory(PydocStyleRunner, pydocstyle)
 
     def _flexfactory(self, cls: Type[T], config: Optional[CIConfig]) -> Optional[T]:
         """handles the true form of the config. like mypy = true """
