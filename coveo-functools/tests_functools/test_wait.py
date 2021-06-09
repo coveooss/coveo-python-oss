@@ -16,7 +16,7 @@ NOW = datetime.datetime.now
 
 @UnitTest
 def test_until() -> None:
-    """ Tests the basic behavior of wait.until """
+    """Tests the basic behavior of wait.until"""
     # Test success
     val = True
     wait.until(lambda: val)
@@ -47,7 +47,7 @@ def test_until() -> None:
 @UnitTest
 @parametrize("timeout,retry", [(25, 5), (5, 1), (10, 50), (25, 25)])
 def test_until_timeout_retry(timeout: int, retry: int) -> None:
-    """ Tests various timeout and retry values """
+    """Tests various timeout and retry values"""
     timestamp = NOW()
     with pytest.raises(wait.TimeoutExpired):
         wait.until(
@@ -60,14 +60,14 @@ def test_until_timeout_retry(timeout: int, retry: int) -> None:
 
 @UnitTest
 def test_until_infinite_timeout() -> None:
-    """ Tests waiting for an infinite timeout. """
+    """Tests waiting for an infinite timeout."""
     timestamp = NOW()
     retry_ms = 1
     count = [0]
     max_count = 10
 
     def raise_if_called_more_than_max_count_times() -> None:
-        """ Raise an exception when we reach the maximum number of calls. """
+        """Raise an exception when we reach the maximum number of calls."""
         count[0] += 1
         if count[0] > max_count:
             raise InterruptedError
@@ -84,7 +84,7 @@ def test_until_infinite_timeout() -> None:
 
 @UnitTest
 def test_until_wait() -> None:
-    """ Test waiting for a condition """
+    """Test waiting for a condition"""
     val = NOW() + datetime.timedelta(milliseconds=30)
 
     # value should be true very soon
@@ -94,7 +94,7 @@ def test_until_wait() -> None:
 
 @UnitTest
 def test_until_wait_timeout() -> None:
-    """ Test a condition that will never become true """
+    """Test a condition that will never become true"""
     val = NOW() + datetime.timedelta(milliseconds=100)
 
     with pytest.raises(wait.TimeoutExpired):
@@ -104,7 +104,7 @@ def test_until_wait_timeout() -> None:
 @UnitTest
 @parametrize("timeout", [10, 20, 45])
 def test_until_retry(timeout: int) -> None:
-    """ Assert retry length """
+    """Assert retry length"""
     retries = []
 
     with pytest.raises(wait.TimeoutExpired):
@@ -182,10 +182,10 @@ def test_until_cannot_suppress_own_exception() -> None:
 @UnitTest
 def test_until_custom_exception() -> None:
     class DummyException(Exception):
-        """ DummyException1 """
+        """DummyException1"""
 
     class DummyException2(Exception):
-        """ DummyException2 """
+        """DummyException2"""
 
     i = 0
 
@@ -212,7 +212,7 @@ def test_until_custom_exception() -> None:
 
 
 def _verify_backoff_output(backoff: Backoff, expected_results: List[float]) -> None:
-    """ Checks that the output of a backoff matches a list, bypassing jitter. """
+    """Checks that the output of a backoff matches a list, bypassing jitter."""
     assert sorted(backoff._stages) == sorted(
         set(expected_results)
     )  # expected results includes max retries
@@ -267,7 +267,7 @@ def _verify_backoff_output(backoff: Backoff, expected_results: List[float]) -> N
 )
 @UnitTest
 def test_backoff(backoff: Backoff, expected_results: List[float]) -> None:
-    """ Tests valid backoff scenarios. """
+    """Tests valid backoff scenarios."""
     _verify_backoff_output(backoff, expected_results)
 
 
@@ -294,14 +294,14 @@ def test_backoff(backoff: Backoff, expected_results: List[float]) -> None:
 )
 @UnitTest
 def test_verify_backoff(backoff: Backoff, expected_results: List[float]) -> None:
-    """ Make sure the verify method actually throws/asserts on errors. """
+    """Make sure the verify method actually throws/asserts on errors."""
     with pytest.raises(AssertionError):
         _verify_backoff_output(backoff, expected_results)
 
 
 @UnitTest
 def test_no_backoff() -> None:
-    """ Tests the NoBackoff class. """
+    """Tests the NoBackoff class."""
     backoff = NoBackoff()
 
     with pytest.raises(MaxBackoffException):
@@ -333,7 +333,7 @@ def test_verify_backoff_endless() -> None:
 
 @UnitTest
 def test_verify_backoff_render_on_endless() -> None:
-    """ Verifies that you can list() an infinite backoff. """
+    """Verifies that you can list() an infinite backoff."""
     backoff = Backoff(first_wait=1, max_backoff=8, max_backoff_attempts=None, growth=2)
     assert backoff._stages == (1, 2, 4, 8)
 
