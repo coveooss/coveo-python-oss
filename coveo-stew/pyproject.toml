@@ -33,6 +33,7 @@ coveo-itertools = { path = "../coveo-itertools/", develop = true }
 coveo-systools = { path = "../coveo-systools/", develop = true }
 coveo-styles = { path = "../coveo-styles/", develop = true }
 coveo-testing = { path = "../coveo-testing/", develop = true }
+flake8 = "*"
 pytest = "*"
 
 
@@ -44,6 +45,11 @@ stew = "coveo_stew.commands:stew"
 pytest = true
 offline-build = true
 black = true
+
+
+[tool.stew.ci.custom-runners]
+flake8 = { args = ["--ignore=E501,W503"]}
+
 
 [tool.black]
 line-length = 100

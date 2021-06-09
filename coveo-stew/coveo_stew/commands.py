@@ -2,7 +2,7 @@
 
 from pathlib import Path
 import re
-from typing import Set, Iterable, List, Union, Generator, Final
+from typing import Set, Iterable, List, Union, Generator
 
 import click
 from coveo_functools.finalizer import finalizer

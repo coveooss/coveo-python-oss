@@ -2,8 +2,6 @@ from pathlib import Path
 from typing import Dict, Any, Optional, Union, Mapping, List, Type, TypeVar, Iterable
 from typing_extensions import Protocol, Literal, Final
 
-from poetry.core.packages import Package
-
 from coveo_functools.casing import flexfactory
 from coveo_stew.metadata.pyproject_api import PythonProjectAPI
 

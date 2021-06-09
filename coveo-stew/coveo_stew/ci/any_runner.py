@@ -2,7 +2,7 @@ from enum import Enum, auto
 from typing import Iterable, Tuple, Union, List
 
 from coveo_stew.ci.runner import ContinuousIntegrationRunner, RunnerStatus
-from coveo_stew.environment import PythonEnvironment, PythonTool
+from coveo_stew.environment import PythonEnvironment
 from coveo_stew.exceptions import CannotLoadProject
 from coveo_stew.metadata.pyproject_api import PythonProjectAPI
 from coveo_systools.filesystem import find_repo_root
