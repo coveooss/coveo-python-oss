@@ -19,10 +19,12 @@ six = "*"  # can be removed when this is fixed: https://github.com/docker/docker
 
 
 [tool.poetry.dev-dependencies]
+black = { version = "21.5b2", allow-prereleases = true }
 coveo-functools = { path = "../coveo-functools/", develop = true }
 coveo-settings = { path = "../coveo-settings/", develop = true }
 coveo-systools = { path = "../coveo-systools/", develop = true }
 coveo-testing = { path = "../coveo-testing/", develop = true }
+mypy = "0.812"
 typing_extensions = "*"
 
 

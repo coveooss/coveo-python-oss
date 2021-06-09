@@ -13,9 +13,9 @@ python = ">=3.8"
 
 
 [tool.poetry.dev-dependencies]
-black = { version = "*", allow-prereleases = true }
+black = { version = "21.5b2", allow-prereleases = true }
 coveo-testing = { path = "../coveo-testing", develop = true }
-mypy = "*"
+mypy = "0.812"
 
 
 [tool.stew.ci]

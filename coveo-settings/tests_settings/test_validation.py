@@ -9,7 +9,7 @@ from coveo_settings.validation import InSequence
 
 @UnitTest
 def test_validation_in_sequence_positive() -> None:
-    """ Test InSequence validation """
+    """Test InSequence validation"""
     validation = InSequence("first", "second")
 
     test_setting_positive = StringSetting("ut", fallback="first", validation=validation)
@@ -19,7 +19,7 @@ def test_validation_in_sequence_positive() -> None:
 
 
 def test_validation_in_sequence_negative() -> None:
-    """ Test InSequence validation """
+    """Test InSequence validation"""
     validation = InSequence("first", "second")
 
     test_setting_negative = StringSetting("ut", fallback="third", validation=validation)
