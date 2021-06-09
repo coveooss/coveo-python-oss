@@ -103,7 +103,7 @@ class _OfflinePublish:
         return self._valid_packages
 
     def perform_offline_install(self, *, quiet: bool = False) -> None:
-        """ Performs all the operation for the offline install. """
+        """Performs all the operation for the offline install."""
         if not self.project.lock_path.exists():
             raise PythonProjectException("Project isn't locked; can't proceed.")
 
@@ -131,7 +131,7 @@ class _OfflinePublish:
             )
 
     def _store_dependencies_in_wheelhouse(self) -> None:
-        """ Store the dependency wheels in the wheelhouse. """
+        """Store the dependency wheels in the wheelhouse."""
         # temporary mitigation of circular import
         from coveo_stew.discovery import find_pyproject
 
@@ -157,7 +157,7 @@ class _OfflinePublish:
         self._call_pip_wheel(*to_download, index_urls=index_urls)
 
     def _call_pip_wheel(self, *packages: Package, index_urls: Set[str] = None) -> None:
-        """ Call pip wheel to download the packages, with optional extra index urls. """
+        """Call pip wheel to download the packages, with optional extra index urls."""
         if not packages:
             return
 

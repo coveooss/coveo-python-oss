@@ -387,7 +387,7 @@ class PythonProject(PythonProjectAPI):
     def _activate_poetry_environment(
         self, environment: PythonEnvironment = None
     ) -> Generator[None, None, None]:
-        """ Context manager that can be used to run a block of code in a particular environment. """
+        """Context manager that can be used to run a block of code in a particular environment."""
         if not environment:
             # `self.activated_environment` uses us without an environment specified; prevents infinite recursion
             yield
