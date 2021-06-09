@@ -9,11 +9,13 @@ authors = ["Jonathan Piché <tools@coveo.com>"]
 
 
 [tool.poetry.dependencies]
-python = ">=3.6"
+python = ">=3.8"
 
 
 [tool.poetry.dev-dependencies]
+black = { version = "*", allow-prereleases = true }
 coveo-testing = { path = "../coveo-testing", develop = true }
+mypy = "*"
 
 
 [tool.stew.ci]
