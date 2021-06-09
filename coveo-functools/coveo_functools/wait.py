@@ -13,7 +13,7 @@ NaiveCallback = Callable[[], None]
 
 
 class TimeoutExpired(Exception):
-    """ Exception denotes a timeout waiting for a condition. """
+    """Exception denotes a timeout waiting for a condition."""
 
 
 class MaxBackoffException(StopIteration):
@@ -53,7 +53,7 @@ def until(
         retry_ms = timedelta(milliseconds=retry_ms or 0)
 
     def _get_exception_tuple(suppress_condition: Optional[SuppressCondition]) -> ExceptionHandling:
-        """ Constructs an exception tuple that defines which exceptions to handle/retry within the timeout loop. """
+        """Constructs an exception tuple that defines which exceptions to handle/retry within the timeout loop."""
         if suppress_condition in (None, False):
             return ()
         if suppress_condition is True:
@@ -229,7 +229,7 @@ class Backoff(Iterator):
         return this_wait + jitter
 
     def reset(self) -> None:
-        """ Resets the stage to 0. """
+        """Resets the stage to 0."""
         self.stage = 0
 
 
@@ -240,9 +240,9 @@ class NoBackoff(Backoff):
     """
 
     def __next__(self) -> float:
-        """ Raise immediately, as if all retries were exhausted. """
+        """Raise immediately, as if all retries were exhausted."""
         raise MaxBackoffException
 
     def __bool__(self) -> bool:
-        """ It's the only false backoff ever."""
+        """It's the only false backoff ever."""
         return False
