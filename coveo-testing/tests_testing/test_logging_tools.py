@@ -39,7 +39,7 @@ def _to_raise_or_not_to_raise(*, raises: bool) -> Generator[None, None, None]:
 
 @UnitTest
 def test_intercept_logging() -> None:
-    """ Test that the intercept_logging works correctly. """
+    """Test that the intercept_logging works correctly."""
     str1, str2 = _get_test_strings(2)
 
     log.info(str1)
@@ -90,7 +90,7 @@ def test_intercept_logging_excludes_less_severe_levels() -> None:
 @UnitTest
 @parametrize("presence", ("present", "absent"))
 def test_assert_logging_present_absent(presence: str) -> None:
-    """ Test the assert_logging function success using simple strings. """
+    """Test the assert_logging function success using simple strings."""
     to_assert = to_log = str(uuid4())
 
     if presence == "present":
@@ -107,7 +107,7 @@ def test_assert_logging_present_absent(presence: str) -> None:
 @UnitTest
 @parametrize("presence", ("present", "absent"))
 def test_assert_logging_present_absent_failure(presence: str) -> None:
-    """ Test the assert_logging function failure using simple strings. """
+    """Test the assert_logging function failure using simple strings."""
     to_assert = to_log = str(uuid4())
 
     if presence == "absent":
