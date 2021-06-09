@@ -16,9 +16,9 @@ typing_extensions = "*"
 
 [tool.poetry.dev-dependencies]
 attrs = "*"
-black = { version = "*", allow-prereleases = true }
+black = { version = "21.5b2", allow-prereleases = true }
 coveo-testing = { path = "../coveo-testing/", develop = true }
-mypy = "*"
+mypy = "0.812"
 
 
 [tool.stew.ci]

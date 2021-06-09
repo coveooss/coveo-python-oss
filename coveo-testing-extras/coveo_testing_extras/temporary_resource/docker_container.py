@@ -42,7 +42,7 @@ LogList = List[
 
 
 class ECRLogoutException(Exception):
-    """ Occurs when the ECR login is expired / missing / unauthorized """
+    """Occurs when the ECR login is expired / missing / unauthorized"""
 
 
 class NoSuchPort(Exception):
@@ -58,7 +58,7 @@ def _get_docker_host_version(client: DockerClient) -> LooseVersion:
 
 
 def get_docker_client() -> DockerClient:
-    """ Returns a docker client and performs a connection/version check. """
+    """Returns a docker client and performs a connection/version check."""
     log.debug("Connecting to docker service")
     try:
         client: DockerClient = docker.from_env(timeout=DOCKER_TIMEOUT)
@@ -75,7 +75,7 @@ def get_docker_client() -> DockerClient:
 
 
 class TemporaryDockerContainerResource(TemporaryResource):
-    """ Class providing helper functions to manage a temporary Docker container during unit tests. """
+    """Class providing helper functions to manage a temporary Docker container during unit tests."""
 
     def __init__(self, image_name: str, friendly_name: str) -> None:
         """
@@ -95,7 +95,7 @@ class TemporaryDockerContainerResource(TemporaryResource):
 
     @property
     def container(self) -> Container:
-        """ Returns this container. """
+        """Returns this container."""
         if not self._container:
             raise NoSuchContainer
 
@@ -105,7 +105,7 @@ class TemporaryDockerContainerResource(TemporaryResource):
 
     @property
     def image(self) -> Image:
-        """ Returns the image for this container."""
+        """Returns the image for this container."""
         if self._image is None:
             self._image = self.client.images.get(self.image_name)
         else:
@@ -123,7 +123,7 @@ class TemporaryDockerContainerResource(TemporaryResource):
 
     @property
     def ecr_region(self) -> Optional[str]:
-        """ If the image name points to an ECR registry, return the region name, else None. """
+        """If the image name points to an ECR registry, return the region name, else None."""
         match = re.search(r"\.ecr\.(?P<region>.+)\.amazonaws\.com", self.image_name)
         return match.group("region") if match else None
 
@@ -155,7 +155,7 @@ class TemporaryDockerContainerResource(TemporaryResource):
         raise NoSuchPort(f'Cannot find a {port_id} bound to {host_ip} in "{port_mappings}"')
 
     def create_resource(self) -> None:
-        """ Creates and launch the container. """
+        """Creates and launch the container."""
         super().create_resource()
 
         if not self._container:
@@ -179,7 +179,7 @@ class TemporaryDockerContainerResource(TemporaryResource):
             log.info('%s admin uri: "%s"', self.container.name, self.admin_uri)
 
     def delete_resource(self) -> None:
-        """ Remove the container. """
+        """Remove the container."""
         log.info("delete_object")
         self._extracted_logs = self.get_logs()
         self.container.remove(force=True)
@@ -188,7 +188,7 @@ class TemporaryDockerContainerResource(TemporaryResource):
         super().delete_resource()
 
     def _get_ip_address(self) -> str:
-        """ Return the local ip of the current container """
+        """Return the local ip of the current container"""
         if DOCKER_STATIC_IP:
             ip_address = str(DOCKER_STATIC_IP)
         else:
@@ -202,11 +202,11 @@ class TemporaryDockerContainerResource(TemporaryResource):
         return ip_address
 
     def create_container_arguments(self) -> Dict[str, Any]:
-        """ Returns the arguments to create the docker container. """
+        """Returns the arguments to create the docker container."""
         return dict(name=str(self.container_id), publish_all_ports=bool(DOCKER_PUBLISH_PORTS))
 
     def create_container(self) -> None:
-        """ Create the docker container. """
+        """Create the docker container."""
         log.info('Creating container from image "%s".', self.image_name)
         self._container = self.client.containers.create(
             self.image_name, **self.create_container_arguments()
@@ -221,11 +221,11 @@ class TemporaryDockerContainerResource(TemporaryResource):
         return ip_address
 
     def wait_for_container_running(self, timeout: int = 30) -> None:
-        """ Wait for the docker to start. """
+        """Wait for the docker to start."""
         wait.until(lambda: self.container.status == "running", timeout_s=timeout)
 
     def obtain_image(self) -> None:
-        """ By default, pull the docker image from the registry. Override to specify a build process. """
+        """By default, pull the docker image from the registry. Override to specify a build process."""
         log.info('Pulling image "%s".', self.image_name)
         try:
             self.client.images.pull(self.image_name)
@@ -236,13 +236,13 @@ class TemporaryDockerContainerResource(TemporaryResource):
 
     @property
     def uri(self) -> str:
-        """ Return The main URI used to talk to the server that resides in the container. """
+        """Return The main URI used to talk to the server that resides in the container."""
         assert self._uri, "URI not set. Have you called create_resource?"
         return self._uri
 
     @property
     def admin_uri(self) -> Optional[str]:
-        """ Return the URI used to administrate the service, or None if there's no admin-related uris. """
+        """Return the URI used to administrate the service, or None if there's no admin-related uris."""
         return None
 
     def get_logs(self, errors_only: bool = False) -> LogList:
@@ -267,7 +267,7 @@ class TemporaryDockerContainerResource(TemporaryResource):
         return logs
 
     def __str__(self) -> str:
-        """ Pretty-print for debuggers etc """
+        """Pretty-print for debuggers etc"""
         with suppress(Exception):
             return f"{self.uri} [{self.image_name}]"
         return super().__str__()

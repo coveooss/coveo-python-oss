@@ -3,11 +3,11 @@ from coveo_settings.annotations import ConfigValue
 
 
 class IntSetting(Setting[int]):
-    """ Setting that handles int values. """
+    """Setting that handles int values."""
 
     @staticmethod
     def _cast(value: ConfigValue) -> int:
-        """ Converts the value to an int. """
+        """Converts the value to an int."""
         # check for the presence of a float before converting it. This is the easiest way to catch
         # edge cases such as "0.0"
         value = str(value)

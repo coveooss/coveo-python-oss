@@ -44,7 +44,7 @@ def _find_setting(*keys: str) -> Optional[ConfigValue]:
     are not significant. For instance, "ut.test.setting" will match "UTTESTSETTING" and also "UT_teST.._setting"."""
 
     def _normalize(key_: str) -> str:
-        """ Returns a lowercase version of key without separators. """
+        """Returns a lowercase version of key without separators."""
         return "".join(char.lower() for char in key_ if char not in ENVIRONMENT_VARIABLE_SEPARATORS)
 
     if not keys:
@@ -92,7 +92,7 @@ class Setting(SupportsInt, SupportsFloat, Generic[T]):
         sensitive: bool = False,
         validation: Validation = _no_validation,
     ) -> None:
-        """ Initializes a setting. """
+        """Initializes a setting."""
         self._key: str = key
         self._alternate_keys: Collection[str] = alternate_keys or tuple()
         self._fallback = fallback
@@ -110,12 +110,12 @@ class Setting(SupportsInt, SupportsFloat, Generic[T]):
 
     @property
     def key(self) -> str:
-        """ Return the key of this setting. """
+        """Return the key of this setting."""
         return self._key
 
     @property
     def value(self) -> Optional[T]:
-        """ Returns the validated value of the setting, or None when not set. """
+        """Returns the validated value of the setting, or None when not set."""
         value = self._get_value()
         return None if value is None else self._cast_and_validate(value)
 
@@ -140,7 +140,7 @@ class Setting(SupportsInt, SupportsFloat, Generic[T]):
 
     @property
     def is_valid(self) -> bool:
-        """ True if value is set and valid. """
+        """True if value is set and valid."""
         try:
             return self.value is not None
         except InvalidConfiguration:
@@ -149,10 +149,10 @@ class Setting(SupportsInt, SupportsFloat, Generic[T]):
     @staticmethod
     @abstractmethod
     def _cast(value: ConfigValue) -> T:
-        """ Casts a value to the appropriate type. """
+        """Casts a value to the appropriate type."""
 
     def _cast_or_raise(self, value: ConfigValue) -> T:
-        """ Cast the value or raise an exception. """
+        """Cast the value or raise an exception."""
         try:
             return self._cast(value)
         except (TypeError, ValueError) as exception:
@@ -161,7 +161,7 @@ class Setting(SupportsInt, SupportsFloat, Generic[T]):
             ) from exception
 
     def _validate_or_raise(self, value: T) -> T:
-        """ Launches the custom validation callback on a value. Raises ValidationConfigurationError on failure. """
+        """Launches the custom validation callback on a value. Raises ValidationConfigurationError on failure."""
         if self._cache_validated != value:
             error_message = self._validation_callback(value)
             if error_message:
@@ -170,7 +170,7 @@ class Setting(SupportsInt, SupportsFloat, Generic[T]):
         return value
 
     def _cast_and_validate(self, value: ConfigValue) -> T:
-        """ Cast and validate the value or raise an exception. """
+        """Cast and validate the value or raise an exception."""
         return self._validate_or_raise(self._cast_or_raise(value))
 
     def _get_value(self) -> Optional[ConfigValue]:
@@ -200,7 +200,7 @@ class Setting(SupportsInt, SupportsFloat, Generic[T]):
         return InSequence(*iterable)
 
     def _raise_if_missing(self) -> None:
-        """ Raises an MandatoryConfigurationError exception if the setting is required but missing. """
+        """Raises an MandatoryConfigurationError exception if the setting is required but missing."""
         if not self.is_set:
             raise MandatoryConfigurationError(f'Mandatory config item "{self.key}" is missing.')
 
@@ -209,7 +209,7 @@ class Setting(SupportsInt, SupportsFloat, Generic[T]):
         return f"{self.__class__.__name__}[{self.key}] = {value_str}"
 
     def __repr__(self) -> str:
-        """ Returns a readable representation of the item for debugging. """
+        """Returns a readable representation of the item for debugging."""
         # we are overly careful in not triggering mechanics (e.g.: _get_value()) from here.
         # value is only shown if already computed.
         value = next(
@@ -218,7 +218,7 @@ class Setting(SupportsInt, SupportsFloat, Generic[T]):
         return self._pretty_repr(value)
 
     def __eq__(self, other: Any) -> bool:
-        """ Indicates if the value is equal to another one. """
+        """Indicates if the value is equal to another one."""
         self._raise_if_missing()
         equal = other == self.value
         if isinstance(equal, bool):
@@ -226,20 +226,20 @@ class Setting(SupportsInt, SupportsFloat, Generic[T]):
         return NotImplemented
 
     def __bool__(self) -> bool:
-        """ Indicates if the value is True (in python's terms). Missing values are False. """
+        """Indicates if the value is True (in python's terms). Missing values are False."""
         return bool(self.value)
 
     def __str__(self) -> str:
-        """ Returns the value, blindly converted to a string. """
+        """Returns the value, blindly converted to a string."""
         self._raise_if_missing()
         return str(self.value)
 
     def __int__(self) -> int:
-        """ Returns the value, blindly converted to int. """
+        """Returns the value, blindly converted to int."""
         self._raise_if_missing()
         return int(self.value)  # type: ignore[call-overload, no-any-return]
 
     def __float__(self) -> float:
-        """ Return the value, blindly converted to float. """
+        """Return the value, blindly converted to float."""
         self._raise_if_missing()
         return float(self.value)  # type: ignore[arg-type]

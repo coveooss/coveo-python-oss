@@ -15,9 +15,9 @@ pytest = "*"
 
 
 [tool.poetry.dev-dependencies]
-black = { version = "*", allow-prereleases = true }
+black = { version = "21.5b2", allow-prereleases = true }
 typing_extensions = "*"
-mypy = "*"
+mypy = "0.812"
 
 
 [tool.stew.ci]

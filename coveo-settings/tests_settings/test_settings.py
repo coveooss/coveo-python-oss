@@ -30,7 +30,7 @@ from coveo_testing.parametrize import parametrize
 
 
 def _clean_environment_variable(*environment_variable_name: str) -> None:
-    """ Removes one or many environment variables. """
+    """Removes one or many environment variables."""
     for variable_name in environment_variable_name:
         if variable_name in os.environ:
             del os.environ[variable_name]
@@ -38,7 +38,7 @@ def _clean_environment_variable(*environment_variable_name: str) -> None:
 
 @contextmanager
 def _clean_environment_context(*environment_variable_name: str) -> Generator[None, None, None]:
-    """ Removes one or many environment variables before and after running the block. """
+    """Removes one or many environment variables before and after running the block."""
     try:
         _clean_environment_variable(*environment_variable_name)
         yield
@@ -48,7 +48,7 @@ def _clean_environment_context(*environment_variable_name: str) -> Generator[Non
 
 @UnitTest
 def test_setting_empty() -> None:
-    """ Tests the empty behavior of the AnySetting class. """
+    """Tests the empty behavior of the AnySetting class."""
     test_setting = AnySetting("ut")
     assert test_setting._fallback is None
     assert test_setting.value is None
@@ -68,7 +68,7 @@ def test_setting_empty() -> None:
 
 @UnitTest
 def test_setting_not_empty() -> None:
-    """ Tests the not-empty behavior of the AnySetting class. """
+    """Tests the not-empty behavior of the AnySetting class."""
     default_value = "value"
     test_setting = AnySetting("ut", fallback=default_value)
     assert test_setting._fallback == default_value
@@ -80,7 +80,7 @@ def test_setting_not_empty() -> None:
 
 @UnitTest
 def test_settings_python_number_cast_error() -> None:
-    """ Tests the exceptions when we cannot cast a string into a number. """
+    """Tests the exceptions when we cannot cast a string into a number."""
     test_setting = AnySetting("ut", fallback="not a number")
     assert test_setting.is_set
 
@@ -94,7 +94,7 @@ def test_settings_python_number_cast_error() -> None:
 
 @UnitTest
 def test_settings_python_number_cast() -> None:
-    """ Tests the ability to cast the value to ints and floats. """
+    """Tests the ability to cast the value to ints and floats."""
     # test a positive float
     test_setting = AnySetting("ut", fallback="12.3")
     assert test_setting.is_set
@@ -131,7 +131,7 @@ def test_settings_python_number_cast() -> None:
 
 @UnitTest
 def test_settings_non_string_default() -> None:
-    """ Tests the Setting's class ability to deal with non-string types. """
+    """Tests the Setting's class ability to deal with non-string types."""
     # test the false number as an int
     test_setting = AnySetting("ut", fallback=0)
     assert test_setting.value == 0
@@ -187,7 +187,7 @@ def test_settings_non_string_default() -> None:
 
 @UnitTest
 def test_setting_environment_variable() -> None:
-    """ Tests the environment variable feature of the Setting class. """
+    """Tests the environment variable feature of the Setting class."""
     environment_variable = "ut.test.setting.environment.variable"
     if environment_variable in os.environ:
         del os.environ[environment_variable]  # pragma: no cover
@@ -215,7 +215,7 @@ def test_setting_environment_variable() -> None:
 
 @UnitTest
 def test_string_setting() -> None:
-    """ Tests the behavior of the StringSetting class. """
+    """Tests the behavior of the StringSetting class."""
     for unsupported_value in ("", [], {}, set(), object()):
         with pytest.raises(TypeConversionConfigurationError):
             StringSetting("ut", fallback=unsupported_value)  # type: ignore
@@ -253,7 +253,7 @@ def test_string_setting() -> None:
 
 @UnitTest
 def test_string_setting_always_true() -> None:
-    """ Empty strings are not supported, it's impossible to obtain a false StringSetting unless it's None. """
+    """Empty strings are not supported, it's impossible to obtain a false StringSetting unless it's None."""
     true_and_false = set()
     for true_or_false in (1, 0, True, False, "1", "0", "None", "True", "False", "Yes", "No", "no"):
         assert bool(StringSetting("ut", fallback=true_or_false))  # type: ignore
@@ -281,7 +281,7 @@ def test_string_setting_always_true() -> None:
 
 @UnitTest
 def test_bool_setting() -> None:
-    """ Tests the behavior of the BoolSetting class. """
+    """Tests the behavior of the BoolSetting class."""
     environment_variable = "ut.test.bool.settings"
 
     # test supported True values
@@ -326,7 +326,7 @@ def test_bool_setting() -> None:
 
 @UnitTest
 def test_int_setting() -> None:
-    """ Tests the behavior of the int setting. """
+    """Tests the behavior of the int setting."""
     environment_variable = "ut.test.int.setting"
 
     for trueish_int in (-1, 1, 100, "-1", "1", "100"):
@@ -371,7 +371,7 @@ def test_int_setting() -> None:
 
 @UnitTest
 def test_float_setting() -> None:
-    """ Tests the behavior of the FloatSetting class. """
+    """Tests the behavior of the FloatSetting class."""
     environment_variable = "ut.test.float.setting"
 
     for trueish_float in (-1.1, 1.0, 100, 1, "-1", "-0.1", "100.0"):
@@ -416,7 +416,7 @@ def test_float_setting() -> None:
 
 @UnitTest
 def test_dict_setting() -> None:
-    """ Tests the dict setting class. """
+    """Tests the dict setting class."""
     environment_key = "ut.test.dict.setting"
     value = {"string": "JSON", "int": 3, "null": None, "bool": True}
     os.environ[environment_key] = json.dumps(value)

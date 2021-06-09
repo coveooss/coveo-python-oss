@@ -15,7 +15,7 @@ class BoolSetting(Setting[bool]):
 
     @staticmethod
     def _cast(value: ConfigValue) -> bool:
-        """ Converts any supported value to a bool. """
+        """Converts any supported value to a bool."""
         value = str(value).lower()
         if value not in BoolSetting.TRUE_VALUES + BoolSetting.FALSE_VALUES:
             raise ValueError(f"Cannot determine boolean from {value}")

@@ -3,11 +3,11 @@ from coveo_settings.annotations import ConfigValue
 
 
 class StringSetting(Setting[str]):
-    """ Setting that handles string values. """
+    """Setting that handles string values."""
 
     @staticmethod
     def _cast(value: ConfigValue) -> str:
-        """ Converts a value to a string. """
+        """Converts a value to a string."""
         if not isinstance(value, (str, bool, int, float)):
             raise ValueError(f"Cannot convert objects of type {type(value)}.")
 
