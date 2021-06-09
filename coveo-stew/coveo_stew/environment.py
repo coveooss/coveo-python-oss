@@ -50,31 +50,33 @@ class PythonEnvironment:
         self.python_executable: Path = python_path
 
     @lru_cache()
-    def _guess_path(self, tool: PythonTool) -> Path:
+    def guess_path(self, tool: Union[PythonTool, str]) -> Path:
         if tool is PythonTool.Python:
             return self.python_executable
-        else:
-            return self.python_executable.with_name(tool.value).with_suffix(self._suffix).absolute()
 
-    def build_command(self, tool: PythonTool, *args: Any) -> List[Any]:
-        """Builds a command for a given executable. OS-dependant."""
-        return [self.python_executable, "-m", tool.value, *args]
+        tool_name = tool.value if isinstance(tool, PythonTool) else tool
+        return self.python_executable.with_name(tool_name).with_suffix(self._suffix).absolute()
+
+    def build_command(self, tool: Union[PythonTool, str], *args: Any) -> List[Any]:
+        """Builds a command for a python module."""
+        tool = tool.value if isinstance(tool, PythonTool) else tool
+        return [self.python_executable, "-m", tool, *args]
 
     @property
     def mypy_executable(self) -> Path:
-        return self._guess_path(PythonTool.Mypy)
+        return self.guess_path(PythonTool.Mypy)
 
     @property
     def poetry_executable(self) -> Path:
-        return self._guess_path(PythonTool.Poetry)
+        return self.guess_path(PythonTool.Poetry)
 
     @property
     def pytest_executable(self) -> Path:
-        return self._guess_path(PythonTool.Pytest)
+        return self.guess_path(PythonTool.Pytest)
 
     @property
     def black_executable(self) -> Path:
-        return self._guess_path(PythonTool.Black)
+        return self.guess_path(PythonTool.Black)
 
     @property
     def python_version(self) -> str:
