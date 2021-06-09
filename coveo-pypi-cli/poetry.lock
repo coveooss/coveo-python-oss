@@ -74,11 +74,11 @@ url = "../coveo-functools"
 
 [[package]]
 name = "coveo-settings"
-version = "1.1.0"
+version = "2.0.0"
 description = "Settings driven by environment variables."
 category = "main"
 optional = false
-python-versions = ">=3.6"
+python-versions = ">=3.8"
 develop = true
 
 [package.source]
@@ -87,11 +87,11 @@ url = "../coveo-settings"
 
 [[package]]
 name = "coveo-styles"
-version = "1.0.0"
+version = "2.0.0"
 description = "Styles, colors and emojis for the command line."
 category = "main"
 optional = false
-python-versions = ">=3.6"
+python-versions = ">=3.8"
 develop = true
 
 [package.dependencies]
@@ -304,7 +304,7 @@ socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.8"
-content-hash = "43287a586d7e93c059d2381f59cc6fea70c6a7b1f742a8042b913d99a489e8b2"
+content-hash = "bcd84d40d3d28ad29df33a9a64807ab02ba05095a0c58cdadf414fedea55a1a9"
 
 [metadata.files]
 atomicwrites = [

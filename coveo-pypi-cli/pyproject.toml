@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "coveo-pypi-cli"
-version = "1.0.0"
+version = "2.0.0"
 description = "Query and compute pypi versions from command line."
 license = "Apache-2.0"
 readme = "README.md"
@@ -11,8 +11,8 @@ authors = ["Jonathan Piché <tools@coveo.com>"]
 python = ">=3.8"
 
 click = "*"
-coveo-settings = { version = "^1.1.0" }
-coveo-styles = { version = "^1.0.0" }
+coveo-settings = { version = "^2.0.0" }
+coveo-styles = { version = "^2.0.0" }
 coveo-systools = { version = "^2.0.0" }
 requests = "*"
 typing-extensions = "*"
