@@ -10,7 +10,7 @@ TestFunction = Callable[..., None]
 
 
 def _parametrized_test_formatter(test_case_value: Any) -> str:
-    """ produce a prettier version of a parameter id """
+    """produce a prettier version of a parameter id"""
     if isinstance(test_case_value, str):
         pretty = test_case_value
     elif isinstance(test_case_value, SequenceType):
@@ -26,5 +26,5 @@ def parametrize(
     ids: TestIdFormatter = _parametrized_test_formatter,
     **kwargs: Any
 ) -> TestFunction:
-    """ augment the pytest decorator with some id magic (bonus: no more 'pytest.mark.parametrize' typos!) """
+    """augment the pytest decorator with some id magic (bonus: no more 'pytest.mark.parametrize' typos!)"""
     return cast(TestFunction, pytest.mark.parametrize(arguments, value, ids=ids, **kwargs).__call__)

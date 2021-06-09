@@ -54,7 +54,7 @@ class TestId:
 
     @classmethod
     def _isolate_and_sanitize_id_part(cls, string: str) -> str:
-        """ Return a new string that doesn't contain invalid characters or the name tokenization delimiter """
+        """Return a new string that doesn't contain invalid characters or the name tokenization delimiter"""
         replacement = "-"
         assert (
             replacement != cls.DELIMITER
