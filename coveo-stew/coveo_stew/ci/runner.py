@@ -39,7 +39,7 @@ class ContinuousIntegrationRunner:
     def launch(
         self, environment: PythonEnvironment = None, *extra_args: str, auto_fix: bool = False
     ) -> RunnerStatus:
-        """Launch the runner's checks. Will raise on unhandled exceptions."""
+        """Launch the runner's checks. Will raise on unhandled exceptions. """
         try:
             self.status = self._launch(environment, *extra_args)
         except DetailedCalledProcessError as exception:

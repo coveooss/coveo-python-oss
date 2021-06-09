@@ -22,7 +22,7 @@ class VersionAPI(Protocol):
 
 
 class PackageAPI(Protocol):
-    """mimics the Package class from poetry, so we can duck-type our own."""
+    """mimics the Package class from poetry, so we can duck-type our own. """
 
     name: str
     version: VersionAPI
@@ -37,7 +37,7 @@ class PackageAPI(Protocol):
 
 
 class Dependency:
-    """A poetry-style package dependency, such as `mypy = '*'` or 'cdf = { path = "../cdf" }`"""
+    """ A poetry-style package dependency, such as `mypy = '*'` or 'cdf = { path = "../cdf" }` """
 
     def __init__(
         self,
@@ -109,7 +109,7 @@ class PoetryAPI:
 def dependencies_factory(
     dependencies: Mapping[str, Union[str, dict]] = None
 ) -> Dict[str, Dependency]:
-    """Transforms a poetry dependency section (such as tool.poetry.dev-dependencies) into Dependency instances."""
+    """ Transforms a poetry dependency section (such as tool.poetry.dev-dependencies) into Dependency instances. """
     return (
         {name: Dependency.factory(name, dependency) for name, dependency in dependencies.items()}
         if dependencies

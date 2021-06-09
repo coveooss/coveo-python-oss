@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "coveo-stew"
-version = "2.0.0"
+version = "1.2.0"
 description = "Opinionated python packaging and development utilities"
 license = "Apache-2.0"
 readme = "README.md"
@@ -13,15 +13,15 @@ packages = [
 
 
 [tool.poetry.dependencies]
-python = ">=3.8"
-black = { version = "21.5b2", allow-prereleases = true }
+python = ">=3.6"
+black = { version = "20.8b1", allow-prereleases = true }
 click = "*"
-coveo-functools = { version = "^2.0.0" }
-coveo-itertools = { version = "^2.0.0" }
-coveo-systools = { version = "^2.0.0" }
-coveo-styles = { version = "^2.0.0" }
+coveo-functools = { version = "^1.0.0" }
+coveo-itertools = { version = "^1.0.0" }
+coveo-systools = { version = "^1.0.0" }
+coveo-styles = { version = "^1.0.0" }
 junit-xml = "*"
-mypy = "0.812"
+mypy = "*"
 poetry = "^1.1.4"
 toml = "*"
 typing_extensions = "*"

@@ -45,7 +45,7 @@ class ContinuousIntegrationConfig:
         self.black: Optional[BlackRunner] = self._flexfactory(BlackRunner, black)
 
     def _flexfactory(self, cls: Type[T], config: Optional[CIConfig]) -> Optional[T]:
-        """handles the true form of the config. like mypy = true"""
+        """handles the true form of the config. like mypy = true """
         if config in (None, False):
             return None
         if config is True:
