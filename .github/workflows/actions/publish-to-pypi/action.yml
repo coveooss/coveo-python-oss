@@ -28,9 +28,10 @@ runs:
     - name: Obtain the next release version
       id: get-next-version
       shell: bash
+      working-directory: coveo-pypi-cli
       run: |
-        python -m pip install coveo-pypi-cli
-        NEXT_VERSION="$(python -m pypi next-version ${{ inputs.project-name }} --minimum-version ${{ steps.get-minimum-version.outputs.minimum-version }})"
+        python -m poetry install
+        NEXT_VERSION="$(python -m poetry run pypi next-version ${{ inputs.project-name }} --minimum-version ${{ steps.get-minimum-version.outputs.minimum-version }})"
         echo "::set-output name=next-version::$NEXT_VERSION"
         echo "Next release's version: $NEXT_VERSION"
 
