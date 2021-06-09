@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from enum import Enum, auto
 from pathlib import Path
-from typing import List, Optional, Callable
+from typing import List, Optional, Callable, Iterable
 
 from coveo_systools.subprocess import DetailedCalledProcessError
 from coveo_styles.styles import echo
@@ -24,7 +24,7 @@ class RunnerStatus(Enum):
 
 class ContinuousIntegrationRunner:
     status: RunnerStatus = RunnerStatus.NotRan
-    check_failed_exit_codes: List[int] = []
+    check_failed_exit_codes: Iterable[int] = []
     outputs_own_report: bool = False  # set to True if the runner produces its own report.
 
     # implementations may provide an auto fix routine.

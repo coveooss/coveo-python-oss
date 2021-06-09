@@ -92,8 +92,8 @@ class MypyRunner(ContinuousIntegrationRunner):
             return
 
         pattern = re.compile(
-            rf"^(?P<path>.+\.py):(?P<line>\d+):(?P<column>\d+(?::)| )"
-            rf"(?:\s?error:\s?)(?P<detail>.+)$"
+            r"^(?P<path>.+\.py):(?P<line>\d+):(?P<column>\d+(?::)| )"
+            r"(?:\s?error:\s?)(?P<detail>.+)$"
         )
 
         for line in self._last_output:

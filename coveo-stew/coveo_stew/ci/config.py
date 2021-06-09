@@ -1,6 +1,7 @@
 from typing import TypeVar, Any, Dict, Optional, Iterator, Union, Type
 
 from coveo_functools.casing import flexfactory
+from coveo_stew.ci.any_runner import AnyRunner
 
 from coveo_stew.ci.black_runner import BlackRunner
 from coveo_stew.ci.mypy_runner import MypyRunner
@@ -8,6 +9,7 @@ from coveo_stew.ci.poetry_runners import PoetryCheckRunner
 from coveo_stew.ci.stew_runners import CheckOutdatedRunner, OfflineInstallRunner
 from coveo_stew.ci.pytest_runner import PytestRunner
 from coveo_stew.ci.runner import ContinuousIntegrationRunner
+from coveo_stew.exceptions import CannotLoadProject
 from coveo_stew.metadata.pyproject_api import PythonProjectAPI
 
 
@@ -27,7 +29,8 @@ class ContinuousIntegrationConfig:
         pytest: CIConfig = False,
         offline_build: CIConfig = False,
         black: CIConfig = False,
-        _pyproject: PythonProjectAPI
+        custom_runners: Optional[Dict[str, CIConfig]] = None,
+        _pyproject: PythonProjectAPI,
     ):
         self._pyproject = _pyproject
         self.disabled = disabled  # a master switch used by stew to skip this project.
@@ -44,13 +47,23 @@ class ContinuousIntegrationConfig:
         )
         self.black: Optional[BlackRunner] = self._flexfactory(BlackRunner, black)
 
-    def _flexfactory(self, cls: Type[T], config: Optional[CIConfig]) -> Optional[T]:
+        # custom runners are entirely dynamic
+        for runner_name, runner_config in (custom_runners or {}).items():
+            if hasattr(self, runner_name):
+                raise CannotLoadProject(
+                    f"Custom runner {runner_name} conflicts with the builtin version."
+                )
+            setattr(
+                self, runner_name, self._flexfactory(AnyRunner, runner_config, name=runner_name)
+            )
+
+    def _flexfactory(self, cls: Type[T], config: Optional[CIConfig], **extra: str) -> Optional[T]:
         """handles the true form of the config. like mypy = true"""
         if config in (None, False):
             return None
         if config is True:
             config = {}
-        return flexfactory(cls, **config, _pyproject=self._pyproject)  # type: ignore
+        return flexfactory(cls, **config, **extra, _pyproject=self._pyproject)  # type: ignore
 
     @property
     def runners(self) -> Iterator[ContinuousIntegrationRunner]:

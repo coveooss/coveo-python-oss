@@ -50,15 +50,17 @@ class PythonEnvironment:
         self.python_executable: Path = python_path
 
     @lru_cache()
-    def _guess_path(self, tool: PythonTool) -> Path:
+    def _guess_path(self, tool: Union[PythonTool, str]) -> Path:
         if tool is PythonTool.Python:
             return self.python_executable
-        else:
-            return self.python_executable.with_name(tool.value).with_suffix(self._suffix).absolute()
 
-    def build_command(self, tool: PythonTool, *args: Any) -> List[Any]:
-        """Builds a command for a given executable. OS-dependant."""
-        return [self.python_executable, "-m", tool.value, *args]
+        tool_name = tool.value if isinstance(tool, PythonTool) else tool
+        return self.python_executable.with_name(tool_name).with_suffix(self._suffix).absolute()
+
+    def build_command(self, tool: Union[PythonTool, str], *args: Any) -> List[Any]:
+        """Builds a command for a python module."""
+        tool = tool.value if isinstance(tool, PythonTool) else tool
+        return [self.python_executable, "-m", tool, *args]
 
     @property
     def mypy_executable(self) -> Path:
