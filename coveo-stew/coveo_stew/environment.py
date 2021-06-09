@@ -50,7 +50,7 @@ class PythonEnvironment:
         self.python_executable: Path = python_path
 
     @lru_cache()
-    def guess_path(self, tool: Union[PythonTool, str]) -> Path:
+    def _guess_path(self, tool: Union[PythonTool, str]) -> Path:
         if tool is PythonTool.Python:
             return self.python_executable
 
@@ -64,19 +64,19 @@ class PythonEnvironment:
 
     @property
     def mypy_executable(self) -> Path:
-        return self.guess_path(PythonTool.Mypy)
+        return self._guess_path(PythonTool.Mypy)
 
     @property
     def poetry_executable(self) -> Path:
-        return self.guess_path(PythonTool.Poetry)
+        return self._guess_path(PythonTool.Poetry)
 
     @property
     def pytest_executable(self) -> Path:
-        return self.guess_path(PythonTool.Pytest)
+        return self._guess_path(PythonTool.Pytest)
 
     @property
     def black_executable(self) -> Path:
-        return self.guess_path(PythonTool.Black)
+        return self._guess_path(PythonTool.Black)
 
     @property
     def python_version(self) -> str:
