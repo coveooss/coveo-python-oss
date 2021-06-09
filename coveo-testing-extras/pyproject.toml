@@ -15,6 +15,7 @@ coveo-settings = "*"
 coveo-systools = "*"
 coveo-testing = "*"
 docker = "*"
+six = "*"  # can be removed when this is fixed: https://github.com/docker/docker-py/issues/2807
 
 
 [tool.poetry.dev-dependencies]
