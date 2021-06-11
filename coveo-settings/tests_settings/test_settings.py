@@ -630,3 +630,13 @@ def test_setting_sensitive() -> None:
     setting._sensitive = False
     assert "sensitive" not in repr(setting)
     assert "foo" in repr(setting)
+
+
+@UnitTest
+def test_setting_get_not_set() -> None:
+    assert StringSetting("any").get_if_set("default") == "default"
+
+
+@UnitTest
+def test_setting_get() -> None:
+    assert StringSetting("any", fallback="foo").get_if_set("default") == "foo"
