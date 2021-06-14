@@ -18,7 +18,7 @@ class DictSetting(Setting[dict]):
 
     def __iter__(self) -> Iterator[str]:
         """Typical dict-keys iterator."""
-        return iter(self.value or {})
+        return super().__iter__()
 
     @staticmethod
     def _cast(value: ConfigValue) -> dict:

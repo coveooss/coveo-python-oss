@@ -633,6 +633,60 @@ def test_setting_sensitive() -> None:
 
 
 @UnitTest
+def test_settings_contains() -> None:
+    assert "foo" in StringSetting("any", fallback="hey-foo-bar")
+    assert "foo" not in StringSetting("any", fallback="hey-boo-bar")
+
+
+@UnitTest
+def test_dict_settings_contains() -> None:
+    assert "foo" in DictSetting("any", fallback='{"foo": 0}')
+    assert "foo" not in DictSetting("any", fallback='{"boo": 0}')
+
+
+@UnitTest
+def test_settings_contains_not_supported() -> None:
+    with pytest.raises(TypeError):
+        assert "1" in IntSetting("any", fallback=123)
+
+
+@UnitTest
+def test_settings_contains_not_set() -> None:
+    with pytest.raises(MandatoryConfigurationError):
+        assert "1" in IntSetting("any")
+
+
+@UnitTest
+def test_settings_iterable() -> None:
+    loop = 0
+    for _ in StringSetting("any", fallback="hey"):
+        loop += 1
+    assert loop == 3
+
+
+@UnitTest
+def test_dict_settings_iterable() -> None:
+    data = {"test": 0, "foo": 0}
+    loop = 0
+    for key in DictSetting("any", fallback=data):
+        assert key in data
+        loop += 1
+    assert loop == 2
+
+
+@UnitTest
+def test_settings_iterable_not_supported() -> None:
+    with pytest.raises(TypeError):
+        iter(BoolSetting("any", fallback=False))
+
+
+@UnitTest
+def test_settings_iterable_not_set() -> None:
+    with pytest.raises(MandatoryConfigurationError):
+        iter(DictSetting("any"))
+
+
+@UnitTest
 def test_setting_get_not_set() -> None:
     assert StringSetting("any").get_if_set("default") == "default"
 

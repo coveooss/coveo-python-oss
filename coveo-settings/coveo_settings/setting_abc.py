@@ -23,6 +23,9 @@ from typing import (
     Generic,
     Collection,
     Callable,
+    Container,
+    Iterator,
+    Iterable,
 )
 
 from coveo_settings.annotations import ConfigValue, T, Validation, ValidationCallback
@@ -68,7 +71,7 @@ def _no_validation(_: ConfigValue) -> Optional[str]:
     return None
 
 
-class Setting(SupportsInt, SupportsFloat, Generic[T]):
+class Setting(SupportsInt, SupportsFloat, Generic[T], Container, Iterable):
     """
     Base class for magic type-checked settings.
 
@@ -247,3 +250,16 @@ class Setting(SupportsInt, SupportsFloat, Generic[T]):
         """Return the value, blindly converted to float."""
         self._raise_if_missing()
         return float(self.value)  # type: ignore[arg-type]
+
+    def __iter__(self) -> Iterator:
+        """Return the iterator for `value`. Will raise on unsupported types or missing values.
+        Note: T will not be used here, because in the case of e.g. Dictionaries you would get strings,
+        or a List of str would give back str...
+        """
+        self._raise_if_missing()
+        return iter(self.value)  # type: ignore[no-any-return,call-overload]
+
+    def __contains__(self, item: Any) -> bool:
+        """Tells if item is in `value`. Will raise on unsupported types or missing values."""
+        self._raise_if_missing()
+        return item in self.value  # type: ignore[operator]
