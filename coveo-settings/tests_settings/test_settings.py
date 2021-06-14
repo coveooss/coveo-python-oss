@@ -684,3 +684,13 @@ def test_settings_iterable_not_supported() -> None:
 def test_settings_iterable_not_set() -> None:
     with pytest.raises(MandatoryConfigurationError):
         iter(DictSetting("any"))
+
+
+@UnitTest
+def test_setting_get_not_set() -> None:
+    assert StringSetting("any").get_if_set("default") == "default"
+
+
+@UnitTest
+def test_setting_get() -> None:
+    assert StringSetting("any", fallback="foo").get_if_set("default") == "foo"

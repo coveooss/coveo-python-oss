@@ -149,6 +149,10 @@ class Setting(SupportsInt, SupportsFloat, Generic[T], Container, Iterable):
         except InvalidConfiguration:
             return False
 
+    def get_if_set(self, default: T) -> T:
+        """Return the value, or a default if not set."""
+        return self.value if self.is_set else default
+
     @staticmethod
     @abstractmethod
     def _cast(value: ConfigValue) -> T:
