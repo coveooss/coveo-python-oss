@@ -1,10 +1,13 @@
 """Adds much needed magic and features over the builtin subprocess machinery."""
 
+
 import logging
-from os import PathLike
-from pathlib import Path
+import shlex
 import subprocess
-from typing import Union, Any, Optional, cast, List, Dict, Tuple, Iterable
+from os import PathLike
+
+from coveo_systools.platforms import WINDOWS
+from typing import Union, Any, Optional, cast, List, Dict, Tuple, Iterable, Generator
 from typing_extensions import Protocol, Final, Literal
 
 from coveo_functools.dispatch import dispatch
@@ -145,9 +148,19 @@ class _CallProtocol(Protocol):
     """Adds type-check to the check_output and check_call protocols."""
 
     def __call__(
-        self, command: List[str], shell: bool = False, cwd: str = None, **kwargs: Any
+        self, command: Iterable[str], shell: bool = False, cwd: str = None, **kwargs: Any
     ) -> Optional[Union[str, bytes]]:
         ...
+
+
+def _build_command(*command: Any, quoted: bool) -> Generator[str, None, None]:
+    """Build the command for Popen."""
+    converted_command = (
+        arg for arg in map(cast_command_line_argument_to_string, command) if arg and arg.strip()
+    )
+    yield from shlex.split(
+        " ".join(converted_command), posix=not WINDOWS
+    ) if quoted else converted_command
 
 
 def check_run(
@@ -155,6 +168,7 @@ def check_run(
     working_directory: Union[PathLike, str] = ".",
     capture_output: bool = False,
     verbose: bool = False,
+    quoted: bool = False,
     **kwargs: Any,
 ) -> Optional[str]:
     """
@@ -166,14 +180,52 @@ def check_run(
         - automatic conversion of Path, bytes and number variables in command line
         - automatic filtering of ansi codes from the output
         - enhanced DetailedCalledProcessError on error (a subclass of the typical CalledProcessError)
+
+    quoted:
+        - When False, an argument is automatically quoted if it has a space (Popen's behavior):
+            Good: 'exec', '--option', '--also', 'this value' -> exec --option --also "this value"
+            Bad:  'exec', '--option', '--also this value' -> exec --option "--also this value" (quotes are misplaced)
+
+        - With True, the arguments will be split on spaces, unless you quoted them beforehand:
+            Good: 'exec --option', '--also "this value"' -> exec --option --also "this value"
+            Bad:  'exec', '--option', '--also', 'this value' -> exec --option --also this value (quotes are missing)
+
+    With `quoted=True` you can combine arguments together in single strings; this often improves readability.
+    However, you MUST quote the tokens that may contain a space. Example with black formatting:
+
+        without quoted:
+
+            check_run(
+                [
+                    "executable",
+                    "--verbose",
+                    "--target",
+                    filename,
+                    "--dry-run",
+                    "--with-onions"
+                ]
+            )
+
+        with quoted:
+
+            import shlex
+            check_run(
+                [
+                    "executable --verbose",
+                    f"--target {shlex.quote(filename)}",
+                    "--dry-run --with-onions"
+                ],
+                quoted=True,
+            )
     """
     if verbose:
         print(f"input arguments: {command}")
-    converted_command = [
-        arg for arg in map(cast_command_line_argument_to_string, command) if arg and arg.strip()
-    ]
+
+    converted_command = tuple(_build_command(*command, quoted=True))
+    command_for_display = " ".join(converted_command) if quoted else shlex.join(converted_command)
+
     if verbose:
-        print(f'calling: {" ".join(converted_command)}')
+        print(f"calling: {command_for_display}")
 
     fn = cast(_CallProtocol, subprocess.check_output if capture_output else subprocess.check_call)
     try:
@@ -196,16 +248,20 @@ def check_call(
     *command: Any,
     working_directory: Union[PathLike, str] = ".",
     verbose: bool = False,
+    quoted: bool = False,
     **kwargs: Any,
 ) -> Optional[str]:
     """Proxy for subprocess.check_call"""
-    return check_run(*command, working_directory=working_directory, verbose=verbose, **kwargs)
+    return check_run(
+        *command, working_directory=working_directory, verbose=verbose, quoted=quoted, **kwargs
+    )
 
 
 def check_output(
     *command: Any,
     working_directory: Union[PathLike, str] = ".",
     verbose: bool = False,
+    quoted: bool = False,
     **kwargs: Any,
 ) -> Optional[str]:
     """Proxy for subprocess.check_output"""
@@ -214,6 +270,7 @@ def check_output(
         working_directory=working_directory,
         capture_output=True,
         verbose=verbose,
+        quoted=quoted,
         **kwargs,
     )
 
