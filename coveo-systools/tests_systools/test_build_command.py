@@ -1,4 +1,6 @@
 import shlex
+from pathlib import Path
+
 from typing import List
 
 from coveo_testing.parametrize import parametrize
@@ -6,7 +8,7 @@ from coveo_testing.parametrize import parametrize
 from coveo_systools.subprocess import _build_command
 
 
-TOKEN_WITH_SPACES = "some/file with spaces.txt"
+TOKEN_WITH_SPACES = str(Path("folder") / "file with spaces.txt")
 
 
 @parametrize("command", (["which", "git"], ["exec", "--option", "--target", TOKEN_WITH_SPACES]))
