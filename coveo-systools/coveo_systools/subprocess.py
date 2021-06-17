@@ -6,7 +6,6 @@ import shlex
 import subprocess
 from os import PathLike
 
-from coveo_systools.platforms import WINDOWS
 from typing import Union, Any, Optional, cast, List, Dict, Tuple, Iterable, Generator
 from typing_extensions import Protocol, Final, Literal
 
@@ -159,7 +158,7 @@ def _build_command(*command: Any, quoted: bool) -> Generator[str, None, None]:
         arg for arg in map(cast_command_line_argument_to_string, command) if arg and arg.strip()
     )
     yield from shlex.split(
-        " ".join(converted_command), posix=not WINDOWS
+        " ".join(converted_command), posix=False
     ) if quoted else converted_command
 
 
