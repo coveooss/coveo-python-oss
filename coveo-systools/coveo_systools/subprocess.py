@@ -220,7 +220,7 @@ def check_run(
     if verbose:
         print(f"input arguments: {command}")
 
-    converted_command = tuple(_build_command(*command, quoted=True))
+    converted_command = tuple(_build_command(*command, quoted=quoted))
     command_for_display = " ".join(converted_command) if quoted else shlex.join(converted_command)
 
     if verbose:
