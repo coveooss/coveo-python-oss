@@ -44,7 +44,7 @@ The API used by `coveo-pypi-cli` is served by the `/pypi` endpoint _and should n
 
 # pypi-cli in action
 
-The best example comes from the [github action](./.github/workflows/actions/publish-to-pypi), which computes the next version based on the current release and what's in the `pyproject.toml`.
+The best example comes from the [github action](../.github/workflows/actions/publish-to-pypi), which computes the next version based on the current release and what's in the `pyproject.toml`.
 
 Here's what you can expect from the tool:
 
