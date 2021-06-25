@@ -4,7 +4,7 @@ version = "2.0.0"
 description = "Filesystem, language and OS related tools."
 license = "Apache-2.0"
 readme = "README.md"
-repository = "https://github.com/coveooss/coveo-python-oss"
+repository = "https://github.com/coveooss/coveo-python-oss/tree/main/coveo-systools"
 authors = ["Jonathan Piché <tools@coveo.com>"]
 
 [tool.poetry.dependencies]
@@ -15,7 +15,7 @@ typing_extensions = "*"
 
 
 [tool.poetry.dev-dependencies]
-black = { version = "21.5b2", allow-prereleases = true }
+black = { version = "21.6b0", allow-prereleases = true }
 coveo-functools = { path = "../coveo-functools/", develop = true }
 coveo-testing = { path = "../coveo-testing/", develop = true }
 mypy = "0.812"

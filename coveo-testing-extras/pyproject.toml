@@ -4,7 +4,7 @@ version = "2.0.0"
 description = "Dependency-hungry testing helpers"
 license = "Apache-2.0"
 readme = "README.md"
-repository = "https://github.com/coveooss/coveo-python-oss"
+repository = "https://github.com/coveooss/coveo-python-oss/tree/main/coveo-testing-extras"
 authors = ["Jonathan Piché <tools@coveo.com>"]
 
 [tool.poetry.dependencies]
@@ -19,7 +19,7 @@ six = "*"  # can be removed when this is fixed: https://github.com/docker/docker
 
 
 [tool.poetry.dev-dependencies]
-black = { version = "21.5b2", allow-prereleases = true }
+black = { version = "21.6b0", allow-prereleases = true }
 coveo-functools = { path = "../coveo-functools/", develop = true }
 coveo-settings = { path = "../coveo-settings/", develop = true }
 coveo-systools = { path = "../coveo-systools/", develop = true }
