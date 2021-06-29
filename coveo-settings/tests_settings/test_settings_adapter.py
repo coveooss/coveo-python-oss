@@ -34,14 +34,14 @@ def return_value_adapter(value: str) -> Optional[ConfigValue]:
 @UnitTest
 @parametrize_scheme
 def test_setting_adapter(scheme: str) -> None:
-    assert StringSetting("...", fallback=f"{scheme}foo").value == "foo"
+    assert StringSetting("ut", fallback=f"{scheme}foo").value == "foo"
 
 
 @UnitTest
 @parametrize_scheme
 def test_setting_adapter_no_match(scheme: str) -> None:
     expected = f"{scheme[:-1]}foo"
-    assert StringSetting("...", fallback=expected).value == expected
+    assert StringSetting("ut", fallback=expected).value == expected
 
 
 @UnitTest
@@ -57,7 +57,7 @@ def test_duplicate_scheme(scheme: str) -> None:
 @UnitTest
 def test_scheme_case_insensitive() -> None:
     assert TEST_RETURN_VALUE.islower()
-    assert StringSetting("...", fallback=f"{TEST_RETURN_VALUE.upper()}foo").value == "foo"
+    assert StringSetting("ut", fallback=f"{TEST_RETURN_VALUE.upper()}foo").value == "foo"
 
 
 @UnitTest
@@ -87,7 +87,7 @@ def test_redirect_not_called_on_is_set() -> None:
         called = True
         return value
 
-    setting = BoolSetting("...", fallback="lazy-evaluated::yes")
+    setting = BoolSetting("ut", fallback="lazy-evaluated::yes")
     assert setting.is_set
     assert not called
     assert setting.value is True
@@ -103,8 +103,8 @@ def test_adapter_may_cast_object() -> None:
         return json.loads(value)  # type: ignore[no-any-return]
 
     value = 'return-dict::{"success": true}'
-    assert DictSetting("...", fallback=value).value["success"] is True
+    assert DictSetting("ut", fallback=value).value["success"] is True
 
     with pytest.raises(TypeConversionConfigurationError):
         # providing a dictionary to a BoolSetting is never a good idea!
-        _ = BoolSetting("...", fallback=value).value
+        _ = BoolSetting("ut", fallback=value).value
