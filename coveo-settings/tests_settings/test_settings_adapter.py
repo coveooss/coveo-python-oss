@@ -3,7 +3,11 @@ import os
 from typing import Optional, Final
 
 import pytest
-from coveo_settings.exceptions import DuplicatedScheme, TooManyRedirects, TypeConversionConfigurationError
+from coveo_settings.exceptions import (
+    DuplicatedScheme,
+    TooManyRedirects,
+    TypeConversionConfigurationError,
+)
 from coveo_testing.markers import UnitTest
 from coveo_testing.parametrize import parametrize
 
@@ -96,11 +100,11 @@ def test_adapter_may_cast_object() -> None:
 
     @settings_adapter("return-dict::")
     def return_dict(value: str) -> Optional[ConfigValue]:
-        return json.loads(value)
+        return json.loads(value)  # type: ignore[no-any-return]
 
     value = 'return-dict::{"success": true}'
-    assert DictSetting('...', fallback=value).value['success'] is True
+    assert DictSetting("...", fallback=value).value["success"] is True
 
     with pytest.raises(TypeConversionConfigurationError):
         # providing a dictionary to a BoolSetting is never a good idea!
-        _ = BoolSetting('...', fallback=value).value
+        _ = BoolSetting("...", fallback=value).value
