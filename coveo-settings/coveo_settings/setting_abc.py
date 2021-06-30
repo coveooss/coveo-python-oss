@@ -103,6 +103,7 @@ class Setting(SupportsInt, SupportsFloat, Generic[T], Container, Iterable):
         alternate_keys: Optional[Collection[str]] = None,
         sensitive: bool = False,
         validation: Validation = _no_validation,
+        cached: bool = False
     ) -> None:
         """Initializes a setting."""
         self._key: str = key
@@ -113,6 +114,7 @@ class Setting(SupportsInt, SupportsFloat, Generic[T], Container, Iterable):
             validation
         )
         self._sensitive = sensitive
+        self._cached = cached
         self._cache_validated: Optional[T] = None
         self._last_value: Optional[ConfigValue] = None
         # cast fallback values so that it breaks on import (e.g.: during tests)
@@ -199,6 +201,9 @@ class Setting(SupportsInt, SupportsFloat, Generic[T], Container, Iterable):
 
     def _get_value(self) -> Optional[ConfigValue]:
         """Returns the raw value/fallback/override of this setting, else None."""
+        if self._cached and self._cache_validated is not None:
+            return copy(self._cache_validated)
+
         value = (
             _find_setting(self.key, *self._alternate_keys)
             if self._override is None

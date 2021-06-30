@@ -154,6 +154,11 @@ os.environ["my-setting"] = "env->new-setting"
 assert StringSetting("my-setting").value == "correct-value"
 ```
 
+## Cached
+
+You can set a setting to cache the first valid value with `cached=True`.
+This is particularly useful in redirection scenarios to avoid repeating requests too often.
+
 
 ## Setting the value
 
