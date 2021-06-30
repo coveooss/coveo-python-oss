@@ -295,7 +295,7 @@ class _SchemeDispatch:
 
     matchers: Final[Dict[Pattern, AdapterHandler]] = {}
 
-    def __init__(self, scheme: str) -> None:
+    def __init__(self, scheme: str, strip_scheme: bool = True) -> None:
         """
         Reasonable schemes will use the same delimiter pattern within an application for consistency and will
         contain several characters for uniqueness.
@@ -304,8 +304,15 @@ class _SchemeDispatch:
             - ssm://
             - s3->
             - {api}
+
+        The scheme is removed from the value given to the adapter. To keep it, set `strip_scheme` to False.
         """
-        self.matcher = re.compile(rf"^{re.escape(scheme)}(?P<resource>.+)$", flags=re.IGNORECASE)
+        pattern = (
+            rf"^{re.escape(scheme)}(?P<resource>.+)$"
+            if strip_scheme
+            else rf"^(?P<resource>{re.escape(scheme)}.+)$"
+        )
+        self.matcher = re.compile(pattern, flags=re.IGNORECASE)
         self.scheme = scheme
 
     def __call__(self, fn: AdapterHandler) -> AdapterHandler:

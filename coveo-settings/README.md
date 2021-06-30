@@ -92,13 +92,15 @@ from coveo_settings import settings_adapter, StringSetting, ConfigValue
 
 @settings_adapter("internal-api::")
 def internal_api_adapter(key: str) -> ConfigValue:
-    # the scheme was automatically removed for convenience; only the resource remains  
+    # the scheme was automatically removed for convenience; only the resource remains
     assert "internal-api::" not in key
     return "internal api"  # implement logic to obtain value from internal api
     
 
-@settings_adapter("file::")
+@settings_adapter("file::", strip_scheme=False)
 def file_adapter(key: str) -> ConfigValue:
+    # you can keep the scheme by specifying `strip_scheme=False`
+    assert key.startswith("file::")
     return "file adapter"  # implement logic to parse the key and retrieve the setting value 
 
 
