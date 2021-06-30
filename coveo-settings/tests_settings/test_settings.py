@@ -698,9 +698,9 @@ def test_setting_get() -> None:
 
 @UnitTest
 def test_setting_cached() -> None:
-    env = 'test.settings.cached'
+    env = "test.settings.cached"
     setting = StringSetting(env, cached=True)
-    os.environ[env] = 'foo'
-    assert str(setting) == 'foo'
-    os.environ[env] = 'bar'
-    assert str(setting) == 'foo'
+    os.environ[env] = "foo"
+    assert str(setting) == "foo"
+    os.environ[env] = "bar"
+    assert str(setting) == "foo"

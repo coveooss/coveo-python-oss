@@ -103,7 +103,7 @@ class Setting(SupportsInt, SupportsFloat, Generic[T], Container, Iterable):
         alternate_keys: Optional[Collection[str]] = None,
         sensitive: bool = False,
         validation: Validation = _no_validation,
-        cached: bool = False
+        cached: bool = False,
     ) -> None:
         """Initializes a setting."""
         self._key: str = key
