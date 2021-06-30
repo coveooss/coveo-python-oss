@@ -25,6 +25,8 @@ A default (fallback) value may be specified. The fallback may be a `callable`.
 
 A validation callback may be specified for custom logic and error messages.
 
+Not limited to environment variables; supports redirection to custom implementations.
+
 **A setting can be set as sensitive for logging purposes. When logging, use repr(setting) to get the correct representation.**
 
 
@@ -74,6 +76,82 @@ from coveo_settings.settings import StringSetting
 from coveo_settings.validation import InSequence
 
 ENV = StringSetting("environment", fallback="dev", validation=InSequence("prod", "staging", "dev"))
+```
+
+
+## Redirection
+
+You can register custom redirection schemes in order to support any data source.
+
+Much like `https://` is a clear scheme, you may register callback functions to trigger when the value of a setting
+starts with the scheme(s) you define. For instance, let's support a custom API and a file storage: 
+
+```python
+from coveo_settings import settings_adapter, StringSetting, ConfigValue
+
+
+@settings_adapter("internal-api::")
+def internal_api_adapter(key: str) -> ConfigValue:
+    # the scheme was automatically removed for convenience; only the resource remains  
+    assert "internal-api::" not in key
+    return "internal api"  # implement logic to obtain value from internal api
+    
+
+@settings_adapter("file::")
+def file_adapter(key: str) -> ConfigValue:
+    return "file adapter"  # implement logic to parse the key and retrieve the setting value 
+
+
+assert StringSetting('...', fallback="internal-api::settings/user-name").value == "internal api"
+assert StringSetting('...', fallback="file::settings.yaml/user-name").value == "file adapter"
+
+
+# even though we used `fallback` above, the redirection is driven by the user:
+import os
+
+REDIRECT_ME = StringSetting('test')
+os.environ['test'] = "file::user.json::name"
+assert REDIRECT_ME.value == "file adapter"
+os.environ['test'] = "internal-api::url"
+assert REDIRECT_ME.value == "internal api"
+```
+
+Keep in mind that there's no restriction on the prefix scheme; it's your responsibility to pick something unique 
+that can be set as the value of an environment variable.
+
+
+### Redirection is recursive
+
+The value of a redirection may be another redirection and may juggle between adapters. 
+A limit of 50 redirections is supported:
+
+```python
+import os
+
+from coveo_settings import StringSetting
+
+
+os.environ["expected"] = "final value"
+os.environ["redirected"] = "env->expected"
+os.environ["my-setting"] = "env->redirected"
+
+assert StringSetting("my-setting").value == "final value"
+```
+
+### Builtin environment redirection
+
+The builtin redirection scheme `env->` can be used to redirect to a different environment variable.
+The example below demonstrates the deprecation/migration of `my-setting` into `new-setting`: 
+
+```python
+import os
+
+from coveo_settings import StringSetting
+
+os.environ["new-setting"] = "correct-value"
+os.environ["my-setting"] = "env->new-setting"
+
+assert StringSetting("my-setting").value == "correct-value"
 ```
 
 

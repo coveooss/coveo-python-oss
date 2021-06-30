@@ -10,8 +10,12 @@ There are three places where a setting may be set, in order of precedence:
 Environment variables separators . and _ are optional and casing is ignored. Thus, it's possible to specify
 keys like `redis.host` as `REDIS_HOST`, `__REDIS...host_`, `RedisHost` or `REDISHOST`, for instance.
 """
-
+import inspect
 import os
+import re
+from functools import partial
+
+import sys
 from abc import abstractmethod
 from copy import copy
 from typing import (
@@ -26,6 +30,9 @@ from typing import (
     Container,
     Iterator,
     Iterable,
+    Dict,
+    Final,
+    Pattern,
 )
 
 from coveo_settings.annotations import ConfigValue, T, Validation, ValidationCallback
@@ -35,6 +42,8 @@ from coveo_settings.exceptions import (
     ValidationConfigurationError,
     ValidationCallbackError,
     MandatoryConfigurationError,
+    DuplicatedScheme,
+    TooManyRedirects,
 )
 from coveo_settings.validation import InSequence
 
@@ -42,7 +51,7 @@ from coveo_settings.validation import InSequence
 ENVIRONMENT_VARIABLE_SEPARATORS = "._"
 
 
-def _find_setting(*keys: str) -> Optional[ConfigValue]:
+def _find_setting(*keys: str) -> Optional[str]:
     """Attempts to find a variable in the environment variables. The casing, dots (.) and the underline character (_)
     are not significant. For instance, "ut.test.setting" will match "UTTESTSETTING" and also "UT_teST.._setting"."""
 
@@ -108,7 +117,7 @@ class Setting(SupportsInt, SupportsFloat, Generic[T], Container, Iterable):
         self._last_value: Optional[ConfigValue] = None
         # cast fallback values so that it breaks on import (e.g.: during tests)
         # however, do not trigger any callables or validation to promote a just-in-time evaluation at runtime
-        if fallback is not None and not callable(fallback):
+        if fallback is not None and not callable(fallback) and not self.is_redirect:
             self._cast_or_raise(fallback)
 
     @property
@@ -136,8 +145,11 @@ class Setting(SupportsInt, SupportsFloat, Generic[T], Container, Iterable):
     @property
     def is_set(self) -> bool:
         """
-        Indicates if the value is set (values with defaults are always set unless mocked).
-        This doesn't mean the value is valid.
+        Indicates if the value is set. This doesn't mean the value is valid.
+
+        Notes:
+            - Values with defaults are always set
+            - Values that should redirect to a custom adapter are always set
         """
         return self._get_value() is not None
 
@@ -148,6 +160,11 @@ class Setting(SupportsInt, SupportsFloat, Generic[T], Container, Iterable):
             return self.value is not None
         except InvalidConfiguration:
             return False
+
+    @property
+    def is_redirect(self) -> bool:
+        """True if the value invokes a custom adapter."""
+        return settings_adapter.is_redirect(self._get_value())
 
     def get_if_set(self, default: T) -> T:
         """Return the value, or a default if not set."""
@@ -177,8 +194,8 @@ class Setting(SupportsInt, SupportsFloat, Generic[T], Container, Iterable):
         return value
 
     def _cast_and_validate(self, value: ConfigValue) -> T:
-        """Cast and validate the value or raise an exception."""
-        return self._validate_or_raise(self._cast_or_raise(value))
+        """Redirect/cast and validate the value or raise an exception."""
+        return self._validate_or_raise(self._cast_or_raise(settings_adapter.evaluate(value)))
 
     def _get_value(self) -> Optional[ConfigValue]:
         """Returns the raw value/fallback/override of this setting, else None."""
@@ -263,3 +280,78 @@ class Setting(SupportsInt, SupportsFloat, Generic[T], Container, Iterable):
         """Tells if item is in `value`. Will raise on unsupported types or missing values."""
         self._raise_if_missing()
         return item in self.value  # type: ignore[operator]
+
+
+AdapterHandler = Callable[[str], Optional[ConfigValue]]
+
+
+class _SchemeDispatch:
+    """Decorator that registers a function as a callback for a specific scheme."""
+
+    matchers: Final[Dict[Pattern, AdapterHandler]] = {}
+
+    def __init__(self, scheme: str) -> None:
+        """
+        Reasonable schemes will use the same delimiter pattern within an application for consistency and will
+        contain several characters for uniqueness.
+
+        Examples:
+            - ssm://
+            - s3->
+            - {api}
+        """
+        self.matcher = re.compile(rf"^{re.escape(scheme)}(?P<resource>.+)$", flags=re.IGNORECASE)
+        self.scheme = scheme
+
+    def __call__(self, fn: AdapterHandler) -> AdapterHandler:
+        """Register the function into the class registry. The function is returned; no wrapping occurs."""
+        if self.matcher in self.matchers:
+            raise DuplicatedScheme(self.scheme)
+        self.matchers[self.matcher] = fn
+        return fn
+
+    @classmethod
+    def evaluate(cls, value: ConfigValue) -> Optional[ConfigValue]:
+        """Evaluates the config value against the registered handlers."""
+        if not isinstance(value, str):
+            return value
+
+        recursion_limit = sys.getrecursionlimit()
+        # limit the recursion depth to make errors come out faster. 50 ought to be enough for anybody!
+        current_stack_depth = len(inspect.stack(0))
+        sys.setrecursionlimit(current_stack_depth + 50)
+        try:
+            return cls._evaluate(value)
+        except RecursionError as exception:
+            raise TooManyRedirects(value) from exception
+        finally:
+            sys.setrecursionlimit(recursion_limit)
+
+    @classmethod
+    def _evaluate(cls, value: ConfigValue) -> Optional[ConfigValue]:
+        """Evaluates value recursively."""
+        handler = cls._get_handler(value)
+        return cls._evaluate(handler()) if handler else value
+
+    @classmethod
+    def is_redirect(cls, value: ConfigValue) -> bool:
+        """Indicates if the value would match a registered adapter."""
+        return cls._get_handler(value) is not None
+
+    @classmethod
+    def _get_handler(cls, value: Any) -> Optional[Callable[[], Optional[ConfigValue]]]:
+        if isinstance(value, str):
+            for matcher, handler in cls.matchers.items():
+                match = matcher.match(value)
+                if match:
+                    return partial(handler, match["resource"])
+        return None
+
+
+settings_adapter = _SchemeDispatch
+
+
+@settings_adapter("env->")
+def default_environ_adapter(value: str) -> Optional[ConfigValue]:
+    """Custom adapter that defers to another environment variable."""
+    return os.getenv(value)

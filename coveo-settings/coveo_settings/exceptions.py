@@ -1,3 +1,15 @@
+class InvalidScheme(RuntimeError):
+    """Thrown when a scheme is not valid."""
+
+
+class DuplicatedScheme(InvalidScheme):
+    """Thrown when a scheme is duplicated."""
+
+
+class TooManyRedirects(RuntimeError):
+    """A setting tried to redirect to custom adapters too many times."""
+
+
 class InvalidConfiguration(Exception):
     """Thrown when a setting item is badly configured."""
 
