@@ -108,3 +108,24 @@ def test_adapter_may_cast_object() -> None:
     with pytest.raises(TypeConversionConfigurationError):
         # providing a dictionary to a BoolSetting is never a good idea!
         _ = BoolSetting("ut", fallback=value).value
+
+
+@UnitTest
+def test_adapter_strip_scheme() -> None:
+    expected = "keep::all::the::tokens"
+
+    @settings_adapter(expected, strip_scheme=False)
+    def return_dict(value: str) -> Optional[ConfigValue]:
+        assert value == expected
+        return value
+
+    assert str(AnySetting("ut", fallback=expected)) == expected
+
+
+@UnitTest
+def test_adapter_strip_scheme_recursive() -> None:
+    @settings_adapter("loop->", strip_scheme=False)
+    def return_dict(value: str) -> Optional[ConfigValue]:
+        return value
+
+    assert str(AnySetting("ut", fallback="loop->test")) == "loop->test"

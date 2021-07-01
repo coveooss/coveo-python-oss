@@ -313,16 +313,10 @@ class _SchemeDispatch:
         if not isinstance(value, str):
             return value
 
-        recursion_limit = sys.getrecursionlimit()
-        # limit the recursion depth to make errors come out faster. 50 ought to be enough for anybody!
-        current_stack_depth = len(inspect.stack(0))
-        sys.setrecursionlimit(current_stack_depth + 50)
         try:
             return cls._evaluate(value)
         except RecursionError as exception:
             raise TooManyRedirects(value) from exception
-        finally:
-            sys.setrecursionlimit(recursion_limit)
 
     @classmethod
     def _evaluate(cls, value: ConfigValue) -> Optional[ConfigValue]:
