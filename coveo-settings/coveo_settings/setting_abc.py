@@ -1,23 +1,15 @@
-"""
-Contains classes to create application settings that can be overridden through environment variables or config files.
+""" Create application settings that can be overridden through environment variables or custom adapters. """
 
-There are three places where a setting may be set, in order of precedence:
+from __future__ import annotations
 
-1. Environment variables
-2. Config files
-3. Default value
-
-Environment variables separators . and _ are optional and casing is ignored. Thus, it's possible to specify
-keys like `redis.host` as `REDIS_HOST`, `__REDIS...host_`, `RedisHost` or `REDISHOST`, for instance.
-"""
 import inspect
 import os
 import re
-from functools import partial
-
 import sys
+
 from abc import abstractmethod
 from copy import copy
+from functools import partial
 from typing import (
     Any,
     Optional,
@@ -336,7 +328,13 @@ class _SchemeDispatch:
     def _evaluate(cls, value: ConfigValue) -> Optional[ConfigValue]:
         """Evaluates value recursively."""
         handler = cls._get_handler(value)
-        return cls._evaluate(handler()) if handler else value
+        if handler:
+            redirected_value = handler()
+            if redirected_value != value:
+                # recurse when the value changes
+                return cls._evaluate(redirected_value)
+
+        return value
 
     @classmethod
     def is_redirect(cls, value: ConfigValue) -> bool:
