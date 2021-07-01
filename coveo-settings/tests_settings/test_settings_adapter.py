@@ -11,7 +11,7 @@ from coveo_settings.exceptions import (
 from coveo_testing.markers import UnitTest
 from coveo_testing.parametrize import parametrize
 
-from coveo_settings import StringSetting, BoolSetting, DictSetting
+from coveo_settings import StringSetting, BoolSetting, DictSetting, AnySetting
 from coveo_settings.annotations import ConfigValue
 from coveo_settings.setting_abc import settings_adapter
 
