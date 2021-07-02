@@ -15,8 +15,9 @@ U = TypeVar("U")
 
 
 class FlexFactory(Generic[T]):
-
-    def __init__(self, klass: Type[T], strip_extras: bool = True, keep_raw: Optional[str] = None) -> None:
+    def __init__(
+        self, klass: Type[T], strip_extras: bool = True, keep_raw: Optional[str] = None
+    ) -> None:
         self.klass = klass
         self.strip_extras = strip_extras
         self.keep_raw = keep_raw
@@ -27,7 +28,7 @@ class FlexFactory(Generic[T]):
         converted_kwargs: Dict[str, Any] = {}
 
         # scan the annotations for custom types and convert them
-        for arg_name, arg_type in find_annotations(self.klass).items():
+        for arg_name, arg_type in find_annotations(self.klass.__init__).items():
             if arg_name not in mapped_kwargs:
                 continue  # this may be ok if the target class has a default value, will break if not
 
@@ -49,7 +50,7 @@ class FlexFactory(Generic[T]):
             converted_kwargs[arg_name] = factory(**mapped_kwargs[arg_name])
 
         # with everything converted, create an instance of the class
-        instance = self.klass(**converted_kwargs)
+        instance = self.klass(**converted_kwargs)  # type: ignore[call-arg]
 
         # keep raw data?
         if self.keep_raw and hasattr(instance, "__dict__"):
