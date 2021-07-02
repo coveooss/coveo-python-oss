@@ -29,6 +29,12 @@ class FlexFactory(Generic[T]):
 
         # scan the annotations for custom types and convert them
         for arg_name, arg_type in find_annotations(self.klass.__init__).items():
+            if arg_name == self.keep_raw:
+                # the constructor contains the raw attribute; inject the payload from here.
+                # also, if the raw data was explicitly given in kwargs, use that instead.
+                converted_kwargs[arg_name] = dirty_kwargs.get(arg_name, dirty_kwargs)
+                continue
+
             if arg_name not in mapped_kwargs:
                 continue  # this may be ok if the target class has a default value, will break if not
 
@@ -52,9 +58,10 @@ class FlexFactory(Generic[T]):
         # with everything converted, create an instance of the class
         instance = self.klass(**converted_kwargs)  # type: ignore[call-arg]
 
-        # keep raw data?
-        if self.keep_raw and hasattr(instance, "__dict__"):
-            # can't do that if slots-based
-            instance.__dict__[self.keep_raw] = dirty_kwargs
+        # inject the raw payload if it wasn't already injected in the constructor:
+        if self.keep_raw and not hasattr(instance, self.keep_raw):
+            if hasattr(instance, "__dict__"):
+                # if the raw data was explicitly given in kwargs, use that instead.
+                instance.__dict__[self.keep_raw] = dirty_kwargs.get(self.keep_raw, dirty_kwargs)
 
         return instance
