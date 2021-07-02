@@ -134,13 +134,13 @@ def test_adapter_strip_scheme_infinite_recursion() -> None:
 @UnitTest
 def test_adapter_strip_scheme_recursion() -> None:
     mapping = {
-        'first': 'key->second',
-        'second': 'key->expected',
-        'expected': 'goal!',
+        "first": "key->second",
+        "second": "key->expected",
+        "expected": "goal!",
     }
 
     @settings_adapter("key->", strip_scheme=False)
     def return_dict(value: str) -> Optional[ConfigValue]:
         return mapping[value[5:]]
 
-    assert str(AnySetting("ut", fallback="key->first")) == 'goal!'
+    assert str(AnySetting("ut", fallback="key->first")) == "goal!"
