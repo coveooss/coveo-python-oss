@@ -1,34 +1,64 @@
 from __future__ import annotations
 
+import inspect
 from typing import Type, TypeVar, Generic, Optional, Any, get_args, get_origin, Union, Dict
 
 from coveo_functools.annotations import find_annotations
-from coveo_functools.casing import unflex
-from coveo_functools.exceptions import InvalidUnion
+from coveo_functools.casing import unflex, flexcase
+from coveo_functools.exceptions import InvalidUnion, PositionalArgumentsNotAllowed, FlexException
+
+_ = unflex, flexcase  # mark them as used (forward compatibility vs docs)
+
 
 JSON_TYPES = (str, bool, int, float, type(None))
 META_TYPES = (Union, Optional)
 
 
 T = TypeVar("T")
-U = TypeVar("U")
 
 
 class FlexFactory(Generic[T]):
     def __init__(
-        self, klass: Type[T], strip_extras: bool = True, keep_raw: Optional[str] = None
+        self,
+        __wrapped: Optional[Type[T]] = None,
+        *,
+        strip_extras: bool = True,
+        keep_raw: Optional[str] = None
     ) -> None:
-        self.klass = klass
+        # when used as a decorator, __wrapped will be None; it will be given and assigned in __call__ instead.
+        self.__wrapped = __wrapped
         self.strip_extras = strip_extras
         self.keep_raw = keep_raw
 
-    def __call__(self, **dirty_kwargs: Any) -> T:
+    def __call__(self, __wrapped: Optional[Type] = None, **dirty_kwargs: Any) -> T:
+        if __wrapped is not None:
+            """
+            The decorator pattern will lead us here.
+            At this stage, python called us with just the class and expects a wrapper.
+            We return ourselves; the current method will be called again with kwargs exclusively.
+            """
+            if self.__wrapped is not None or dirty_kwargs:
+                # it's not possible to have both __wrapped and dirty_kwargs; unless the caller inserted a
+                # positional argument in his call.
+                # note: this may be the only thing that happens with "self"; would be nice to support methods too.
+                raise PositionalArgumentsNotAllowed
+
+            self.__wrapped = __wrapped
+            return self  # type: ignore[return-value]
+
+        if inspect.isclass(self.__wrapped):
+            fn = self.__wrapped.__init__
+        else:
+            raise FlexException(':soon:')
+            # assert callable(self.__wrapped)
+            # fn = self.__wrapped
+
         # convert the keys casings to match the target class
-        mapped_kwargs = unflex(self.klass.__init__, dirty_kwargs, strip_extra=self.strip_extras)
+        mapped_kwargs = unflex(fn, dirty_kwargs, strip_extra=self.strip_extras)
         converted_kwargs: Dict[str, Any] = {}
 
         # scan the annotations for custom types and convert them
-        for arg_name, arg_type in find_annotations(self.klass.__init__).items():
+        for arg_name, arg_type in find_annotations(fn).items():
             if arg_name == self.keep_raw:
                 # the constructor contains the raw attribute; inject the payload from here.
                 # also, if the raw data was explicitly given in kwargs, use that instead.
@@ -56,7 +86,7 @@ class FlexFactory(Generic[T]):
             converted_kwargs[arg_name] = factory(**mapped_kwargs[arg_name])
 
         # with everything converted, create an instance of the class
-        instance = self.klass(**converted_kwargs)  # type: ignore[call-arg]
+        instance = self.__wrapped(**converted_kwargs)  # type: ignore[call-arg]
 
         # inject the raw payload if it wasn't already injected in the constructor:
         if self.keep_raw and not hasattr(instance, self.keep_raw):

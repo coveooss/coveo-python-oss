@@ -11,19 +11,22 @@ Introspect classes and callables at runtime.
 Can convert string annotations into their actual type reference.
 
 
-## casing / flexcase
+## flex
 
-Flexcase takes a "dirty" input and maps it to a python construct.
+Note: Flex only works with keyword arguments.
+
+Flex takes a "dirty" input and maps it to a python construct.
 
 The principal use case is to allow seamless translation between snake_case and camelCase and generate PEP8-compliant code over APIs that support a different casing scheme.
 
-- It introspects a function to obtain the expected argument names
+- It introspects a function/class to obtain the expected argument names
 - It inspects the provided input to find matching candidates
 - It calls the function with the cleaned arguments
+- It can recurse into nested custom types based on annotations
 
 It can also be used to allow for a certain degree of personalization in typically strict contexts such as configuration files and APIs. 
 
-Take for example the toml below, where all 3 items are equivalent:
+Take for example the toml below, where all 3 items can be made equivalent:
 
 ```toml
 [tool.some-plugin]
@@ -39,6 +42,38 @@ Or maybe in a CLI app, to allow both underscores and dashes:
 poetry install --no-dev
 poetry install --no_dev
 ```
+
+### unflex
+
+With unflex, you can remap a dictionary to fit the keyword arguments given by a function call:
+
+```python
+from coveo_functools.flex import unflex
+
+def fn(arg1: str, arg2: str) -> None:
+    ...
+
+assert unflex(fn, {"ARG1": ..., "ArG_2": ...}) == {"arg1": ..., "arg2": ...}
+```
+
+### flexcase
+
+`flexcase` is a decorator that allows a function to apply the `unflex` logic automatically:
+
+```python
+from coveo_functools.flex import flexcase
+
+@flexcase
+def fn(arg1: str, arg2: str) -> str:
+    return f"{arg1} {arg2}"
+
+
+assert fn(ARG1="hello", _arg2="world") == "hello world"
+```
+
+### FlexFactory
+
+This class decorator allows you to  
 
 
 ## dispatch

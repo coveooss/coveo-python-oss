@@ -8,3 +8,7 @@ class FlexException(CoveoFunctoolsException):
 
 class InvalidUnion(FlexException):
     """An invalid union was provided."""
+
+
+class PositionalArgumentsNotAllowed(CoveoFunctoolsException, RuntimeError):
+    """When positional args are detected in the calls."""

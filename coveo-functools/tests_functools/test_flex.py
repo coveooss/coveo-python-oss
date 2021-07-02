@@ -1,10 +1,9 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Final, Dict, Any, Optional, Union
 
 import pytest
 from coveo_functools.exceptions import InvalidUnion
 from coveo_functools.flex import FlexFactory
-from coveo_testing.parametrize import parametrize
 from coveo_testing.markers import UnitTest
 
 
@@ -192,3 +191,40 @@ def test_flex_factory_raise_not_set() -> None:
 
     with pytest.raises(TypeError):
         _ = FlexFactory(MockUnion)()
+
+
+def test_flex_factory_decorator() -> None:
+    @FlexFactory
+    class Test:
+        def __init__(self, test: str) -> None:
+            self.test = test
+
+    assert Test(**{"TEST": "SUCCESS"}).test == "SUCCESS"
+
+
+def test_flex_factory_decorator_dataclass() -> None:
+    @FlexFactory
+    @dataclass
+    class Test:
+        def __init__(self, test: str) -> None:
+            self.test = test
+
+    assert Test(**{"TEST": "SUCCESS"}).test == "SUCCESS"
+
+
+def test_flex_factory_decorator_alt() -> None:
+    @FlexFactory()
+    class Test:
+        def __init__(self, test: str) -> None:
+            self.test = test
+
+    assert Test(**{"TEST": "SUCCESS"}).test == "SUCCESS"
+
+
+def test_flex_factory_decorator_alt_with_params() -> None:
+    @FlexFactory(strip_extras=True)
+    class Test:
+        def __init__(self, test: str) -> None:
+            self.test = test
+
+    assert Test(**{"TEST": "SUCCESS"}).test == "SUCCESS"
