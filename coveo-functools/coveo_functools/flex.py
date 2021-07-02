@@ -1,11 +1,22 @@
 from __future__ import annotations
 
 import inspect
-from typing import Type, TypeVar, Generic, Optional, Any, get_args, get_origin, Union, Dict
+from typing import (
+    Type,
+    TypeVar,
+    Generic,
+    Optional,
+    Any,
+    get_args,
+    get_origin,
+    Union,
+    Dict,
+    Callable,
+)
 
 from coveo_functools.annotations import find_annotations
 from coveo_functools.casing import unflex, flexcase
-from coveo_functools.exceptions import InvalidUnion, PositionalArgumentsNotAllowed, FlexException
+from coveo_functools.exceptions import InvalidUnion, PositionalArgumentsNotAllowed
 
 _ = unflex, flexcase  # mark them as used (forward compatibility vs docs)
 
@@ -20,7 +31,7 @@ T = TypeVar("T")
 class FlexFactory(Generic[T]):
     def __init__(
         self,
-        __wrapped: Optional[Type[T]] = None,
+        __wrapped: Optional[Union[Type[T], Callable[..., T]]] = None,
         *,
         strip_extras: bool = True,
         keep_raw: Optional[str] = None
@@ -47,11 +58,10 @@ class FlexFactory(Generic[T]):
             return self  # type: ignore[return-value]
 
         if inspect.isclass(self.__wrapped):
-            fn = self.__wrapped.__init__
+            fn: Callable[..., T] = self.__wrapped.__init__  # type: ignore[misc]
         else:
-            raise FlexException(':soon:')
-            # assert callable(self.__wrapped)
-            # fn = self.__wrapped
+            assert callable(self.__wrapped)
+            fn = self.__wrapped
 
         # convert the keys casings to match the target class
         mapped_kwargs = unflex(fn, dirty_kwargs, strip_extra=self.strip_extras)

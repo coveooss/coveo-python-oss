@@ -228,3 +228,11 @@ def test_flex_factory_decorator_alt_with_params() -> None:
             self.test = test
 
     assert Test(**{"TEST": "SUCCESS"}).test == "SUCCESS"
+
+
+def test_flex_factory_function() -> None:
+    @FlexFactory
+    def fn(arg1: str) -> str:
+        return arg1
+
+    assert fn(**{"ARG1": "yay"}) == "yay"
