@@ -123,9 +123,24 @@ def test_adapter_strip_scheme() -> None:
 
 
 @UnitTest
-def test_adapter_strip_scheme_recursive() -> None:
+def test_adapter_strip_scheme_infinite_recursion() -> None:
     @settings_adapter("loop->", strip_scheme=False)
     def return_dict(value: str) -> Optional[ConfigValue]:
         return value
 
     assert str(AnySetting("ut", fallback="loop->test")) == "loop->test"
+
+
+@UnitTest
+def test_adapter_strip_scheme_recursion() -> None:
+    mapping = {
+        'first': 'key->second',
+        'second': 'key->expected',
+        'expected': 'goal!',
+    }
+
+    @settings_adapter("key->", strip_scheme=False)
+    def return_dict(value: str) -> Optional[ConfigValue]:
+        return mapping[value[5:]]
+
+    assert str(AnySetting("ut", fallback="key->first")) == 'goal!'
