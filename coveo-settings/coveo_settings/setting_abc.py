@@ -1,23 +1,15 @@
-"""
-Contains classes to create application settings that can be overridden through environment variables or config files.
+""" Create application settings that can be overridden through environment variables or custom adapters. """
 
-There are three places where a setting may be set, in order of precedence:
+from __future__ import annotations
 
-1. Environment variables
-2. Config files
-3. Default value
-
-Environment variables separators . and _ are optional and casing is ignored. Thus, it's possible to specify
-keys like `redis.host` as `REDIS_HOST`, `__REDIS...host_`, `RedisHost` or `REDISHOST`, for instance.
-"""
 import inspect
 import os
 import re
-from functools import partial
-
 import sys
+
 from abc import abstractmethod
 from copy import copy
+from functools import partial
 from typing import (
     Any,
     Optional,
@@ -295,7 +287,7 @@ class _SchemeDispatch:
 
     matchers: Final[Dict[Pattern, AdapterHandler]] = {}
 
-    def __init__(self, scheme: str) -> None:
+    def __init__(self, scheme: str, strip_scheme: bool = True) -> None:
         """
         Reasonable schemes will use the same delimiter pattern within an application for consistency and will
         contain several characters for uniqueness.
@@ -304,8 +296,15 @@ class _SchemeDispatch:
             - ssm://
             - s3->
             - {api}
+
+        The scheme is removed from the value given to the adapter. To keep it, set `strip_scheme` to False.
         """
-        self.matcher = re.compile(rf"^{re.escape(scheme)}(?P<resource>.+)$", flags=re.IGNORECASE)
+        pattern = (
+            rf"^{re.escape(scheme)}(?P<resource>.+)$"
+            if strip_scheme
+            else rf"^(?P<resource>{re.escape(scheme)}.+)$"
+        )
+        self.matcher = re.compile(pattern, flags=re.IGNORECASE)
         self.scheme = scheme
 
     def __call__(self, fn: AdapterHandler) -> AdapterHandler:
@@ -321,22 +320,22 @@ class _SchemeDispatch:
         if not isinstance(value, str):
             return value
 
-        recursion_limit = sys.getrecursionlimit()
-        # limit the recursion depth to make errors come out faster. 50 ought to be enough for anybody!
-        current_stack_depth = len(inspect.stack(0))
-        sys.setrecursionlimit(current_stack_depth + 50)
         try:
             return cls._evaluate(value)
         except RecursionError as exception:
             raise TooManyRedirects(value) from exception
-        finally:
-            sys.setrecursionlimit(recursion_limit)
 
     @classmethod
     def _evaluate(cls, value: ConfigValue) -> Optional[ConfigValue]:
         """Evaluates value recursively."""
         handler = cls._get_handler(value)
-        return cls._evaluate(handler()) if handler else value
+        if handler:
+            redirected_value = handler()
+            if redirected_value != value:
+                # recurse when the value changes
+                return cls._evaluate(redirected_value)
+
+        return value
 
     @classmethod
     def is_redirect(cls, value: ConfigValue) -> bool:

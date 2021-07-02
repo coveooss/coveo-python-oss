@@ -11,7 +11,7 @@ from coveo_settings.exceptions import (
 from coveo_testing.markers import UnitTest
 from coveo_testing.parametrize import parametrize
 
-from coveo_settings import StringSetting, BoolSetting, DictSetting
+from coveo_settings import StringSetting, BoolSetting, DictSetting, AnySetting
 from coveo_settings.annotations import ConfigValue
 from coveo_settings.setting_abc import settings_adapter
 
@@ -108,3 +108,39 @@ def test_adapter_may_cast_object() -> None:
     with pytest.raises(TypeConversionConfigurationError):
         # providing a dictionary to a BoolSetting is never a good idea!
         _ = BoolSetting("ut", fallback=value).value
+
+
+@UnitTest
+def test_adapter_strip_scheme() -> None:
+    expected = "keep::all::the::tokens"
+
+    @settings_adapter(expected, strip_scheme=False)
+    def return_dict(value: str) -> Optional[ConfigValue]:
+        assert value == expected
+        return value
+
+    assert str(AnySetting("ut", fallback=expected)) == expected
+
+
+@UnitTest
+def test_adapter_strip_scheme_infinite_recursion() -> None:
+    @settings_adapter("loop->", strip_scheme=False)
+    def return_dict(value: str) -> Optional[ConfigValue]:
+        return value
+
+    assert str(AnySetting("ut", fallback="loop->test")) == "loop->test"
+
+
+@UnitTest
+def test_adapter_strip_scheme_recursion() -> None:
+    mapping = {
+        'first': 'key->second',
+        'second': 'key->expected',
+        'expected': 'goal!',
+    }
+
+    @settings_adapter("key->", strip_scheme=False)
+    def return_dict(value: str) -> Optional[ConfigValue]:
+        return mapping[value[5:]]
+
+    assert str(AnySetting("ut", fallback="key->first")) == 'goal!'
