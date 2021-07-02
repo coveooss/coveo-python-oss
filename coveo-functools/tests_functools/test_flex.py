@@ -91,3 +91,24 @@ def test_flex_factory_invalid_union() -> None:
 
     with pytest.raises(InvalidUnion):
         _ = FlexFactory(MockUnion)(**{'union': 'sorry'})
+
+
+@UnitTest
+def test_flex_factory_defaults() -> None:
+    @dataclass
+    class MockUnion:
+        none: Optional[str] = None
+        not_none: Optional[str] = 'set'
+
+    assert FlexFactory(MockUnion)().none is None
+    assert FlexFactory(MockUnion)().not_none is not None
+
+
+@UnitTest
+def test_flex_factory_raise_not_set() -> None:
+    @dataclass
+    class MockUnion:
+        missing: Optional[str]
+
+    with pytest.raises(TypeError):
+        _ = FlexFactory(MockUnion)()

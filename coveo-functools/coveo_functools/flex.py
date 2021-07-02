@@ -28,6 +28,9 @@ class FlexFactory(Generic[T]):
 
         # scan the annotations for custom types and convert them
         for arg_name, arg_type in find_annotations(self.klass).items():
+            if arg_name not in mapped_kwargs:
+                continue  # this may be ok if the target class has a default value, will break if not
+
             if arg_type in JSON_TYPES:
                 converted_kwargs[arg_name] = mapped_kwargs[arg_name]
                 continue  # assume that builtin types are already converted
