@@ -67,13 +67,14 @@ def test_flex_factory_detect_and_recurse_objects() -> None:
 @UnitTest
 def test_flex_factory_raw() -> None:
     """A class can be annotated with the raw node."""
+
     class MockRaw:
         raw: Dict[str, Any]
 
         def __init__(self, test: str) -> None:
             self.test = test
 
-    payload = {'_test': 'raw'}
+    payload = {"_test": "raw"}
     instance = FlexFactory(MockRaw, keep_raw="raw")(**payload)
     assert instance.raw == payload
 
@@ -81,12 +82,13 @@ def test_flex_factory_raw() -> None:
 @UnitTest
 def test_flex_factory_raw_dataclass() -> None:
     """A dataclass can be annotated with the raw node."""
+
     @dataclass
     class MockRaw:
         test: str
         raw: Dict[str, Any]
 
-    payload = {'_test': 'raw'}
+    payload = {"_test": "raw"}
     instance = FlexFactory(MockRaw, keep_raw="raw")(**payload)
     assert instance.raw == payload
 
@@ -94,11 +96,12 @@ def test_flex_factory_raw_dataclass() -> None:
 @UnitTest
 def test_flex_factory_raw_non_annotated() -> None:
     """The raw attribute works even when the class doesn't annotate it."""
+
     class MockRaw:
         def __init__(self, test: str) -> None:
             self.test = test
 
-    payload = {'_test': 'raw'}
+    payload = {"_test": "raw"}
     instance = FlexFactory(MockRaw, keep_raw="raw")(**payload)
     assert instance.raw == payload  # type: ignore[attr-defined]
 
@@ -106,11 +109,12 @@ def test_flex_factory_raw_non_annotated() -> None:
 @UnitTest
 def test_flex_factory_raw_dataclass_non_annotated() -> None:
     """The raw attribute works even when the class doesn't annotate it."""
+
     @dataclass
     class MockRaw:
         test: str
 
-    payload = {'_test': 'raw'}
+    payload = {"_test": "raw"}
     instance = FlexFactory(MockRaw, keep_raw="raw")(**payload)
     assert instance.raw == payload  # type: ignore[attr-defined]
 
@@ -118,12 +122,13 @@ def test_flex_factory_raw_dataclass_non_annotated() -> None:
 @UnitTest
 def test_flex_factory_doesnt_override_explicit_raw() -> None:
     """If the raw data is explicitly given, don't overwrite it."""
+
     @dataclass
     class MockRaw:
         test: str
 
     expected = {"explicitly": "given"}
-    payload = {'test': 'raw', 'raw_data': expected}
+    payload = {"test": "raw", "raw_data": expected}
     instance = FlexFactory(MockRaw, keep_raw="raw_data")(**payload)
 
     assert instance.raw_data == expected  # type: ignore[attr-defined]
@@ -132,16 +137,17 @@ def test_flex_factory_doesnt_override_explicit_raw() -> None:
 @UnitTest
 def test_flex_factory_doesnt_override_explicit_raw_with_constructor() -> None:
     """If the raw data is explicitly given, don't overwrite it."""
+
     @dataclass
     class MockRaw:
         test: str
         raw_data: Dict[str, Any]
 
     expected = {"explicitly": "given"}
-    payload = {'test': 'raw', 'raw_data': expected}
+    payload = {"test": "raw", "raw_data": expected}
     instance = FlexFactory(MockRaw, keep_raw="raw_data")(**payload)
 
-    assert instance.raw_data == expected  # type: ignore[attr-defined]
+    assert instance.raw_data == expected
 
 
 @UnitTest
