@@ -68,9 +68,15 @@ def _convert(
                         # not sure if this is even possible... Union[None, None] ?
                         arg_value = mapped_kwargs[arg_name]
                     elif len(allowed_types) > 1:
+                        # todo: we should allow things like Union[T, List[T]] (one or many)
                         raise AmbiguousAnnotation(meta_type)
                     else:
                         arg_value = flex(allowed_types[0])(**mapped_kwargs[arg_name])
+
+            # elif meta_type in (List, Set, Iterable, Collection, Sequence):
+            #     ...  # handle lists/etc
+            # elif meta_type in (Dict, Mapping, MutableMapping):
+            #     ...  # handle mappings
 
             elif meta_type:
                 raise FlexException(f"Unsupported type: {meta_type}")

@@ -48,6 +48,7 @@ def _flex_mocks() -> Generator[Any, None, None]:
     yield mock_function
 
 
+@UnitTest
 @parametrize("obj", _flex_mocks())
 def test_flex_raw_data(obj: Any) -> None:
     result = obj(**PAYLOAD)
@@ -212,6 +213,7 @@ def _flex_on_flex_classes() -> Generator[Type, None, None]:
     yield OuterClass
 
 
+@UnitTest
 @parametrize("obj", _flex_on_flex_classes())
 def test_flex_on_flex(obj: Type) -> None:
     assert obj(**PAYLOAD).inner.value == EXPECTED_VALUE
