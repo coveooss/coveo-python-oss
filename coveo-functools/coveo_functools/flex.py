@@ -16,6 +16,7 @@ from typing import (
     Tuple,
     overload,
     Final,
+    cast,
 )
 
 from coveo_functools.annotations import find_annotations
@@ -40,16 +41,11 @@ RAW_KEY: Final[str] = "_flexed_from_"
 def _convert(
     arguments: Dict[str, Type],
     mapped_kwargs: Dict[str, Any],
-    raw: Dict[str, Any],
 ) -> Generator[Tuple[str, Any], None, None]:
 
     # scan the arguments for custom types and convert them
     for arg_name, arg_type in arguments.items():
-        if arg_name == RAW_KEY:
-            # inject the raw data as part as the constructor since it's present
-            arg_value = raw
-
-        elif arg_name not in mapped_kwargs:
+        if arg_name not in mapped_kwargs:
             continue  # skip it; this may be ok if the target class has a default value for this arg
 
         elif arg_type in JSON_TYPES:
@@ -86,42 +82,50 @@ def _convert(
         yield arg_name, arg_value
 
 
-def _flex_call(
-    obj: SupportedTypes,
-    args: Any,
-    dirty_kwargs: Dict[str, Any],
-) -> T:
-    """This method orchestrates `flexcase` to call `obj` in a recursive manner and returns the value."""
-    if inspect.isclass(obj):
-        to_map: Callable[..., T] = obj.__init__  # type: ignore[misc]
-    else:
-        assert callable(obj)
-        to_map = obj
-
-    # convert the keys casings to match the target class
-    mapped_kwargs = unflex(to_map, dirty_kwargs)
-    converted_kwargs: Dict[str, Any] = dict(
-        _convert(find_annotations(to_map), mapped_kwargs, dirty_kwargs)
-    )
-
-    # with everything converted, create an instance of the class
-    instance: T = obj(*args, **converted_kwargs)
-
-    # (debugging commodity) inject the raw payload if it's not already there
-    if hasattr(instance, "__dict__") and not hasattr(instance, RAW_KEY):
-        instance.__dict__[RAW_KEY] = dirty_kwargs
-
-    return instance
+def _remap_and_convert(obj: SupportedTypes, dirty_kwargs: Dict[str, Any]) -> Dict[str, Any]:
+    mapped_kwargs = unflex(obj, dirty_kwargs)
+    return dict(_convert(find_annotations(obj), mapped_kwargs))
 
 
-def _generate_flex_call_wrapper(obj: SupportedTypes) -> Wrapper:
+@overload
+def _generate_wrapper(obj: Type[T]) -> Type[T]:
+    ...
+
+
+@overload
+def _generate_wrapper(obj: Callable[..., T]) -> Callable[..., T]:
+    ...
+
+
+def _generate_wrapper(obj: Union[Type[T], Callable[..., T]]) -> Union[Type[T], Callable[..., T]]:
     """Returns a wrapper over _flex_call to please Python's mechanics."""
+    if inspect.isclass(obj):
+        return _generate_class_wrapper(cast(Type[T], obj))
 
+    return _generate_callable_wrapper(cast(Callable[..., T], obj))
+
+
+def _generate_callable_wrapper(obj: Callable[..., T]) -> Callable[..., T]:
     @functools.wraps(obj)
-    def _flex_call_wrapper(*args: Any, **kwargs: Any) -> T:
-        return _flex_call(obj, args, kwargs)
+    def wrapper(*args: Any, **kwargs: Any) -> T:
+        value = obj(*args, **_remap_and_convert(obj, kwargs))
+        if hasattr(value, "__dict__"):
+            value.__dict__[RAW_KEY] = kwargs
+        return value
 
-    return _flex_call_wrapper
+    return wrapper
+
+
+def _generate_class_wrapper(obj: Type[T]) -> Type[T]:
+    fn = obj.__init__
+
+    @functools.wraps(fn)
+    def new_init(*args: Any, **kwargs: Any) -> None:
+        setattr(args[0], RAW_KEY, kwargs)  # set the raw data on self
+        fn(*args, **_remap_and_convert(fn, kwargs))
+
+    obj.__init__ = new_init  # type: ignore[assignment]
+    return obj
 
 
 @overload
@@ -135,7 +139,12 @@ def flex(obj: None) -> Delegate:
 
 
 @overload
-def flex(obj: SupportedTypes) -> Wrapper:
+def flex(obj: Type[T]) -> Type[T]:
+    ...
+
+
+@overload
+def flex(obj: Callable[..., T]) -> Callable[..., T]:
     ...
 
 
@@ -161,7 +170,7 @@ def flex(obj: Optional[SupportedTypes] = None) -> Union[Wrapper, Delegate]:
 
         """
 
-        return _generate_flex_call_wrapper(obj)
+        return _generate_wrapper(obj)
 
     else:
 
