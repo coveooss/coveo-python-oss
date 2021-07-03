@@ -1,10 +1,10 @@
 from __future__ import annotations
 
+import functools
 import inspect
 from typing import (
     Type,
     TypeVar,
-    Generic,
     Optional,
     Any,
     get_args,
@@ -12,11 +12,15 @@ from typing import (
     Union,
     Dict,
     Callable,
+    Generator,
+    Tuple,
+    overload,
+    Final,
 )
 
 from coveo_functools.annotations import find_annotations
 from coveo_functools.casing import unflex, flexcase
-from coveo_functools.exceptions import InvalidUnion, PositionalArgumentsNotAllowed
+from coveo_functools.exceptions import AmbiguousAnnotation, FlexException
 
 _ = unflex, flexcase  # mark them as used (forward compatibility vs docs)
 
@@ -24,84 +28,156 @@ _ = unflex, flexcase  # mark them as used (forward compatibility vs docs)
 JSON_TYPES = (str, bool, int, float, type(None))
 META_TYPES = (Union, Optional)
 
-
 T = TypeVar("T")
 
+SupportedTypes = Union[Type[T], Callable[..., T]]
+Wrapper = Callable[..., T]
+Delegate = Callable[[SupportedTypes], Wrapper]
 
-class FlexFactory(Generic[T]):
-    def __init__(
-        self,
-        __wrapped: Optional[Union[Type[T], Callable[..., T]]] = None,
-        *,
-        strip_extras: bool = True,
-        keep_raw: Optional[str] = None
-    ) -> None:
-        # when used as a decorator, __wrapped will be None; it will be given and assigned in __call__ instead.
-        self.__wrapped = __wrapped
-        self.strip_extras = strip_extras
-        self.keep_raw = keep_raw
+RAW_KEY: Final[str] = "_flexed_from_"
 
-    def __call__(self, __wrapped: Optional[Type] = None, **dirty_kwargs: Any) -> T:
-        if __wrapped is not None:
-            """
-            The decorator pattern will lead us here.
-            At this stage, python called us with just the class and expects a wrapper.
-            We return ourselves; the current method will be called again with kwargs exclusively.
-            """
-            if self.__wrapped is not None or dirty_kwargs:
-                # it's not possible to have both __wrapped and dirty_kwargs; unless the caller inserted a
-                # positional argument in his call.
-                # note: this may be the only thing that happens with "self"; would be nice to support methods too.
-                raise PositionalArgumentsNotAllowed
 
-            self.__wrapped = __wrapped
-            return self  # type: ignore[return-value]
+def _convert(
+    arguments: Dict[str, Type],
+    mapped_kwargs: Dict[str, Any],
+    raw: Dict[str, Any],
+) -> Generator[Tuple[str, Any], None, None]:
 
-        if inspect.isclass(self.__wrapped):
-            fn: Callable[..., T] = self.__wrapped.__init__  # type: ignore[misc]
+    # scan the arguments for custom types and convert them
+    for arg_name, arg_type in arguments.items():
+        if arg_name == RAW_KEY:
+            # inject the raw data as part as the constructor since it's present
+            arg_value = raw
+
+        elif arg_name not in mapped_kwargs:
+            continue  # skip it; this may be ok if the target class has a default value for this arg
+
+        elif arg_type in JSON_TYPES:
+            # assume that builtin types are already converted
+            arg_value = mapped_kwargs[arg_name]
+
         else:
-            assert callable(self.__wrapped)
-            fn = self.__wrapped
-
-        # convert the keys casings to match the target class
-        mapped_kwargs = unflex(fn, dirty_kwargs, strip_extra=self.strip_extras)
-        converted_kwargs: Dict[str, Any] = {}
-
-        # scan the annotations for custom types and convert them
-        for arg_name, arg_type in find_annotations(fn).items():
-            if arg_name == self.keep_raw:
-                # the constructor contains the raw attribute; inject the payload from here.
-                # also, if the raw data was explicitly given in kwargs, use that instead.
-                converted_kwargs[arg_name] = dirty_kwargs.get(arg_name, dirty_kwargs)
-                continue
-
-            if arg_name not in mapped_kwargs:
-                continue  # this may be ok if the target class has a default value, will break if not
-
-            if arg_type in JSON_TYPES:
-                converted_kwargs[arg_name] = mapped_kwargs[arg_name]
-                continue  # assume that builtin types are already converted
-
+            # check for special typing constructs
             meta_type = get_origin(arg_type)
             if meta_type in (Optional, Union):
-                allowed_types = get_args(arg_type)
-                if not all(_type in JSON_TYPES for _type in allowed_types):
-                    raise InvalidUnion(meta_type)
+                allowed_types = list(get_args(arg_type))
+                if all(_type in JSON_TYPES for _type in allowed_types):
+                    # all types are builtin, we expect it to be already ok; carry on
+                    arg_value = mapped_kwargs[arg_name]
+                else:
+                    while type(None) in allowed_types:
+                        allowed_types.remove(type(None))
 
-                converted_kwargs[arg_name] = mapped_kwargs[arg_name]
-                continue  # assume that builtin types are already converted
+                    if not allowed_types:
+                        # not sure if this is even possible... Union[None, None] ?
+                        arg_value = mapped_kwargs[arg_name]
+                    elif len(allowed_types) > 1:
+                        raise AmbiguousAnnotation(meta_type)
+                    else:
+                        arg_value = flex(allowed_types[0])(**mapped_kwargs[arg_name])
 
-            # convert the argument to the target class
-            factory = FlexFactory(arg_type, strip_extras=self.strip_extras, keep_raw=self.keep_raw)
-            converted_kwargs[arg_name] = factory(**mapped_kwargs[arg_name])
+            elif meta_type:
+                raise FlexException(f"Unsupported type: {meta_type}")
 
-        # with everything converted, create an instance of the class
-        instance = self.__wrapped(**converted_kwargs)  # type: ignore[call-arg]
+            else:
+                arg_value = flex(arg_type)(**mapped_kwargs[arg_name])
 
-        # inject the raw payload if it wasn't already injected in the constructor:
-        if self.keep_raw and not hasattr(instance, self.keep_raw):
-            if hasattr(instance, "__dict__"):
-                # if the raw data was explicitly given in kwargs, use that instead.
-                instance.__dict__[self.keep_raw] = dirty_kwargs.get(self.keep_raw, dirty_kwargs)
+        # convert the argument to the target class
+        yield arg_name, arg_value
 
-        return instance
+
+def _flex_call(
+    obj: SupportedTypes,
+    args: Any,
+    dirty_kwargs: Dict[str, Any],
+) -> T:
+    """This method orchestrates `flexcase` to call `obj` in a recursive manner and returns the value."""
+    if inspect.isclass(obj):
+        to_map: Callable[..., T] = obj.__init__  # type: ignore[misc]
+    else:
+        assert callable(obj)
+        to_map = obj
+
+    # convert the keys casings to match the target class
+    mapped_kwargs = unflex(to_map, dirty_kwargs)
+    converted_kwargs: Dict[str, Any] = dict(
+        _convert(find_annotations(to_map), mapped_kwargs, dirty_kwargs)
+    )
+
+    # with everything converted, create an instance of the class
+    instance: T = obj(*args, **converted_kwargs)
+
+    # (debugging commodity) inject the raw payload if it's not already there
+    if hasattr(instance, "__dict__") and not hasattr(instance, RAW_KEY):
+        instance.__dict__[RAW_KEY] = dirty_kwargs
+
+    return instance
+
+
+def _generate_flex_call_wrapper(obj: SupportedTypes) -> Wrapper:
+    """Returns a wrapper over _flex_call to please Python's mechanics."""
+
+    @functools.wraps(obj)
+    def _flex_call_wrapper(*args: Any, **kwargs: Any) -> T:
+        return _flex_call(obj, args, kwargs)
+
+    return _flex_call_wrapper
+
+
+@overload
+def flex() -> Delegate:
+    ...
+
+
+@overload
+def flex(obj: None) -> Delegate:
+    ...
+
+
+@overload
+def flex(obj: SupportedTypes) -> Wrapper:
+    ...
+
+
+def flex(obj: Optional[SupportedTypes] = None) -> Union[Wrapper, Delegate]:
+    """Wraps `obj` into recursive flexcase magic."""
+    if obj is not None:
+
+        """
+        Covers decorator usages without parenthesis:
+
+            @flex
+            def obj(...)
+
+            @flex
+            class C:
+                @flex
+                def obj(self, ...)
+                    ...
+
+        Also covers the complete inline usage:
+
+            f = flex(obj, ...)(**dirty_kwargs)
+
+        """
+
+        return _generate_flex_call_wrapper(obj)
+
+    else:
+
+        """
+        Covers decorator usages with parenthesis:
+
+            @flex()
+            def obj(...)
+
+            @flex()
+            class C:
+
+                @flex()
+                def obj(self, ...)
+                    ...
+        """
+
+        # python's mechanic is going to call us again with the obj as the first (and only) argument to get a wrapper.
+        return flex

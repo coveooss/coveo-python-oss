@@ -2,51 +2,47 @@ from dataclasses import dataclass
 from typing import Final, Dict, Any, Optional, Union
 
 import pytest
-from coveo_functools.exceptions import InvalidUnion
-from coveo_functools.flex import FlexFactory
+from coveo_functools.exceptions import AmbiguousAnnotation
+from coveo_functools.flex import flex, RAW_KEY
 from coveo_testing.markers import UnitTest
-
-
-@dataclass
-class MockLeaf:
-    object_id: str
-    _int: int
-    _float: float
-    _bool: Optional[bool]
-    optional_str: Optional[str]
-
-
-@dataclass
-class MockInner:
-    object_id: str
-    inner: MockLeaf
-
-
-@dataclass
-class MockOuter:
-    object_id: str
-    inner: MockInner
-
-
-MOCK_PAYLOAD: Final[Dict[str, Any]] = {
-    "object-id": "outer",
-    "iNNer": {
-        "ObjectId": "inner",
-        "inner": {
-            "_object__id": "leaf",
-            "int": 1,
-            "float": 1.2,
-            "bool": True,
-            "optional-str": None,
-            "extra": "this value is stripped out.",
-        },
-    },
-}
 
 
 @UnitTest
 def test_flex_factory_detect_and_recurse_objects() -> None:
-    instance = FlexFactory(MockOuter)(**MOCK_PAYLOAD)
+    @dataclass
+    class MockLeaf:
+        object_id: str
+        _int: int
+        _float: float
+        _bool: Optional[bool]
+        optional_str: Optional[str]
+
+    @dataclass
+    class MockInner:
+        object_id: str
+        inner: MockLeaf
+
+    @dataclass
+    class MockOuter:
+        object_id: str
+        inner: MockInner
+
+    MOCK_PAYLOAD: Final[Dict[str, Any]] = {
+        "object-id": "outer",
+        "iNNer": {
+            "ObjectId": "inner",
+            "inner": {
+                "_object__id": "leaf",
+                "int": 1,
+                "float": 1.2,
+                "bool": True,
+                "optional-str": None,
+                "extra": "this value is stripped out.",
+            },
+        },
+    }
+
+    instance = flex(MockOuter)(**MOCK_PAYLOAD)
     assert instance.object_id == "outer"
     assert isinstance(instance, MockOuter)
 
@@ -65,88 +61,31 @@ def test_flex_factory_detect_and_recurse_objects() -> None:
 
 @UnitTest
 def test_flex_factory_raw() -> None:
-    """A class can be annotated with the raw node."""
+    """The raw data is injected inside the instance."""
 
-    class MockRaw:
+    class MockTest:
         raw: Dict[str, Any]
 
         def __init__(self, test: str) -> None:
             self.test = test
 
     payload = {"_test": "raw"}
-    instance = FlexFactory(MockRaw, keep_raw="raw")(**payload)
-    assert instance.raw == payload
+    instance = flex(MockTest)(**payload)
+    assert getattr(instance, RAW_KEY) == payload
 
 
 @UnitTest
-def test_flex_factory_raw_dataclass() -> None:
-    """A dataclass can be annotated with the raw node."""
+def test_flex_factory_raw_constructor() -> None:
+    """If the raw key is in the constructor, use it."""
 
     @dataclass
-    class MockRaw:
+    class MockTest:
         test: str
-        raw: Dict[str, Any]
+        _flexed_from_: Dict[str, Any]
 
     payload = {"_test": "raw"}
-    instance = FlexFactory(MockRaw, keep_raw="raw")(**payload)
-    assert instance.raw == payload
-
-
-@UnitTest
-def test_flex_factory_raw_non_annotated() -> None:
-    """The raw attribute works even when the class doesn't annotate it."""
-
-    class MockRaw:
-        def __init__(self, test: str) -> None:
-            self.test = test
-
-    payload = {"_test": "raw"}
-    instance = FlexFactory(MockRaw, keep_raw="raw")(**payload)
-    assert instance.raw == payload  # type: ignore[attr-defined]
-
-
-@UnitTest
-def test_flex_factory_raw_dataclass_non_annotated() -> None:
-    """The raw attribute works even when the class doesn't annotate it."""
-
-    @dataclass
-    class MockRaw:
-        test: str
-
-    payload = {"_test": "raw"}
-    instance = FlexFactory(MockRaw, keep_raw="raw")(**payload)
-    assert instance.raw == payload  # type: ignore[attr-defined]
-
-
-@UnitTest
-def test_flex_factory_doesnt_override_explicit_raw() -> None:
-    """If the raw data is explicitly given, don't overwrite it."""
-
-    @dataclass
-    class MockRaw:
-        test: str
-
-    expected = {"explicitly": "given"}
-    payload = {"test": "raw", "raw_data": expected}
-    instance = FlexFactory(MockRaw, keep_raw="raw_data")(**payload)
-
-    assert instance.raw_data == expected  # type: ignore[attr-defined]
-
-
-@UnitTest
-def test_flex_factory_doesnt_override_explicit_raw_with_constructor() -> None:
-    """If the raw data is explicitly given, don't overwrite it."""
-
-    @dataclass
-    class MockRaw:
-        test: str
-        raw_data: Dict[str, Any]
-
-    expected = {"explicitly": "given"}
-    payload = {"test": "raw", "raw_data": expected}
-    instance = FlexFactory(MockRaw, keep_raw="raw_data")(**payload)
-
-    assert instance.raw_data == expected
+    instance = flex(MockTest)(**payload)
+    assert instance._flexed_from_ == payload
 
 
 @UnitTest
@@ -155,21 +94,21 @@ def test_flex_factory_unions() -> None:
     class MockUnion:
         union: Optional[Union[bool, float]]
 
-    assert FlexFactory(MockUnion)(**{"union": True}).union is True
-    assert FlexFactory(MockUnion)(**{"union": 1.2}).union == 1.2
-    assert FlexFactory(MockUnion)(**{"union": None}).union is None
+    assert flex(MockUnion)(**{"union": True}).union is True
+    assert flex(MockUnion)(**{"union": 1.2}).union == 1.2
+    assert flex(MockUnion)(**{"union": None}).union is None
 
 
 @UnitTest
 def test_flex_factory_invalid_union() -> None:
-    """Unions must be comprised of builtin types only, else it may become ambiguous."""
+    """Unions must be comprised of select builtin types only, else it may become ambiguous."""
 
     @dataclass
     class MockUnion:
-        union: Union[str, MockLeaf]
+        union: Union[str, object]
 
-    with pytest.raises(InvalidUnion):
-        _ = FlexFactory(MockUnion)(**{"union": "sorry"})
+    with pytest.raises(AmbiguousAnnotation):
+        _ = flex(MockUnion)(**{"union": "sorry"})
 
 
 @UnitTest
@@ -179,8 +118,8 @@ def test_flex_factory_defaults() -> None:
         none: Optional[str] = None
         not_none: Optional[str] = "set"
 
-    assert FlexFactory(MockUnion)().none is None
-    assert FlexFactory(MockUnion)().not_none is not None
+    assert flex(MockUnion)().none is None
+    assert flex(MockUnion)().not_none is not None
 
 
 @UnitTest
@@ -190,11 +129,12 @@ def test_flex_factory_raise_not_set() -> None:
         missing: Optional[str]
 
     with pytest.raises(TypeError):
-        _ = FlexFactory(MockUnion)()
+        _ = flex(MockUnion)()
 
 
-def test_flex_factory_decorator() -> None:
-    @FlexFactory
+@UnitTest
+def test_flex_factory_decorator_class() -> None:
+    @flex
     class Test:
         def __init__(self, test: str) -> None:
             self.test = test
@@ -202,8 +142,29 @@ def test_flex_factory_decorator() -> None:
     assert Test(**{"TEST": "SUCCESS"}).test == "SUCCESS"
 
 
+@UnitTest
+def test_flex_factory_decorator_class_alt() -> None:
+    @flex()
+    class Test:
+        def __init__(self, test: str) -> None:
+            self.test = test
+
+    assert Test(**{"TEST": "SUCCESS"}).test == "SUCCESS"
+
+
+@UnitTest
+def test_flex_factory_decorator_alt_with_params() -> None:
+    @flex()
+    class Test:
+        def __init__(self, test: str) -> None:
+            self.test = test
+
+    assert Test(**{"TEST": "SUCCESS"}).test == "SUCCESS"
+
+
+@UnitTest
 def test_flex_factory_decorator_dataclass() -> None:
-    @FlexFactory
+    @flex
     @dataclass
     class Test:
         def __init__(self, test: str) -> None:
@@ -212,8 +173,10 @@ def test_flex_factory_decorator_dataclass() -> None:
     assert Test(**{"TEST": "SUCCESS"}).test == "SUCCESS"
 
 
-def test_flex_factory_decorator_alt() -> None:
-    @FlexFactory()
+@UnitTest
+def test_flex_factory_decorator_dataclass_alt() -> None:
+    @flex()
+    @dataclass
     class Test:
         def __init__(self, test: str) -> None:
             self.test = test
@@ -221,18 +184,58 @@ def test_flex_factory_decorator_alt() -> None:
     assert Test(**{"TEST": "SUCCESS"}).test == "SUCCESS"
 
 
-def test_flex_factory_decorator_alt_with_params() -> None:
-    @FlexFactory(strip_extras=True)
-    class Test:
-        def __init__(self, test: str) -> None:
-            self.test = test
-
-    assert Test(**{"TEST": "SUCCESS"}).test == "SUCCESS"
-
-
-def test_flex_factory_function() -> None:
-    @FlexFactory
+@UnitTest
+def test_flex_factory_decorator_function() -> None:
+    @flex
     def fn(arg1: str) -> str:
         return arg1
 
     assert fn(**{"ARG1": "yay"}) == "yay"
+
+
+@UnitTest
+def test_flex_factory_decorator_function_alt() -> None:
+    @flex()
+    def fn(arg1: str) -> str:
+        return arg1
+
+    assert fn(**{"ARG1": "yay"}) == "yay"
+
+
+@UnitTest
+def test_flex_factory_decorator_method() -> None:
+    @dataclass
+    class Test:
+        value: str
+
+        @flex
+        def method1(self, arg: str) -> str:
+            return self.value + arg
+
+    assert Test("he").method1(**{"ARG": "llo"}) == "hello"
+
+
+@UnitTest
+def test_flex_factory_decorator_method_alt() -> None:
+    @dataclass
+    class Test:
+        value: str
+
+        @flex()
+        def method1(self, arg: str) -> str:
+            return self.value + arg
+
+    assert Test("he").method1(**{"ARG": "llo"}) == "hello"
+
+
+def test_flex_factory_normal_use() -> None:
+    @dataclass
+    class Test:
+        value: str
+
+        @flex()
+        def method1(self, arg: str) -> str:
+            return self.value + arg
+
+    assert Test("he").method1("llo") == "hello"
+    assert Test(value="he").method1(arg="llo") == "hello"
