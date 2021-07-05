@@ -96,7 +96,7 @@ def test_flex_raise_not_set() -> None:
         missing: Optional[str]
 
     with pytest.raises(TypeError):
-        _ = flex(MockUnion)()  # type: ignore[call-arg]
+        _ = flex(MockUnion)()
 
 
 class TestInterface(Protocol):

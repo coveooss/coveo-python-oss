@@ -15,7 +15,6 @@ from typing import (
     Tuple,
     overload,
     Final,
-    cast,
     List,
 )
 
@@ -27,41 +26,53 @@ from coveo_functools.exceptions import UnsupportedAnnotation
 _ = unflex, flexcase  # mark them as used (forward compatibility vs docs)
 
 
-JSON_TYPES = (str, bool, int, float, type(None))  # list omitted to support list of custom types
-PASSTHROUGH_TYPES = {dict, None, Any, *JSON_TYPES}  # todo: do we really need both?
-
-META_TYPES = (Union, Optional)
+JSON_TYPES = (
+    str,
+    bool,
+    int,
+    float,
+    type(None),
+    dict,
+)  # list omitted to support list of custom types
+PASSTHROUGH_TYPES = {None, Any, *JSON_TYPES}
 
 T = TypeVar("T")
 
-SupportedTypes = Union[Type[T], Callable[..., T]]
-Wrapper = Callable[..., T]
-Delegate = Callable[[SupportedTypes], Wrapper]
+TypeHint = Any  # :shrug:
+
+RealClass = Type[T]
+RealFunction = Callable[..., T]
+RealObject = Union[RealClass, RealFunction]
+WrappedClass = Type[T]
+WrappedFunction = Callable[..., T]
+WrappedObject = Union[RealClass, RealFunction]
 
 RAW_KEY: Final[str] = "_flexed_from_"
 
 
 @overload
-def flex() -> Delegate:
+def flex() -> Callable[[RealObject], WrappedObject]:
     ...
 
 
 @overload
-def flex(obj: None) -> Delegate:
+def flex(obj: None) -> Callable[[RealObject], WrappedObject]:
     ...
 
 
 @overload
-def flex(obj: Type[T]) -> Type[T]:
+def flex(obj: RealClass) -> WrappedClass:
     ...
 
 
 @overload
-def flex(obj: Callable[..., T]) -> Callable[..., T]:
+def flex(obj: RealFunction) -> WrappedFunction:
     ...
 
 
-def flex(obj: Optional[SupportedTypes] = None) -> Union[Wrapper, Delegate]:
+def flex(
+    obj: Optional[RealObject] = None,
+) -> Union[WrappedObject, Callable[[RealObject], WrappedObject]]:
     """Wraps `obj` into recursive flexcase magic."""
     if obj is not None:
 
@@ -106,27 +117,29 @@ def flex(obj: Optional[SupportedTypes] = None) -> Union[Wrapper, Delegate]:
 
 
 @overload
-def _generate_wrapper(obj: Type[T]) -> Type[T]:
+def _generate_wrapper(obj: RealClass) -> WrappedClass:
     ...
 
 
 @overload
-def _generate_wrapper(obj: Callable[..., T]) -> Callable[..., T]:
+def _generate_wrapper(obj: RealFunction) -> WrappedFunction:
     ...
 
 
-def _generate_wrapper(obj: Union[Type[T], Callable[..., T]]) -> Union[Type[T], Callable[..., T]]:
-    """Returns a wrapper over _flex_call to please Python's mechanics."""
+def _generate_wrapper(obj: RealObject) -> WrappedObject:
+    """Generates a wrapper over obj."""
     if inspect.isclass(obj):
-        return _generate_class_wrapper(cast(Type[T], obj))
+        return _generate_class_wrapper(obj)  # type: ignore[arg-type]
 
-    return _generate_callable_wrapper(cast(Callable[..., T], obj))
+    return _generate_callable_wrapper(obj)
 
 
-def _generate_callable_wrapper(fn: Callable[..., T]) -> Callable[..., T]:
+def _generate_callable_wrapper(fn: RealFunction) -> WrappedFunction:
+    """Class decorators"""
+
     @functools.wraps(fn)
     def wrapper(*args: Any, **kwargs: Any) -> T:
-        value = fn(*args, **_remap_and_convert(fn, kwargs))
+        value: T = fn(*args, **_remap_and_convert(fn, kwargs))
         if hasattr(value, "__dict__"):
             value.__dict__[RAW_KEY] = kwargs
         return value
@@ -134,19 +147,21 @@ def _generate_callable_wrapper(fn: Callable[..., T]) -> Callable[..., T]:
     return wrapper
 
 
-def _generate_class_wrapper(obj: Type[T]) -> Type[T]:
-    fn = obj.__init__
+def _generate_class_wrapper(obj: RealClass) -> WrappedClass:
+    """Function decorators"""
+    fn: RealFunction = obj.__init__
 
     @functools.wraps(fn)
     def new_init(*args: Any, **kwargs: Any) -> None:
         setattr(args[0], RAW_KEY, kwargs)  # set the raw data on self
         fn(*args, **_remap_and_convert(fn, kwargs))
 
-    obj.__init__ = new_init  # type: ignore[assignment]
+    obj.__init__ = new_init
     return obj
 
 
-def _remap_and_convert(fn: Callable[..., T], dirty_kwargs: Dict[str, Any]) -> Dict[str, Any]:
+def _remap_and_convert(fn: RealFunction, dirty_kwargs: Dict[str, Any]) -> Dict[str, Any]:
+    """Orchestrates the deserialization of `dirty_kwargs` into `fn`."""
     mapped_kwargs = unflex(fn, dirty_kwargs)
     converted_kwargs = {}
 
@@ -158,7 +173,7 @@ def _remap_and_convert(fn: Callable[..., T], dirty_kwargs: Dict[str, Any]) -> Di
     return converted_kwargs
 
 
-def _resolve_hint(thing: Type) -> Tuple[Type, Tuple[Type, ...]]:
+def _resolve_hint(thing: TypeHint) -> Tuple[TypeHint, Tuple[TypeHint, ...]]:
     """
     Transform e.g. List[Union[str, bool]] into (list, Union[str, bool]).
     Also validates that the annotation is supported and removes "NoneType" if present.
@@ -192,14 +207,14 @@ def _resolve_hint(thing: Type) -> Tuple[Type, Tuple[Type, ...]]:
     raise UnsupportedAnnotation(thing)
 
 
-def _as_union_of_thing_or_list_of_things(*annotation: Type) -> Tuple[Type, Type]:
+def _as_union_of_thing_or_list_of_things(*annotation: TypeHint) -> Tuple[TypeHint, TypeHint]:
     """
-    Validates that the annotation accepts thing or a list of things.
+    Validates that the annotation accepts "thing or a list of things" and returns it. Raise otherwise.
     Returns the ordered args; we always move the target type to the first thing in the tuple.
     """
     if len(annotation) == 2:
-        target_type: Optional[Any] = None
-        container_kind: Optional[Any] = None
+        target_type: Optional[TypeHint] = None
+        container_kind: Optional[TypeHint] = None
 
         for hint in annotation:
             origin = get_origin(hint)
@@ -216,29 +231,48 @@ def _as_union_of_thing_or_list_of_things(*annotation: Type) -> Tuple[Type, Type]
     raise UnsupportedAnnotation(annotation)
 
 
-def deserialize(value: Any, *, hint: Any = None) -> Any:
+def deserialize(value: Any, *, hint: TypeHint) -> Any:
+    """
+    Deserializes a value based on the provided type hint:
+
+    - If value is None, we return None. We don't validate the hint.
+    - If hint is a builtin type, we blindly return the value we were given. We don't validate the value.
+    - If hint is a custom class, the value must be a dictionary to "flex" into the class.
+    - Hint may be a `Union[T, List[T]]`, in which case the value must be a dict or a list of them.
+    """
+    if value is None:
+        return None  # nope!
+
+    # origin: like `list` for `List` or `Union` for `Optional`
+    # args: like (str, int) for Optional[str, int]
     origin, args = _resolve_hint(hint)
 
-    if origin in PASSTHROUGH_TYPES or value is None:
-        return value
-
     if origin is Union:
-        # Unions of PASSTHROUGH_TYPES types are allowed and assumed to be in the proper type already
         if not {*args}.difference(PASSTHROUGH_TYPES):
+            # Unions of PASSTHROUGH_TYPES are allowed and assumed to be in the proper type already
             return value
 
+        # implementation detail: the `_resolve_hint` function always puts the real type first.
+        target_type: TypeHint = args[0]
+
         if len(args) == 1:
-            return deserialize(value, hint=args[0])
+            # launch again with only that type
+            return deserialize(value, hint=target_type)
 
         if len(args) == 2:
+            # special support for variadic "thing-or-list-of-things" payloads is based on the type of the value.
             if isinstance(value, list):
-                return deserialize(value, hint=List[args[0]])  # type: ignore[valid-type]
+                return deserialize(value, hint=List[target_type])
             else:
-                return deserialize(value, hint=args[0])
+                return deserialize(value, hint=target_type)
 
     if origin is list:
-        args = args or cast(Tuple[Type, ...], (Any,))
-        return _deserialize(value, hint=list, contains=args[0])
+        target_type = args[0] if args else Any
+        return _deserialize(value, hint=list, contains=target_type)
+
+    if origin in PASSTHROUGH_TYPES:
+        # we always return those without validation
+        return value
 
     if inspect.isclass(origin) and isinstance(value, origin):
         # it's a custom class and it's already converted
@@ -249,18 +283,18 @@ def deserialize(value: Any, *, hint: Any = None) -> Any:
 
 
 @dispatch(switch_pos="hint")
-def _deserialize(value: Any, *, hint: Any, contains: Optional[Type] = None) -> Any:
+def _deserialize(value: Any, *, hint: TypeHint, contains: Optional[TypeHint] = None) -> Any:
+    """Fallback deserialization; if dict and hint is class, flex it. Else just return value."""
     if inspect.isclass(hint) and isinstance(value, dict):
-        return flex(hint)(**value)
+        return flex(hint)(**value)  # type: ignore[call-arg]
 
-    # todo: raise?
     return value
 
 
 @_deserialize.register(list)
-def _deserialize_list(value: Any, *, hint: list, contains: Optional[Type] = None) -> List:
+def _deserialize_list(value: Any, *, hint: list, contains: Optional[TypeHint] = None) -> List:
+    """List deserialization into list of things."""
     if isinstance(value, list):
         return [deserialize(item, hint=contains) for item in value]
 
-    # todo: raise?
     return value  # type: ignore[no-any-return]
