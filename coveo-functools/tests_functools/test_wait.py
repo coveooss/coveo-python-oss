@@ -1,7 +1,7 @@
 """ Tests the wait method features """
 
 import datetime
-from typing import Dict, List, Type, Tuple, TypedDict
+from typing import List, Type, Tuple, TypedDict
 
 from coveo_testing.markers import UnitTest
 from coveo_testing.parametrize import parametrize

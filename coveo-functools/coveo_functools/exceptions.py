@@ -6,5 +6,5 @@ class FlexException(CoveoFunctoolsException):
     """Base class for exceptions raised by the flex module."""
 
 
-class AmbiguousAnnotation(FlexException):
-    """An invalid union was provided."""
+class UnsupportedAnnotation(FlexException, NotImplementedError):
+    """When an annotation isn't suported."""

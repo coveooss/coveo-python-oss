@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Final, Dict, Any, Optional, Union, Callable, Generator, Type, Protocol
 
 import pytest
-from coveo_functools.exceptions import AmbiguousAnnotation
+from coveo_functools.exceptions import UnsupportedAnnotation
 from coveo_functools.flex import flex, RAW_KEY
 from coveo_testing.markers import UnitTest
 from coveo_testing.parametrize import parametrize
@@ -20,7 +20,7 @@ EXPECTED_INNER: Final[MockInner] = MockInner(EXPECTED_VALUE)
 
 
 def _flex_mocks() -> Generator[Any, None, None]:
-    """General set of mocks meant to be called with PAYLOAD."""
+    """General set of mocks meant to be called with DEFAULT_PAYLOAD."""
 
     @flex
     class MockClass:
@@ -74,7 +74,7 @@ def test_flex_invalid_union() -> None:
     class MockUnion:
         union: Union[str, object]
 
-    with pytest.raises(AmbiguousAnnotation):
+    with pytest.raises(UnsupportedAnnotation):
         _ = flex(MockUnion)(**{"union": "sorry"})
 
 

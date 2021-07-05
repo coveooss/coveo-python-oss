@@ -1,6 +1,6 @@
 import functools
 import re
-from typing import Match, Iterable, Dict, Callable, Any, TypeVar, Mapping, Type, cast
+from typing import Match, Iterable, Dict, Callable, Any, TypeVar, Mapping, Type
 
 import inflection
 
