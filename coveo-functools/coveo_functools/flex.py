@@ -116,6 +116,75 @@ def flex(
         return flex
 
 
+def deserialize(value: Any, *, hint: TypeHint) -> Any:
+    """
+    Deserializes a value based on the provided type hint:
+
+    - If value is None, we return None. We don't validate the hint.
+    - If hint is a builtin type, we blindly return the value we were given. We don't validate the value.
+    - If hint is a custom class, the value must be a dictionary to "flex" into the class.
+    - Hint may be a `Union[T, List[T]]`, in which case the value must be a dict or a list of them.
+    """
+    if value is None:
+        return None  # nope!
+
+    # origin: like `list` for `List` or `Union` for `Optional`
+    # args: like (str, int) for Optional[str, int]
+    origin, args = _resolve_hint(hint)
+
+    if origin is Union:
+        if not {*args}.difference(PASSTHROUGH_TYPES):
+            # Unions of PASSTHROUGH_TYPES are allowed and assumed to be in the proper type already
+            return value
+
+        # implementation detail: the `_resolve_hint` function always puts the real type first.
+        target_type: TypeHint = args[0]
+
+        if len(args) == 1:
+            # launch again with only that type
+            return deserialize(value, hint=target_type)
+
+        if len(args) == 2:
+            # special support for variadic "thing-or-list-of-things" payloads is based on the type of the value.
+            if isinstance(value, list):
+                return deserialize(value, hint=List[target_type])
+            else:
+                return deserialize(value, hint=target_type)
+
+    if origin is list:
+        target_type = args[0] if args else Any
+        return _deserialize(value, hint=list, contains=target_type)
+
+    if origin in PASSTHROUGH_TYPES:
+        # we always return those without validation
+        return value
+
+    if inspect.isclass(origin) and isinstance(value, origin):
+        # it's a custom class and it's already converted
+        return value
+
+    # annotation arguments are not supported past this point, so we can omit them.
+    return _deserialize(value, hint=origin)
+
+
+@dispatch(switch_pos="hint")
+def _deserialize(value: Any, *, hint: TypeHint, contains: Optional[TypeHint] = None) -> Any:
+    """Fallback deserialization; if dict and hint is class, flex it. Else just return value."""
+    if inspect.isclass(hint) and isinstance(value, dict):
+        return flex(hint)(**value)  # type: ignore[call-arg]
+
+    return value
+
+
+@_deserialize.register(list)
+def _deserialize_list(value: Any, *, hint: list, contains: Optional[TypeHint] = None) -> List:
+    """List deserialization into list of things."""
+    if isinstance(value, list):
+        return [deserialize(item, hint=contains) for item in value]
+
+    return value  # type: ignore[no-any-return]
+
+
 @overload
 def _generate_wrapper(obj: RealClass) -> WrappedClass:
     ...
@@ -229,72 +298,3 @@ def _as_union_of_thing_or_list_of_things(*annotation: TypeHint) -> Tuple[TypeHin
             return target_type, List[target_type]  # type: ignore[valid-type]
 
     raise UnsupportedAnnotation(annotation)
-
-
-def deserialize(value: Any, *, hint: TypeHint) -> Any:
-    """
-    Deserializes a value based on the provided type hint:
-
-    - If value is None, we return None. We don't validate the hint.
-    - If hint is a builtin type, we blindly return the value we were given. We don't validate the value.
-    - If hint is a custom class, the value must be a dictionary to "flex" into the class.
-    - Hint may be a `Union[T, List[T]]`, in which case the value must be a dict or a list of them.
-    """
-    if value is None:
-        return None  # nope!
-
-    # origin: like `list` for `List` or `Union` for `Optional`
-    # args: like (str, int) for Optional[str, int]
-    origin, args = _resolve_hint(hint)
-
-    if origin is Union:
-        if not {*args}.difference(PASSTHROUGH_TYPES):
-            # Unions of PASSTHROUGH_TYPES are allowed and assumed to be in the proper type already
-            return value
-
-        # implementation detail: the `_resolve_hint` function always puts the real type first.
-        target_type: TypeHint = args[0]
-
-        if len(args) == 1:
-            # launch again with only that type
-            return deserialize(value, hint=target_type)
-
-        if len(args) == 2:
-            # special support for variadic "thing-or-list-of-things" payloads is based on the type of the value.
-            if isinstance(value, list):
-                return deserialize(value, hint=List[target_type])
-            else:
-                return deserialize(value, hint=target_type)
-
-    if origin is list:
-        target_type = args[0] if args else Any
-        return _deserialize(value, hint=list, contains=target_type)
-
-    if origin in PASSTHROUGH_TYPES:
-        # we always return those without validation
-        return value
-
-    if inspect.isclass(origin) and isinstance(value, origin):
-        # it's a custom class and it's already converted
-        return value
-
-    # annotation arguments are not supported past this point, so we can omit them.
-    return _deserialize(value, hint=origin)
-
-
-@dispatch(switch_pos="hint")
-def _deserialize(value: Any, *, hint: TypeHint, contains: Optional[TypeHint] = None) -> Any:
-    """Fallback deserialization; if dict and hint is class, flex it. Else just return value."""
-    if inspect.isclass(hint) and isinstance(value, dict):
-        return flex(hint)(**value)  # type: ignore[call-arg]
-
-    return value
-
-
-@_deserialize.register(list)
-def _deserialize_list(value: Any, *, hint: list, contains: Optional[TypeHint] = None) -> List:
-    """List deserialization into list of things."""
-    if isinstance(value, list):
-        return [deserialize(item, hint=contains) for item in value]
-
-    return value  # type: ignore[no-any-return]
