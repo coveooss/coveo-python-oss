@@ -12,7 +12,6 @@ from typing import (
     Union,
     Dict,
     Callable,
-    Generator,
     Tuple,
     overload,
     Final,
@@ -23,7 +22,7 @@ from typing import (
 from coveo_functools.annotations import find_annotations
 from coveo_functools.casing import unflex, flexcase
 from coveo_functools.dispatch import dispatch
-from coveo_functools.exceptions import FlexException, UnsupportedAnnotation
+from coveo_functools.exceptions import UnsupportedAnnotation
 
 _ = unflex, flexcase  # mark them as used (forward compatibility vs docs)
 
@@ -124,10 +123,10 @@ def _generate_wrapper(obj: Union[Type[T], Callable[..., T]]) -> Union[Type[T], C
     return _generate_callable_wrapper(cast(Callable[..., T], obj))
 
 
-def _generate_callable_wrapper(obj: Callable[..., T]) -> Callable[..., T]:
-    @functools.wraps(obj)
+def _generate_callable_wrapper(fn: Callable[..., T]) -> Callable[..., T]:
+    @functools.wraps(fn)
     def wrapper(*args: Any, **kwargs: Any) -> T:
-        value = obj(*args, **_remap_and_convert(obj, kwargs))
+        value = fn(*args, **_remap_and_convert(fn, kwargs))
         if hasattr(value, "__dict__"):
             value.__dict__[RAW_KEY] = kwargs
         return value
@@ -147,59 +146,16 @@ def _generate_class_wrapper(obj: Type[T]) -> Type[T]:
     return obj
 
 
-def _convert(
-    arguments: Dict[str, Type],
-    mapped_kwargs: Dict[str, Any],
-) -> Generator[Tuple[str, Any], None, None]:
+def _remap_and_convert(fn: Callable[..., T], dirty_kwargs: Dict[str, Any]) -> Dict[str, Any]:
+    mapped_kwargs = unflex(fn, dirty_kwargs)
+    converted_kwargs = {}
 
-    # scan the arguments for custom types and convert them
-    for arg_name, arg_type in arguments.items():
+    for arg_name, arg_type in find_annotations(fn).items():
         if arg_name not in mapped_kwargs:
-            continue  # skip it; this may be ok if the target class has a default value for this arg
+            continue  # this may be ok, for instance if the target argument has a default
+        converted_kwargs[arg_name] = deserialize(mapped_kwargs[arg_name], hint=arg_type)
 
-        elif arg_type in JSON_TYPES:
-            # assume that builtin types are already converted
-            arg_value = mapped_kwargs[arg_name]
-
-        else:
-            # check for special typing constructs
-            meta_type = get_origin(arg_type)
-            if meta_type in (Optional, Union):
-                allowed_types = list(get_args(arg_type))
-                if all(_type in JSON_TYPES for _type in allowed_types):
-                    # all types are builtin, we expect it to be already ok; carry on
-                    arg_value = mapped_kwargs[arg_name]
-                else:
-                    while type(None) in allowed_types:
-                        allowed_types.remove(type(None))
-
-                    if not allowed_types:
-                        # not sure if this is even possible... Union[None, None] ?
-                        arg_value = mapped_kwargs[arg_name]
-                    elif len(allowed_types) > 1:
-                        # todo: we should allow things like Union[T, List[T]] (one or many)
-                        raise UnsupportedAnnotation(meta_type)
-                    else:
-                        arg_value = flex(allowed_types[0])(**mapped_kwargs[arg_name])
-
-            # elif meta_type in (List, Set, Iterable, Collection, Sequence):
-            #     ...  # handle lists/etc
-            # elif meta_type in (Dict, Mapping, MutableMapping):
-            #     ...  # handle mappings
-
-            elif meta_type:
-                raise FlexException(f"Unsupported type: {meta_type}")
-
-            else:
-                arg_value = flex(arg_type)(**mapped_kwargs[arg_name])
-
-        # convert the argument to the target class
-        yield arg_name, arg_value
-
-
-def _remap_and_convert(obj: SupportedTypes, dirty_kwargs: Dict[str, Any]) -> Dict[str, Any]:
-    mapped_kwargs = unflex(obj, dirty_kwargs)
-    return dict(_convert(find_annotations(obj), mapped_kwargs))
+    return converted_kwargs
 
 
 def _resolve_hint(thing: Type) -> Tuple[Type, Tuple[Type, ...]]:
@@ -210,15 +166,18 @@ def _resolve_hint(thing: Type) -> Tuple[Type, Tuple[Type, ...]]:
     origin = get_origin(thing) or thing
     args = {*get_args(thing)}
 
-    assert (
-        origin is not Optional
-    ), "Unreachable code / guard; Optionals are always Unions that include None."
+    # typing implementation detail -- At runtime, Optional exists as Union[None, ...]
+    assert origin is not Optional
 
     if origin is dict:
         # In this case, args isn't a collection of types; rather a (key_type, value_type).
         # Dict[str, Any] would therefore come out as a (Dict, Union[str, Any]) which is wrong.
         # since we don't do anything special for dicts anyway yet, drop the arg types and carry on.
         return dict, ()
+
+    if not args.difference(PASSTHROUGH_TYPES):
+        # If all containing types are passthrough types, everything shall be fine.
+        return origin, tuple(args)
 
     # Remove NoneType if it's present. If the value is given as None, we return None, no questions asked,
     # so we really don't need to keep this information.
@@ -229,10 +188,6 @@ def _resolve_hint(thing: Type) -> Tuple[Type, Tuple[Type, ...]]:
 
     if len(args) == 2:
         return origin, _as_union_of_thing_or_list_of_things(*args)
-
-    # Unions of various PASSTHROUGH_TYPES are allowed (we expect them to be converted already e.g. json.load)
-    if not args.difference(PASSTHROUGH_TYPES):
-        return origin, tuple(args)
 
     raise UnsupportedAnnotation(thing)
 
@@ -309,105 +264,3 @@ def _deserialize_list(value: Any, *, hint: list, contains: Optional[Type] = None
 
     # todo: raise?
     return value  # type: ignore[no-any-return]
-
-
-# @_deserialize.register(dict)
-# def _deserialize_dict(value: Dict[str, Any], *, hint: Type[dict]) -> Dict[str, Any]:
-#     if isinstance(hint, GenericMeta):
-#         # py3.6 path
-#         # noinspection PyUnresolvedReferences
-#         item_type = hint.__args__[1] if hint.__args__ else None
-#         try:
-#             return {key: deserialize(value, hint=item_type) for key, value in value.items()}
-#         except AttributeError:
-#             print("!")
-#
-#     # noinspection PyArgumentList
-#     return hint((k, deserialize(v)) for k, v in value.items())
-
-
-# @_deserialize.register(list)
-# def _deserialize_list(value: List[Any], *, hint: Type[list]) -> List:
-#     if isinstance(value, str):
-#         raise ValueError
-#
-#     if isinstance(hint, GenericMeta):
-#         # py3.6 path
-#         # noinspection PyUnresolvedReferences
-#         item_type = hint.__args__[0] if hint.__args__ else None
-#         return [deserialize(v, hint=item_type) for v in value]
-#
-#     # noinspection PyArgumentList
-#     return hint(deserialize(v) for v in value)
-#
-#
-# @_deserialize.register(JidType)
-# def _deserialize_jid_type(value: Dict[str, Any], *, hint: Type[JidType]) -> JidType:
-#     """Most cases should be handled by the shortcircuit in _deserialize; this one handles cases where the
-#     service returns a correctly formatted object without a _type hint."""
-#     if isinstance(value, JidType):
-#         return value
-#
-#     if hint is JidType or not issubclass(hint, JidType):
-#         raise TypeError(f'Unable to infer JidType: {value}')
-#
-#     return flexcase(hint)(**{k: v for k, v in value.items() if v is not None})
-#
-#
-# @_deserialize.register(FunctionType)
-# @_deserialize.register(MethodType)
-# def _deserialize_from_callable(value: Dict[str, Any], *, hint: Callable) -> Dict[str, Any]:
-#     """Use annotations from fn to deserialize value. Extra args will be stripped out and casing is flexible."""
-#     assert isinstance(value, dict)
-#     value = unflex(hint, value)  # fix the case of keys in value
-#     for argument_name, annotation in find_annotations(hint).items():
-#         if argument_name == 'return':
-#             continue
-#         # set the deserialized value
-#         value[argument_name] = deserialize(value[argument_name], hint=annotation)
-#     return value
-#
-#
-# @_deserialize.register(datetime)
-# def _deserialize_datetime(value: float, *, hint: Type[datetime]) -> datetime:
-#     if isinstance(value, datetime):
-#         return value
-#     return hint.utcfromtimestamp(value)
-#
-#
-# # @__deserialize.register(StringEnum)
-# @_deserialize.register(JidEnumFlag)
-# def _deserialize_enum(value: str, *, hint: Type[JidEnumFlag]) -> JidEnumFlag:
-#     if isinstance(value, JidEnumFlag):
-#         return value
-#
-#     if isinstance(value, list) and len(value) == 1:
-#         # in SOAP, these are contained within a list.
-#         value = value[0]
-#
-#     if isinstance(value, int):
-#         # noinspection PyArgumentList
-#         return hint(value)
-#
-#     value = value.replace('None', 'None_')
-#
-#     if '+' in value:
-#         # noinspection PyArgumentList
-#         return functools.reduce(
-#             lambda x, y: x | y,
-#             (hint[flag] for flag in value.split('+')))
-#
-#     # noinspection PyArgumentList
-#     try:
-#         return hint[value]
-#     except KeyError as ex:
-#         if value.isnumeric():
-#             # noinspection PyArgumentList
-#             return hint(int(value))
-#         raise ex
-
-
-def _deserialize_normalized(
-    value: Any, outer_type: Type[T], inner_type: Optional[Type] = None
-) -> T:
-    ...
