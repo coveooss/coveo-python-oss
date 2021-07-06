@@ -60,14 +60,14 @@ jobs:
 
       - name: Publish to pypi.org
         uses: ./.github/workflows/actions/publish-to-pypi
-        if: github.ref == "refs/heads/main"
+        if: github.ref == 'refs/heads/main'
         with:
           project-name: ${{ github.workflow }}
           pypi-token: ${{ secrets.PYPI_TOKEN_COVEO_FUNCTOOLS }}
 
       - name: Pre-release to pypi.org
         uses: ./.github/workflows/actions/publish-to-pypi
-        if: github.ref != "refs/heads/main"
+        if: github.ref != 'refs/heads/main'
         with:
           project-name: ${{ github.workflow }}
           pypi-token: ${{ secrets.PYPI_TOKEN_COVEO_FUNCTOOLS }}
