@@ -73,4 +73,4 @@ jobs:
           pypi-token: ${{ secrets.PYPI_TOKEN_COVEO_FUNCTOOLS }}
           pre-release: true
           # != false is a better typo protection than == true
-          dry-run: ${{ github.event.inputs.dry-run != 'false' }}
+          dry-run: ${{ github.event.inputs.dry-run }}
