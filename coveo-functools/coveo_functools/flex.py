@@ -45,7 +45,8 @@ RealFunction = Callable[..., T]
 RealObject = Union[RealClass, RealFunction]
 WrappedClass = Type[T]
 WrappedFunction = Callable[..., T]
-WrappedObject = Union[RealClass, RealFunction]
+WrappedObject = Union[WrappedClass, WrappedFunction]
+
 
 RAW_KEY: Final[str] = "_flexed_from_"
 
