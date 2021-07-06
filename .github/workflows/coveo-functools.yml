@@ -60,17 +60,8 @@ jobs:
 
       - name: Publish to pypi.org
         uses: ./.github/workflows/actions/publish-to-pypi
-        if: github.ref == 'refs/heads/main'
         with:
           project-name: ${{ github.workflow }}
           pypi-token: ${{ secrets.PYPI_TOKEN_COVEO_FUNCTOOLS }}
-
-      - name: Pre-release to pypi.org
-        uses: ./.github/workflows/actions/publish-to-pypi
-        if: github.ref != 'refs/heads/main'
-        with:
-          project-name: ${{ github.workflow }}
-          pypi-token: ${{ secrets.PYPI_TOKEN_COVEO_FUNCTOOLS }}
-          pre-release: true
-          # != false is a better typo protection than == true
+          pre-release: ${{ github.ref != 'refs/heads/main' }}
           dry-run: ${{ github.event.inputs.dry-run != 'false' }}
