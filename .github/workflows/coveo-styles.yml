@@ -12,7 +12,13 @@ on:
     paths:
       - 'coveo-styles/**'
 
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: "Publish to pypi.org?"
+        required: false
+        default: 'false'
+
 
 jobs:
   pyprojectci:
@@ -58,4 +64,5 @@ jobs:
         with:
           project-name: ${{ github.workflow }}
           pypi-token: ${{ secrets.PYPI_TOKEN_COVEO_STYLES }}
-          dry-run: ${{ github.ref != 'refs/heads/main' }}
+          pre-release: ${{ github.ref != 'refs/heads/main' }}
+          dry-run: ${{ github.event.inputs.publish != 'true' }}

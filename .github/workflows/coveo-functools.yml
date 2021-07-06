@@ -14,10 +14,10 @@ on:
 
   workflow_dispatch:
     inputs:
-      dry-run:
-        description: "Simulate the publish operation."
+      publish:
+        description: "Publish to pypi.org?"
         required: false
-        default: 'true'
+        default: 'false'
 
 jobs:
   pyprojectci:
