@@ -64,4 +64,4 @@ jobs:
           project-name: ${{ github.workflow }}
           pypi-token: ${{ secrets.PYPI_TOKEN_COVEO_FUNCTOOLS }}
           pre-release: ${{ github.ref != 'refs/heads/main' }}
-          dry-run: ${{ github.event.inputs.dry-run != 'false' }}
+          dry-run: ${{ github.event.inputs.publish != 'true' }}
