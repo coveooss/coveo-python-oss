@@ -132,14 +132,14 @@ def deserialize(value: Any, *, hint: TypeHint) -> Any:
     # origin: like `list` for `List` or `Union` for `Optional`
     # args: like (str, int) for Optional[str, int]
     origin, args = _resolve_hint(hint)
+    # implementation detail: in the presence of a custom type in the args, the `_resolve_hint` function
+    # always puts the real type first. This is only applicable to the thing-or-list-of-things feature.
+    target_type: TypeHint = args[0] if args else Any
 
     if origin is Union:
         if not {*args}.difference(PASSTHROUGH_TYPES):
             # Unions of PASSTHROUGH_TYPES are allowed and assumed to be in the proper type already
             return value
-
-        # implementation detail: the `_resolve_hint` function always puts the real type first.
-        target_type: TypeHint = args[0]
 
         if len(args) == 1:
             # launch again with only that type
@@ -153,7 +153,6 @@ def deserialize(value: Any, *, hint: TypeHint) -> Any:
                 return deserialize(value, hint=target_type)
 
     if origin is list:
-        target_type = args[0] if args else Any
         return _deserialize(value, hint=list, contains=target_type)
 
     if origin in PASSTHROUGH_TYPES:
@@ -247,6 +246,13 @@ def _resolve_hint(thing: TypeHint) -> Tuple[TypeHint, Tuple[TypeHint, ...]]:
     """
     Transform e.g. List[Union[str, bool]] into (list, Union[str, bool]).
     Also validates that the annotation is supported and removes "NoneType" if present.
+
+    Some rules are enforced here:
+        - It's allowed to have unions of multiple JSON types; we assume they're already converted.
+        - A union containing multiple custom types is forbidden (we don't support it... yet?)
+        - A union is allowed to contain a Union[List[Thing], Thing] where Thing is any custom class.
+          In this case, Thing is always the first arg in the list of args.
+          i.e.: we may return (Thing, List[Thing]), but never (List[Thing], Thing)
     """
     origin = get_origin(thing) or thing
     args = {*get_args(thing)}
