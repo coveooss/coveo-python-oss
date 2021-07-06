@@ -35,11 +35,11 @@ runs:
       working-directory: coveo-pypi-cli
       run: |
         python -m poetry install
-        PRERELEASE="$(python -m poetry run pypi next-version ${{ inputs.project-name }} --prerelease --minimum-version ${{ steps.get-minimum-version.outputs.minimum-version }})"
         RELEASE="$(python -m poetry run pypi next-version ${{ inputs.project-name }} --minimum-version ${{ steps.get-minimum-version.outputs.minimum-version }})"
-        echo "::set-output name=prerelease::$PRERELEASE"
-        echo "::set-output name=release::RELEASE"
+        PRERELEASE="$(python -m poetry run pypi next-version ${{ inputs.project-name }} --prerelease --minimum-version ${{ steps.get-minimum-version.outputs.minimum-version }})"
+        echo "::set-output name=release::$RELEASE"
         echo "Next release: $RELEASE"
+        echo "::set-output name=prerelease::$PRERELEASE"
         echo "Next prerelease: $PRERELEASE"
 
     - name: Determine the version to publish.
