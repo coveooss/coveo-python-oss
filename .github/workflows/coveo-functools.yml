@@ -17,7 +17,7 @@ on:
       dry-run:
         description: "Simulate the publish operation."
         required: false
-        default: 'true'
+        default: 'false'
 
 jobs:
   pyprojectci:
