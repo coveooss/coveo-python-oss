@@ -72,4 +72,5 @@ jobs:
           project-name: ${{ github.workflow }}
           pypi-token: ${{ secrets.PYPI_TOKEN_COVEO_FUNCTOOLS }}
           pre-release: true
-          dry-run: true
+          # != false is a better typo protection than == true
+          dry-run: ${{ github.event.inputs.dry-run != false }}
