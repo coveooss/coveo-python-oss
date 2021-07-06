@@ -48,7 +48,8 @@ WrappedFunction = Callable[..., T]
 WrappedObject = Union[WrappedClass, WrappedFunction]
 
 
-RAW_KEY: Final[str] = "_flexed_from_"
+RAW_KEY: Final[str] = "_coveo_functools_flexed_from_"
+
 
 
 @overload
