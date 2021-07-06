@@ -12,8 +12,12 @@ on:
     paths:
       - 'coveo-functools/**'
 
-  workflow_dispatch: {}
-
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: "Simulate the publish operation."
+        required: false
+        default: 'true'
 
 jobs:
   pyprojectci:
@@ -56,7 +60,16 @@ jobs:
 
       - name: Publish to pypi.org
         uses: ./.github/workflows/actions/publish-to-pypi
+        if: github.ref == "refs/heads/main"
         with:
           project-name: ${{ github.workflow }}
           pypi-token: ${{ secrets.PYPI_TOKEN_COVEO_FUNCTOOLS }}
-          dry-run: ${{ github.ref != 'refs/heads/main' }}
+
+      - name: Pre-release to pypi.org
+        uses: ./.github/workflows/actions/publish-to-pypi
+        if: github.ref != "refs/heads/main"
+        with:
+          project-name: ${{ github.workflow }}
+          pypi-token: ${{ secrets.PYPI_TOKEN_COVEO_FUNCTOOLS }}
+          pre-release: true
+          dry-run: ${{ github.event.inputs.dry-run == true }}

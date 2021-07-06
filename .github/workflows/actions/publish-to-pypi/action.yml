@@ -8,6 +8,10 @@ inputs:
   pypi-token:
     description: The pypi token to use for authentication
     required: true
+  pre-release:
+    description: Set to true if a pre-release version should be published.
+    required: false
+    default: false
   dry-run:
     description: Set to true for a test run that doesn't publish or tag.
     default: false
@@ -25,13 +29,21 @@ runs:
       working-directory: ${{ inputs.project-name }}
       run: echo "::set-output name=minimum-version::$(${{ github.action_path }}/get-minimum-version.sh)"
 
-    - name: Obtain the next release version
+    - name: Determine the prerelease flag for this release.
+      shell: bash
+      id: get-prerelease-flag
+      run: |
+        if [[ ${{ inputs.pre-release }} == true ]]; then
+          echo "::set-output name=pre-release::--prerelease"
+        fi
+
+    - name: Obtain the next version
       id: get-next-version
       shell: bash
       working-directory: coveo-pypi-cli
       run: |
         python -m poetry install
-        NEXT_VERSION="$(python -m poetry run pypi next-version ${{ inputs.project-name }} --minimum-version ${{ steps.get-minimum-version.outputs.minimum-version }})"
+        NEXT_VERSION="$(python -m poetry run pypi next-version ${{ inputs.project-name }} --minimum-version ${{ steps.get-minimum-version.outputs.minimum-version }} ${{ steps.get-prerelease-flag.outputs.pre-release }})"
         echo "::set-output name=next-version::$NEXT_VERSION"
         echo "Next release's version: $NEXT_VERSION"
 
