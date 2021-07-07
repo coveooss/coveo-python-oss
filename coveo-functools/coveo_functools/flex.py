@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import collections
-
 import functools
 import inspect
 from typing import (
@@ -18,6 +17,7 @@ from typing import (
     overload,
     Final,
     List,
+    Sequence,
 )
 
 from coveo_functools.annotations import find_annotations
@@ -145,7 +145,7 @@ def deserialize(value: Any, *, hint: TypeHint) -> Any:
 
         if len(args) == 1:
             # launch again with only that type
-            return deserialize(value, hint=target_type)
+            return deserialize(value, hint=args[0])
 
         if len(args) == 2:
             # special support for variadic "thing-or-list-of-things" payloads is based on the type of the value.
@@ -156,6 +156,10 @@ def deserialize(value: Any, *, hint: TypeHint) -> Any:
 
     if origin is list:
         return _deserialize(value, hint=list, contains=target_type)
+
+    if origin is dict:
+        # json can't have maps or lists as keys, so we can't either. Ditch the key annotation, but convert values.
+        return _deserialize(value, hint=dict, contains=args[1] if args else Any)
 
     if origin in PASSTHROUGH_TYPES:
         # we always return those without validation
@@ -183,6 +187,14 @@ def _deserialize_list(value: Any, *, hint: list, contains: Optional[TypeHint] = 
     """List deserialization into list of things."""
     if _is_array_like(value):
         return [deserialize(item, hint=contains) for item in value]
+
+    return value  # type: ignore[no-any-return]
+
+
+@_deserialize.register(dict)
+def _deserialize_dict(value: Any, *, hint: dict, contains: Optional[TypeHint] = None) -> Dict:
+    if isinstance(value, collections.Mapping):
+        return {key: deserialize(value, hint=contains or Any) for key, value in value.items()}
 
     return value  # type: ignore[no-any-return]
 
@@ -246,9 +258,9 @@ def _remap_and_convert(fn: RealFunction, dirty_kwargs: Dict[str, Any]) -> Dict[s
     return converted_kwargs
 
 
-def _resolve_hint(thing: TypeHint) -> Tuple[TypeHint, Tuple[TypeHint, ...]]:
+def _resolve_hint(thing: TypeHint) -> Tuple[TypeHint, Sequence[TypeHint]]:
     """
-    Transform e.g. List[Union[str, bool]] into (list, Union[str, bool]).
+    Transform e.g. List[Union[str, bool]] into (list, (str, bool)) or Dict[str, Any] into (dict, (str, Any)).
     Also validates that the annotation is supported and removes "NoneType" if present.
 
     Some rules are enforced here:
@@ -259,27 +271,26 @@ def _resolve_hint(thing: TypeHint) -> Tuple[TypeHint, Tuple[TypeHint, ...]]:
           i.e.: we may return (Thing, List[Thing]), but never (List[Thing], Thing)
     """
     origin = get_origin(thing) or thing
-    args = {*get_args(thing)}
+    args = list(get_args(thing))
 
     # typing implementation detail -- At runtime, Optional exists as Union[None, ...]
     assert origin is not Optional
 
     if origin is dict:
-        # In this case, args isn't a collection of types; rather a (key_type, value_type).
-        # Dict[str, Any] would therefore come out as a (Dict, Union[str, Any]) which is wrong.
-        # since we don't do anything special for dicts anyway yet, drop the arg types and carry on.
-        return dict, ()
-
-    if not args.difference(PASSTHROUGH_TYPES):
-        # If all containing types are passthrough types, everything shall be fine.
-        return origin, tuple(args)
+        # the annotation in this case is [key, value]; they shall be reevaluated separately.
+        return origin, args
 
     # Remove NoneType if it's present. If the value is given as None, we return None, no questions asked,
     # so we really don't need to keep this information.
-    args.discard(type(None))
+    while type(None) in args:
+        args.remove(type(None))
+
+    if not set(args).difference(PASSTHROUGH_TYPES):
+        # If all containing types are passthrough types, everything shall be fine.
+        return origin, args
 
     if len(args) < 2:
-        return origin, tuple(args)
+        return origin, args
 
     if len(args) == 2:
         return origin, _as_union_of_thing_or_list_of_things(*args)
