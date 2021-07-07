@@ -79,6 +79,7 @@ def test_deserialize_unions_limited() -> None:
     (
         (DEFAULT_PAYLOAD, DEFAULT_MOCK),
         ([DEFAULT_PAYLOAD], [DEFAULT_MOCK]),
+        ((DEFAULT_PAYLOAD, DEFAULT_PAYLOAD), [DEFAULT_MOCK, DEFAULT_MOCK]),  # tuple input
         (None, None),
         ([], []),
     ),

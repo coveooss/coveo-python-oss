@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import collections
+
 import functools
 import inspect
 from typing import (
@@ -147,7 +149,7 @@ def deserialize(value: Any, *, hint: TypeHint) -> Any:
 
         if len(args) == 2:
             # special support for variadic "thing-or-list-of-things" payloads is based on the type of the value.
-            if isinstance(value, list):
+            if _is_array_like(value):
                 return deserialize(value, hint=List[target_type])
             else:
                 return deserialize(value, hint=target_type)
@@ -179,7 +181,7 @@ def _deserialize(value: Any, *, hint: TypeHint, contains: Optional[TypeHint] = N
 @_deserialize.register(list)
 def _deserialize_list(value: Any, *, hint: list, contains: Optional[TypeHint] = None) -> List:
     """List deserialization into list of things."""
-    if isinstance(value, list):
+    if _is_array_like(value):
         return [deserialize(item, hint=contains) for item in value]
 
     return value  # type: ignore[no-any-return]
@@ -197,9 +199,11 @@ def _generate_wrapper(obj: RealFunction) -> WrappedFunction:
 
 def _generate_wrapper(obj: RealObject) -> WrappedObject:
     """Generates a wrapper over obj."""
+    # handle custom objects
     if inspect.isclass(obj):
         return _generate_class_wrapper(obj)  # type: ignore[arg-type]
 
+    # handle custom callables
     return _generate_callable_wrapper(obj)
 
 
@@ -305,3 +309,14 @@ def _as_union_of_thing_or_list_of_things(*annotation: TypeHint) -> Tuple[TypeHin
             return target_type, List[target_type]  # type: ignore[valid-type]
 
     raise UnsupportedAnnotation(annotation)
+
+
+def _is_array_like(thing: Any) -> bool:
+    """We don't want to mix up dictionaries and strings with tuples, sets and lists."""
+    return all(
+        (
+            isinstance(thing, collections.Iterable),
+            not isinstance(thing, (str, bytes)),
+            not isinstance(thing, collections.Mapping),
+        )
+    )
