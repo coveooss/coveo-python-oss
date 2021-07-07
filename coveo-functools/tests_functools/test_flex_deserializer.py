@@ -120,7 +120,7 @@ def test_deserialize_dict(hint: Type) -> None:
     ),
 )
 def test_deserialize_dict_with_custom_value_type(hint: Any) -> None:
-    assert deserialize(DEFAULT_MAP_PAYLOAD, hint=Dict[str, MockType]) == DEFAULT_MAP_MOCK
+    assert deserialize(DEFAULT_MAP_PAYLOAD, hint=hint) == DEFAULT_MAP_MOCK
 
 
 @parametrize(
