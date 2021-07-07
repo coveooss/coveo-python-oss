@@ -194,7 +194,7 @@ def _deserialize_list(value: Any, *, hint: list, contains: Optional[TypeHint] = 
 @_deserialize.register(dict)
 def _deserialize_dict(value: Any, *, hint: dict, contains: Optional[TypeHint] = None) -> Dict:
     if isinstance(value, collections.Mapping):
-        return {key: deserialize(value, hint=contains or Any) for key, value in value.items()}
+        return {key: deserialize(val, hint=contains or Any) for key, val in value.items()}
 
     return value  # type: ignore[no-any-return]
 
