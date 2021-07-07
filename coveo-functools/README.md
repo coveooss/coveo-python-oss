@@ -1,7 +1,7 @@
 # coveo-functools
 
 Introspection, finalizers, delegates, dispatchers, waiters...
-These utilities aim at increasing productivity!
+These utilities aim at increasing productivity.
 
 
 ## annotation
