@@ -14,8 +14,6 @@ on:
       - 'coveo-example-library/**'
       - '.github/workflows/**'
 
-  workflow_dispatch: {}
-
 jobs:
   pyprojectci:
     name: pyproject ci
@@ -60,5 +58,5 @@ jobs:
         with:
           project-name: ${{ github.workflow }}
           pypi-token: ${{ secrets.PYPI_TOKEN_COVEO_EXAMPLE_LIBRARY }}
+          pre-release: ${{ github.ref != 'refs/heads/main' }}
           dry-run: true
-          # dry-run: ${{ github.ref != 'refs/heads/main' }}
