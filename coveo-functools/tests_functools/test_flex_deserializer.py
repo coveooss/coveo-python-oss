@@ -18,6 +18,9 @@ DEFAULT_VALUE: Final[str] = "yup"
 DEFAULT_PAYLOAD = {"value": DEFAULT_VALUE}
 DEFAULT_MOCK: Final[MockType] = MockType(DEFAULT_VALUE)
 
+DEFAULT_MAP_PAYLOAD = {"item1": DEFAULT_PAYLOAD, "item2": DEFAULT_PAYLOAD}
+DEFAULT_MAP_MOCK: Final[Dict[str, MockType]] = {"item1": DEFAULT_MOCK, "item2": DEFAULT_MOCK}
+
 
 @parametrize(
     ("hint", "payload", "expected"),
@@ -100,10 +103,51 @@ def test_deserialize_thing_or_list_of_things(hint: Type, payload: Any, expected:
         Dict,
         Dict[Any, Any],
         Dict[Union[str, bool], Any],
-        Dict[Any, Union[bytes, MockType]],
-        Dict[Optional[Union[str, int]], Optional[Union[str, MockType, Optional[bool]]]],
+        Dict[str, Optional[Union[bool, int]]],
     ),
 )
 def test_deserialize_dict(hint: Type) -> None:
     """We don't do much with'em, but they gotta work!"""
     assert deserialize(DEFAULT_PAYLOAD, hint=hint) == DEFAULT_PAYLOAD
+
+
+@parametrize(
+    "hint",
+    (
+        Dict[str, MockType],
+        Dict[Any, MockType],
+        Dict[str, Optional[MockType]],
+    ),
+)
+def test_deserialize_dict_with_custom_value_type(hint: Any) -> None:
+    assert deserialize(DEFAULT_MAP_PAYLOAD, hint=hint) == DEFAULT_MAP_MOCK
+
+
+@parametrize(
+    ("hint", "payload", "expected"),
+    (
+        (
+            Dict[str, List[MockType]],
+            {"item1": [DEFAULT_PAYLOAD, DEFAULT_PAYLOAD]},
+            {"item1": [DEFAULT_MOCK, DEFAULT_MOCK]},
+        ),
+        (
+            Dict[str, Union[List[MockType], MockType]],
+            {"item1": DEFAULT_PAYLOAD},
+            {"item1": DEFAULT_MOCK},
+        ),
+        (
+            Dict[str, Union[List[MockType], MockType]],
+            {"item1": [DEFAULT_PAYLOAD]},
+            {"item1": [DEFAULT_MOCK]},
+        ),
+    ),
+)
+def test_deserialize_dict_complex(hint: Any, payload: Any, expected: Any) -> None:
+    assert deserialize(payload, hint=hint) == expected
+
+
+def test_deserialize_dict_invalid_union() -> None:
+    """Make sure the union rules are respected in the dict value annotation."""
+    with pytest.raises(UnsupportedAnnotation):
+        _ = deserialize(DEFAULT_PAYLOAD, hint=Dict[str, Union[str, MockType]])
