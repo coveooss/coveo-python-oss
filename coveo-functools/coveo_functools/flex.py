@@ -18,6 +18,7 @@ from typing import (
     Final,
     List,
     Sequence,
+    cast,
 )
 
 from coveo_functools.annotations import find_annotations
@@ -119,7 +120,17 @@ def flex(
         return flex
 
 
-def deserialize(value: Any, *, hint: TypeHint) -> Any:
+@overload
+def deserialize(value: Any, *, hint: Type[T]) -> T:
+    ...
+
+
+@overload
+def deserialize(value: Any, *, hint: T) -> T:
+    """This overload tricks mypy in passing typing annotations as types, such as List[str]."""
+
+
+def deserialize(value: Any, *, hint: Union[T, Type[T]]) -> T:
     """
     Deserializes a value based on the provided type hint:
 
@@ -141,36 +152,36 @@ def deserialize(value: Any, *, hint: TypeHint) -> Any:
     if origin is Union:
         if not {*args}.difference(PASSTHROUGH_TYPES):
             # Unions of PASSTHROUGH_TYPES are allowed and assumed to be in the proper type already
-            return value
+            return cast(T, value)
 
         if len(args) == 1:
             # launch again with only that type
-            return deserialize(value, hint=args[0])
+            return cast(T, deserialize(value, hint=args[0]))
 
         if len(args) == 2:
             # special support for variadic "thing-or-list-of-things" payloads is based on the type of the value.
             if _is_array_like(value):
-                return deserialize(value, hint=List[target_type])
+                return cast(T, deserialize(value, hint=List[target_type]))
             else:
-                return deserialize(value, hint=target_type)
+                return cast(T, deserialize(value, hint=target_type))
 
     if origin is list:
-        return _deserialize(value, hint=list, contains=target_type)
+        return cast(T, _deserialize(value, hint=list, contains=target_type))
 
     if origin is dict:
         # json can't have maps or lists as keys, so we can't either. Ditch the key annotation, but convert values.
-        return _deserialize(value, hint=dict, contains=args[1] if args else Any)
+        return cast(T, _deserialize(value, hint=dict, contains=args[1] if args else Any))
 
     if origin in PASSTHROUGH_TYPES:
         # we always return those without validation
-        return value
+        return cast(T, value)
 
     if inspect.isclass(origin) and isinstance(value, origin):
         # it's a custom class and it's already converted
-        return value
+        return cast(T, value)
 
     # annotation arguments are not supported past this point, so we can omit them.
-    return _deserialize(value, hint=origin)
+    return cast(T, _deserialize(value, hint=origin))
 
 
 @dispatch(switch_pos="hint")

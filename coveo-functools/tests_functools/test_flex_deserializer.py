@@ -151,3 +151,47 @@ def test_deserialize_dict_invalid_union() -> None:
     """Make sure the union rules are respected in the dict value annotation."""
     with pytest.raises(UnsupportedAnnotation):
         _ = deserialize(DEFAULT_PAYLOAD, hint=Dict[str, Union[str, MockType]])
+
+
+def test_deserialize_static_typing() -> None:
+    """
+    This is actually a static typing test to ensure that `deserialize` correctly handles the generic annotations.
+
+    To work correctly, mypy must be ran with warnings on unused type: ignores.
+    """
+
+    def fn(value: str) -> str:
+        return value
+
+    def correct_annotations() -> None:
+        """cases that correctly follow annotations"""
+        assert deserialize(DEFAULT_PAYLOAD, hint=MockType).value == DEFAULT_VALUE
+        assert deserialize([DEFAULT_PAYLOAD], hint=List[MockType])[0].value == DEFAULT_VALUE
+        assert deserialize(DEFAULT_PAYLOAD, hint=Dict[str, Any])["value"] == DEFAULT_VALUE
+        assert deserialize(fn, hint=fn)(value=DEFAULT_VALUE) == DEFAULT_VALUE
+
+    correct_annotations()
+
+    def broken_annotations() -> None:  # noqa
+        """we don't execute this one, because it would fail."""
+        # mypy sees that we may not get a list
+        _ = deserialize(DEFAULT_PAYLOAD, hint=Union[List[MockType], MockType])[0].value  # type: ignore[index]
+
+        # ...same as above, reversed.
+        _ = deserialize(DEFAULT_PAYLOAD, hint=Union[List[MockType], MockType]).value  # type: ignore[attr-defined]
+
+        # mypy rightfully complains about None not having a `.value`
+        _ = deserialize(DEFAULT_PAYLOAD, hint=Optional[MockType]).value  # type: ignore[attr-defined]
+
+        # mypy rightfully complains about MockType not having a `.name`
+        _ = deserialize(DEFAULT_PAYLOAD, hint=Optional[MockType]).name  # type: ignore[attr-defined]
+
+        def test_return() -> str:  # noqa
+            # mypy rightfully complains about returning `Any` instead of str
+            return deserialize(DEFAULT_PAYLOAD, hint=MockType).name  # type: ignore[attr-defined,no-any-return]
+
+        # mypy sees that fn accepts a str, not an int
+        _ = deserialize(fn, hint=fn)(fn=1)  # type:ignore[call-arg]
+
+        # mypy sees that fn returns a str, not an int
+        _ = deserialize(fn, hint=fn)(value="") / 2  # type: ignore[operator]
