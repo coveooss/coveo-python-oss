@@ -4,116 +4,312 @@ Introspection, finalizers, delegates, dispatchers, waiters...
 These utilities aim at increasing productivity!
 
 
-## annotations
+# annotations
 
 Introspect classes and callables at runtime.
 
 Can convert string annotations into their actual type reference.
 
 
-## flex
+# flex
+## overview
+Flex works with annotations to adjust and convert input data to match your target structure.
 
-Flex takes a "dirty" input and maps it to a python construct.
+It was originally done as a mean to fit `CamelCase` payloads from external APIs into `snake_case` classes.
 
-The principal use case is to allow seamless translation between snake_case and camelCase and generate PEP8-compliant code over APIs that support a different casing scheme.
+Take for example this payload that we'd like to fit into a pep8 context:
 
-- It introspects a function/class to obtain the expected argument names
-- It inspects the provided input to find matching candidates
-- It calls the function with the cleaned arguments
-- It can recurse into nested custom types based on annotations
-- It strips out the data you don't need from the payload
-
-It can also be used to allow for a certain degree of personalization in typically strict contexts such as configuration files and APIs. 
-
-Take for example the toml below, where all 3 items can be made equivalent:
-
-```toml
-[tool.some-plugin]
-enable_features = ['this', 'that']
-enable-features = ['this', 'that']
-enableFeatures = ['this', 'that']
+```json
+[
+    {"Name": "John", "SocialNumber": 123},
+    {"Name": "Jean", "SocialNumber": 123}
+]
 ```
 
-Or maybe in a CLI app, to allow both underscores and dashes:
+Explicit usage example:
 
-```shell
-# which one was it?
-poetry install --no-dev
-poetry install --no_dev
+```python
+from coveo_functools import flex
+
+@dataclass
+class Person:
+    name: str
+    social_number: Optional[int] = None
+
+# the deserializer is used directly to receive a list of Person instances
+response = flex.deserialize(json.load(), hint=List[Person])
 ```
 
-### @flex
-
-This decorator will wrap a class, method or function so that it can be called with flexible arguments:
+Automatic usage example:
 
 ```python
 from coveo_functools.flex import flex
 
-PAYLOAD = {"TEST": "SUCCESS"}
-
 @flex
-class FlexibleConstructor:
-    def __init__(self, test: str) -> None:
-        self.test = test
+@dataclass
+class SomeObject:
+    """ I am decorated with @flex, so you can always give me some trouble. """
+    name: str
 
-    @flex
-    def flexible_method(self, test: str) -> str:
-        return test
-
-
-@flex
-def flexible_function(test: str) -> str:
-    return test
-
-instance = FlexibleConstructor(**PAYLOAD)
-
-assert instance.test == "SUCCESS"
-assert instance.flexible_method(**PAYLOAD) == "SUCCESS"
-assert flexible_function(**PAYLOAD) == "SUCCESS"
-
-
-# you can also use the tool inline; for instance to wrap a 3rd party lib:
-def typical_function(test: str) -> str:
-    return test
-
-assert flex(typical_function)(**PAYLOAD) == "SUCCESS"
+response = [SomeObject(**data) for data in json.load()]
 ```
 
-Let's see a more practical example:
+When remapping keys, Flex will ignore:
+- Casing
+- Underscores
+- Hyphens
+- Dots
+- Spaces
+
+For instance, it will happily accept `{"__NaM e._": "John"}` as valid input for the `Person` class.
+
+It can also create instances of custom classes:
 
 ```python
+@dataclass
+class Address:
+  street: str
+
+@dataclass
+class Person:
+    name: str
+    address: List[Address]
+    social_number: Optional[int] = None
+```
+
+You could then feed it a payload like `{"name": "Lucy", address: [{"street": ...}, {...}]}`. 
+Flex will create an instance of `Person`, that has a list of 2 Address instances.
+
+Note: The basic types `str, bool, int, float, dict, list, None` **are ignored** (no conversion occurs).
+This is because `json.load()` already returns these values in the proper type. This may change in the future.
+
+
+### Supported objects and annotations
+
+Flex can be used with:
+- Classes and dataclasses
+- Functions
+- Methods
+- `Union[str, bool, int, float, list, dict, None]`  (or any combination of these basic **json-compatible types**)
+- These typing constructs, where `T` is your custom class:
+  - `List[T]`
+  - `Dict[str, T]`
+  - `Union[T, List[T]]`  (for APIs that may return a thing-or-list-of-things)
+  - `Optional[T]`
+
+
+### Limitations
+
+- Variable positional args (such as `def fn(*args): ...`) are left untouched.
+- Basic json-compatible types are left untouched. This is determined by the annotation, not the actual value.
+- If None is given as a value to deserialize into anything, None is given back. Absolutely no validation occurs in this case.
+- You can only `Union` basic json-compatible types, or `List[T], T`
+- No support for additional `typing` and `collections` objects other than the ones mentioned in this documentation.
+
+These are subject to change.
+
+
+## flex.deserialize
+
+This is where the magic happens, and is the recommended usage whenever it meets your use case. 
+
+TL;DR: Given that `payload` is a dict,`flex.deserialize(payload, hint=Job)` will convert `payload` into an instance of `Job`.
+
+Here's an example puzzle! An uncanny API returns a messy "transaction" JSON:
+
+```json
+{
+    "Sold_To": {"Name": "Jon"},
+    "Items": [
+        {"sku": 123, "price": 19.99},
+        {"sku": 234, "price": 13.99},
+        {"sku": 0, "price": 0.50, "NOTE": "Forgot the reusable bag at home!!"}
+    ],
+    "Rebates": {
+        "airmiles": {"Flat": 10.0},
+        "coupon": [{"Flat": 0.79}, {"Flat":  1.50}],
+        "senior": {"Percentage": 2.5}
+    },
+    "Id": "GgfhAs89876yh.z"
+}
+```
+
+
+Wouldn't it be convenient if you could create simple classes/dataclasses around them without any boilerplate?
+
+
+There are many  But you can solve it with flex. In one line, too!
+
+Start by designing a hierarchy of classes with annotations that closely follows the API reference.
+Remember, casing and underscore are ignored in flex, so you could use pep8 if you want:
+
+```python
+# models.py
+
 from dataclasses import dataclass
+from typing import List, Dict, Union, Optional
 
-import requests  # noqa
-from coveo_functools.flex import flex
+
+class SkuItem:
+    def __init__(self, sku: int, price: float) -> None:
+        self.sku = sku
+        self.price = price
 
 
 @dataclass
-class Owner:
-    login: str
+class Rebate:
+    percentage: Optional[float] = None
+    flat: Optional[float] = None
 
 
-@flex
 @dataclass
-class ApiResponse:
-    id: int
-    owner: Owner
+class Customer:
+    name: str
 
-# Consider this api response:
-# {
-#     "Id": 1234,
-#     "Owner": {"login": "jonapich"},
-#     "Url": "https://..."
-# }
-response = ApiResponse(**requests.get(...).json)
-assert response.owner.login == 'jonapich'
+
+@dataclass
+class Transaction:
+    sold_to: Customer
+    items: List[SkuItem]
+    rebates: Dict[str, Union[Rebate, List[Rebate]]]
 ```
 
-In the example above, notice how Owner doesn't have to be decorated?
-This is because @flex works recursively on any type.
-You can decorate it too, but the first call is what matters.
+Did you notice any flex-related boilerplate in the snippet above? No? Good! :)
 
-#### consideration vs mypy
+Here's how you can use flex's deserializer to bend the furious API's response into your perfect python classes:
+
+
+
+```python
+payload = {
+    "Sold_To": {"Name": "Jon"},
+    "Items": [
+        {"sku": 123, "price": 19.99},
+        {"sku": 234, "price": 13.99},
+        {"sku": 0, "price": 0.50, "NOTE": "Forgot the reusable bag at home!!"}
+    ],
+    "Rebates": {
+        "airmiles": {"Flat": 10.0},
+        "coupon": [{"Flat": 0.79}, {"Flat":  1.50}],
+        "senior": {"Percentage": 2.5}
+    },
+    "Id": "GgfhAs89876yh.z"
+}
+
+one_transaction = flex.deserialize(payload, hint=Transaction)
+list_transactions = flex.deserialize([payload, payload], hint=List[Transaction])
+```
+
+Interesting details:
+- Well, the casing worked! :shrug:
+- `Id` and `NOTE` were dropped because they were excluded from the `Transaction` model. Time saver; some APIs return _tons_ of data.
+- The rebates actually kept the keys, and created `Rebate` instances as the values.
+- In some cases, rebates is a `Rebate` instance, sometimes it's a `List[Rebate]`; it follows whatever the API returns because it was annotated as such.
+- In the `get_all_transactions` call, `List[Annotation]` was used directly as the hint. Nifty!
+
+
+## @flex and flex(obj)
+
+There is a decorator version of `deserialize`.
+
+`from coveo_functools.flex import flex`
+
+It returns a function, method or class wrapped in `flex.deserialize` magic.
+When called, the wrapper will automatically adjust the call arguments to match the wrapped object, call the wrapped object with them, and return the response.
+
+`flex` can be used:
+- as a decorator over classes, methods and functions
+- inline to call a function or to create flexible factories
+
+When used inline, you can adjust a payload for any callable:
+
+```python
+from some_3rd_party import calculate_price
+
+price = flex(calculate_price)(**payload)
+```
+
+You can also generate "flexible" factories, for instance to be used as a delegate:
+
+```python
+from some_3rd_party import ThisClass
+
+factory: Callable[..., T] = flex(ThisClass)
+instance1 = factory(**payload1)
+instance2 = factory(**payload2)
+```
+
+
+When used as a decorator, all invocations are automatically handled for all callers:
+
+```python
+@flex
+def calculate_price(sold_to: Customer, items: Union[SkuItems, List[SkuItems]]) -> float:
+    ...
+
+# breaks static analysis; wrong argument shown for demonstration purposes
+price = calculate_price(SoldTo=dict(Name="Marie"), items={"sku": 123, "price": 19.99})
+```
+
+You could adjust the `Transaction` from earlier class like this:
+
+```python
+@flex
+@dataclass
+class Transaction:
+    sold_to: Customer
+    items: List[SkuItem]
+    rebates: Dict[str, Union[Rebate, List[Rebate]]]
+```
+
+So that you can drop the explicit calls to `flex.deserialize` and use them directly:
+
+```python
+one_transaction = Transaction(**payload)
+list_transactions = [Transaction(**t) for t in [payload, payload]]
+```
+
+
+### `flex` or `deserialize`?
+
+Favor `flex.deserialize` over the decorator pattern:
+- This will make the usages explicit rather than implicit.
+- The additional wrappers created by the decorator may affect performance in the presence of huge structures.
+- You can `flex.deserialize([], hint=List[T])` and get a list, but you cannot `flex(List[T])` directly (both methods demonstrated below)
+
+Generally, it leads to a better design because you end up wiring the `flex.deserialize` call next to the `json.load()` call in a generic manner, and that's 100% of the `flex` code you'll ever need:
+
+
+```python
+class ApiWrapper:
+    def get_transaction(self, id: int) -> Transaction:
+        return self._do_request("GET", f"api/transactions/{id}", hint=Transaction)
+
+    def get_all_transactions(self) -> List[Transaction]:
+        return self._do_request("GET", "api/transactions", hint=List[Transaction])
+  
+    def _do_request(self, method: str, url: str, hint: T) -> T:
+        response = self._session.request(method=method, url=url)
+        return flex.deserialize(response.json, hint=hint)
+```
+
+Because explicit is better than implicit, the above design is generally easier to understand than the one below, where `Transaction` is assumed to be decorated with `@flex`:
+
+```python
+class ApiWrapper:
+    def get_transaction(self, id: int) -> Transaction:
+        return Transaction(**self._do_request("GET", f"api/transactions/{id}"))
+
+    def get_all_transactions(self) -> List[Transaction]:
+        return [Transaction(**data) for data in self._do_request("GET", "api/transactions")]
+  
+    def _do_request(self, method: str, url: str) -> Any:
+        response = self._session.request(method=method, url=url)
+        return response.json
+```
+
+
+## consideration vs mypy
 
 There is one annotation case worth mentioning. 
 Consider this code:
@@ -140,11 +336,14 @@ payload: Dict[str, Any] = {"inner": {}}
 _ = fn(**payload)
 ```
 
-### unflex
+# unflex
 
-Unflex is one of the utilities used by the @flex decorator.
+Unflex is one of the utilities used by `flex.deserializer`.
 
-It can remap a dictionary to fit the keyword arguments (casing/etc) given by a callable:
+It is responsible to adjust the keyword arguments of a dictionary, so they match the argument names of a target function.
+
+It does not perform any conversion; all it does is matching keys.
+Extra keys are dropped by default:
 
 ```python
 from coveo_functools.flex import unflex
@@ -152,16 +351,15 @@ from coveo_functools.flex import unflex
 def fn(arg1: str, arg2: str) -> None:
     ...
 
-assert unflex(fn, {"ARG1": ..., "ArG_2": ...}) == {"arg1": ..., "arg2": ...}
+assert unflex(fn, {"ARG1": ..., "ArG_2": ..., "extra": ...}) == {"arg1": ..., "arg2": ...}
 ```
 
-### @flexcase
+Note: To target classes, you need to `unflex(cls.__init__, ...)`
 
-`flexcase` is a simpler version of the flex decorator.
-It allows a function to apply the `unflex` logic automatically against a callable.
 
-Unlike the flex decorator, it is not recursive and it will
-not attempt to read type annotations or convert values.
+## @flexcase
+
+`flexcase` is the decorator version of `unflex`:
 
 
 ```python
@@ -172,11 +370,11 @@ def fn(arg1: str, arg2: str) -> str:
     return f"{arg1} {arg2}"
 
 
-assert fn(ARG1="hello", _arg2="world") == "hello world"
+assert fn(ARG1="hello", _arg2="world", extra=...) == "hello world"
 ```
 
 
-## dispatch
+# dispatch
 
 An enhanced version of [functools.singledispatch](https://docs.python.org/3.8/library/functools.html#functools.singledispatch):
 

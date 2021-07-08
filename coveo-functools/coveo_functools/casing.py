@@ -1,6 +1,6 @@
 import functools
 import re
-from typing import Match, Iterable, Dict, Callable, Any, TypeVar, Mapping, Type
+from typing import Match, Iterable, Dict, Callable, Any, TypeVar, Mapping, Type, Final
 
 import inflection
 
@@ -53,6 +53,9 @@ def snake_case(string: str, bad_casing: Iterable[str] = ()) -> str:
     return result
 
 
+TRANSLATION_TABLE: Final = str.maketrans("", "", "_-. ")
+
+
 class _FlexcaseDecorator:
     """Allow passing kwargs to a method without consideration for casing or underscores."""
 
@@ -100,7 +103,7 @@ class _FlexcaseDecorator:
     @staticmethod
     def _lookup_key(key: str) -> str:
         """Return a normalized lookup key."""
-        return key.replace("-", "").replace("_", "").lower()
+        return key.translate(TRANSLATION_TABLE).lower()
 
 
 def flexcase(
