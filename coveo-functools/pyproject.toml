@@ -18,13 +18,17 @@ typing_extensions = "*"
 attrs = "*"
 black = { version = "21.6b0", allow-prereleases = true }
 coveo-testing = { path = "../coveo-testing/", develop = true }
-mypy = "0.812"
+flake8 = "*"
+mypy = "0.910"
 
 
 [tool.stew.ci]
 pytest = true
 offline-build = true
 black = true
+
+[tool.stew.ci.custom-runners]
+flake8 = { args = ["--ignore=E501,W503"]}
 
 
 [tool.black]
