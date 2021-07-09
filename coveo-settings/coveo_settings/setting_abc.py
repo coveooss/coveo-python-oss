@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
-import inspect
 import os
 import re
-import sys
 
+import logging
 from abc import abstractmethod
 from copy import copy
 from functools import partial
@@ -42,10 +41,15 @@ from coveo_settings.validation import InSequence
 
 ENVIRONMENT_VARIABLE_SEPARATORS = "._"
 
+log = logging.getLogger(__name__)
+
 
 def _find_setting(*keys: str) -> Optional[str]:
     """Attempts to find a variable in the environment variables. The casing, dots (.) and the underline character (_)
     are not significant. For instance, "ut.test.setting" will match "UTTESTSETTING" and also "UT_teST.._setting"."""
+    if not keys:
+        return None
+    main_key = keys[0]
 
     def _normalize(key_: str) -> str:
         """Returns a lowercase version of key without separators."""
@@ -60,8 +64,12 @@ def _find_setting(*keys: str) -> Optional[str]:
             stripped = _normalize(potential_key)
             for key, value in os.environ.items():
                 if _normalize(key) == stripped:
+                    log.debug(f"Setting {main_key} retrieved from the environment variable: {key}")
                     return value
         else:
+            log.debug(
+                f"Setting {main_key} retrieved from the environment variable: {potential_key}"
+            )
             return return_value
 
     return None
@@ -194,6 +202,7 @@ class Setting(SupportsInt, SupportsFloat, Generic[T], Container, Iterable):
     def _get_value(self) -> Optional[ConfigValue]:
         """Returns the raw value/fallback/override of this setting, else None."""
         if self._cached and self._cache_validated is not None:
+            log.debug(f"Setting {self.key} retrieved from cache.")
             return copy(self._cache_validated)
 
         value = (
@@ -202,7 +211,12 @@ class Setting(SupportsInt, SupportsFloat, Generic[T], Container, Iterable):
             else self._override
         )
         if value is None and self._fallback is not None:
+            log.debug(f"Setting {self.key} retrieved from fallback.")
             value = self._fallback() if callable(self._fallback) else self._fallback
+        elif value is None:
+            log.debug(f"Setting {self.key} is not set.")
+        elif settings_adapter.is_redirect(value):
+            log.debug(f"Setting {self.key} is a redirection.")
 
         self._last_value = copy(value)
         return value
