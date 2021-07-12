@@ -102,7 +102,8 @@ Flex can be used with:
 
 - Variable positional args (such as `def fn(*args): ...`) are left untouched.
 - Basic json-compatible types are left untouched. This is determined by the annotation, not the actual value.
-- If None is given as a value to deserialize into anything, None is given back. Absolutely no validation occurs in this case.
+- If `None` is given as a value to deserialize into anything, `None` is given back. Absolutely no validation occurs in this case.
+
 - You can only `Union` basic json-compatible types, or `List[T], T`
 - No support for additional `typing` and `collections` objects other than the ones mentioned in this documentation.
 
@@ -140,7 +141,8 @@ Wouldn't it be convenient if you could create simple classes/dataclasses around 
 
 There are many  But you can solve it with flex. In one line, too!
 
-Start by designing a hierarchy of classes with annotations that closely follows the API reference.
+Start by designing a hierarchy of classes with annotations that closely follow the API reference.
+
 Remember, casing and underscore are ignored in flex, so you could use pep8 if you want:
 
 ```python
@@ -176,7 +178,8 @@ class Transaction:
 
 Did you notice any flex-related boilerplate in the snippet above? No? Good! :)
 
-Here's how you can use flex's deserializer to bend the furious API's response into your perfect python classes:
+Here's how you can use the flex deserializer to bend the furious API response into your perfect python classes:
+
 
 
 
@@ -340,7 +343,8 @@ _ = fn(**payload)
 
 Unflex is one of the utilities used by `flex.deserializer`.
 
-It is responsible to adjust the keyword arguments of a dictionary, so they match the argument names of a target function.
+It is responsible for adjusting the keyword arguments of a dictionary, so that they match the argument names of a target function.
+
 
 It does not perform any conversion; all it does is matching keys.
 Extra keys are dropped by default:
