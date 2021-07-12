@@ -1,9 +1,9 @@
 from dataclasses import dataclass
+from typing import Final, List, Any, Optional, Union, Dict, Type
 
 import pytest
 from coveo_functools.exceptions import UnsupportedAnnotation
-from typing import Final, List, Any, Optional, Union, Dict, Type
-
+from coveo_testing.markers import UnitTest
 from coveo_testing.parametrize import parametrize
 
 from coveo_functools.flex import deserialize, JSON_TYPES
@@ -22,6 +22,7 @@ DEFAULT_MAP_PAYLOAD = {"item1": DEFAULT_PAYLOAD, "item2": DEFAULT_PAYLOAD}
 DEFAULT_MAP_MOCK: Final[Dict[str, MockType]] = {"item1": DEFAULT_MOCK, "item2": DEFAULT_MOCK}
 
 
+@UnitTest
 @parametrize(
     ("hint", "payload", "expected"),
     (
@@ -60,6 +61,7 @@ def test_deserialize_to_list(hint: Any, payload: Any, expected: Any) -> None:
     assert deserialize(payload, hint=hint) == expected
 
 
+@UnitTest
 def test_deserialize_unions_passthrough() -> None:
     """Anything from the json types will be given back without checking; this allows unions of base types."""
     union = Union[JSON_TYPES]  # type: ignore[valid-type]
@@ -67,6 +69,7 @@ def test_deserialize_unions_passthrough() -> None:
     assert deserialize(DEFAULT_VALUE, hint=union) == DEFAULT_VALUE
 
 
+@UnitTest
 def test_deserialize_unions_limited() -> None:
     """
     When it's not 100% builtin types, flex limits to a single type within unions.
@@ -76,6 +79,7 @@ def test_deserialize_unions_limited() -> None:
         assert deserialize(DEFAULT_VALUE, hint=Union[str, MockType]) == DEFAULT_VALUE
 
 
+@UnitTest
 @parametrize("hint", (Union[MockType, List[MockType]], Union[List[MockType], MockType]))
 @parametrize(
     ("payload", "expected"),
@@ -95,6 +99,7 @@ def test_deserialize_thing_or_list_of_things(hint: Type, payload: Any, expected:
     assert deserialize(payload, hint=hint) == expected
 
 
+@UnitTest
 @parametrize(
     "hint",
     (
@@ -111,6 +116,7 @@ def test_deserialize_dict(hint: Type) -> None:
     assert deserialize(DEFAULT_PAYLOAD, hint=hint) == DEFAULT_PAYLOAD
 
 
+@UnitTest
 @parametrize(
     "hint",
     (
@@ -123,6 +129,7 @@ def test_deserialize_dict_with_custom_value_type(hint: Any) -> None:
     assert deserialize(DEFAULT_MAP_PAYLOAD, hint=hint) == DEFAULT_MAP_MOCK
 
 
+@UnitTest
 @parametrize(
     ("hint", "payload", "expected"),
     (
@@ -147,6 +154,7 @@ def test_deserialize_dict_complex(hint: Any, payload: Any, expected: Any) -> Non
     assert deserialize(payload, hint=hint) == expected
 
 
+@UnitTest
 def test_deserialize_dict_invalid_union() -> None:
     """Make sure the union rules are respected in the dict value annotation."""
     with pytest.raises(UnsupportedAnnotation):

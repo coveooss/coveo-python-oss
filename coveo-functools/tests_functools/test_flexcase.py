@@ -27,6 +27,7 @@ def _flexcase_test(mock_class: Callable) -> None:
     assert mock_class(ArG_1=1, Arg2=True)
     assert mock_class(_arG1=1, A___rg2_=True)
     assert mock_class(ar_g2=True, ARG_1=1)
+    assert mock_class(**{"A r_ g. 1": True, "__arg2": True})
 
 
 @UnitTest
