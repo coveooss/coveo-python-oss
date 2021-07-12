@@ -195,7 +195,7 @@ payload = {
 }
 
 transaction = flex.deserialize(payload, hint=Transaction)
-all_transactions = flex.deserialize(payload, hint=List[Transaction])
+all_transactions = flex.deserialize([payload, payload], hint=List[Transaction])
 ```
 
 Interesting details:
