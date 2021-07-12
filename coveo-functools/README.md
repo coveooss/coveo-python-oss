@@ -1,18 +1,18 @@
-# coveo-functools
+# `coveo-functools`
 
 Introspection, finalizers, delegates, dispatchers, waiters...
 These utilities aim at increasing productivity!
 
 
-# annotations
+# `annotations`
 
 Introspect classes and callables at runtime.
 
 Can convert string annotations into their actual type reference.
 
 
-# flex
-## overview
+# `flex`
+## Overview
 Flex works with annotations to adjust and convert input data to match your target structure.
 
 It was originally done as a mean to fit `CamelCase` payloads from external APIs into `snake_case` classes.
@@ -110,7 +110,7 @@ Flex can be used with:
 These are subject to change.
 
 
-## flex.deserialize
+## `flex.deserialize`
 
 This is where the magic happens, and is the recommended usage whenever it meets your use case. 
 
@@ -135,11 +135,9 @@ Here's an example puzzle! An uncanny API returns a messy "transaction" JSON:
 }
 ```
 
-
 Wouldn't it be convenient if you could create simple classes/dataclasses around them without any boilerplate?
 
-
-There are many  But you can solve it with flex. In one line, too!
+You can solve it with flex. In one line, too!
 
 Start by designing a hierarchy of classes with annotations that closely follow the API reference.
 
@@ -180,9 +178,6 @@ Did you notice any flex-related boilerplate in the snippet above? No? Good! :)
 
 Here's how you can use the flex deserializer to bend the furious API response into your perfect python classes:
 
-
-
-
 ```python
 payload = {
     "Sold_To": {"Name": "Jon"},
@@ -199,19 +194,19 @@ payload = {
     "Id": "GgfhAs89876yh.z"
 }
 
-one_transaction = flex.deserialize(payload, hint=Transaction)
-list_transactions = flex.deserialize([payload, payload], hint=List[Transaction])
+transaction = flex.deserialize(payload, hint=Transaction)
+all_transactions = flex.deserialize(payload, hint=List[Transaction])
 ```
 
 Interesting details:
 - Well, the casing worked! :shrug:
 - `Id` and `NOTE` were dropped because they were excluded from the `Transaction` model. Time saver; some APIs return _tons_ of data.
 - The rebates actually kept the keys, and created `Rebate` instances as the values.
-- In some cases, rebates is a `Rebate` instance, sometimes it's a `List[Rebate]`; it follows whatever the API returns because it was annotated as such.
-- In the `get_all_transactions` call, `List[Annotation]` was used directly as the hint. Nifty!
+- The value type of the `rebates` dict is either a single `Rebate` instance or a list of them. See the "thing or list of things" section below for considerations.
+- In the `all_transactions` variable, `List[Annotation]` was used directly as the hint. Nifty!
 
 
-## @flex and flex(obj)
+## `@flex` and `flex(obj)`
 
 There is a decorator version of `deserialize`.
 
@@ -312,7 +307,7 @@ class ApiWrapper:
 ```
 
 
-## consideration vs mypy
+## Consideration for mypy
 
 There is one annotation case worth mentioning. 
 Consider this code:
@@ -339,7 +334,7 @@ payload: Dict[str, Any] = {"inner": {}}
 _ = fn(**payload)
 ```
 
-# unflex
+# `unflex`
 
 Unflex is one of the utilities used by `flex.deserializer`.
 
@@ -361,7 +356,7 @@ assert unflex(fn, {"ARG1": ..., "ArG_2": ..., "extra": ...}) == {"arg1": ..., "a
 Note: To target classes, you need to `unflex(cls.__init__, ...)`
 
 
-## @flexcase
+## `@flexcase`
 
 `flexcase` is the decorator version of `unflex`:
 
@@ -378,7 +373,7 @@ assert fn(ARG1="hello", _arg2="world", extra=...) == "hello world"
 ```
 
 
-# dispatch
+# `dispatch`
 
 An enhanced version of [functools.singledispatch](https://docs.python.org/3.8/library/functools.html#functools.singledispatch):
 
@@ -388,7 +383,7 @@ An enhanced version of [functools.singledispatch](https://docs.python.org/3.8/li
 - You can target an argument by its name too, regardless of its position
 
 
-## finalizer
+## `finalizer`
 
 A classic and simple try/finally context manager that launches a delegate once a block of code has completed.
 
@@ -411,7 +406,7 @@ def test_spawning_containers() -> None:
 ```
 
 
-## wait.until()
+## `wait.until()`
 
 Waits for a condition to happen. Can be configured with exceptions to ignore.
 
@@ -426,7 +421,7 @@ wait.until(_ready, timeout_s=30, retry_ms=100, handle_exceptions=ConnectionError
            failure_message="The service failed to respond in time.")
 ```
 
-## wait.Backoff
+## `wait.Backoff`
 
 A customizable class to assist in the creation of backoff retry strategies.
 
