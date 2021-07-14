@@ -1,11 +1,18 @@
 import functools
 import json
 from pathlib import Path
-from typing import Set, Dict, cast, List, Optional
+from typing import Set, Dict, cast, List, Optional, Tuple
 
 from coveo_styles.styles import echo
 from coveo_systools.subprocess import check_call, check_output
-from poetry.core.packages import Package
+from poetry.core.packages import (
+    Package,
+    Dependency,
+    DirectoryDependency,
+    FileDependency,
+    URLDependency,
+    VCSDependency,
+)
 
 from coveo_stew.environment import PythonEnvironment, PythonTool
 from coveo_stew.exceptions import PythonProjectException
@@ -136,8 +143,7 @@ class _OfflinePublish:
         from coveo_stew.discovery import find_pyproject
 
         # prepare the pip wheel call
-        to_download: Set[Package] = set()
-        index_urls: Set[str] = set()
+        to_download: Set[Dependency] = set()
 
         for requirement in self.valid_packages:
             if requirement not in self._locked_packages:
@@ -149,22 +155,72 @@ class _OfflinePublish:
                 local_dependency.build(self.wheelhouse)
             else:
                 # use the version from the locker, not from the installed packages
-                locked_dependency = self._locked_packages[requirement]
-                to_download.add(locked_dependency)
-                if locked_dependency.source_url:
-                    index_urls.add(locked_dependency.source_url)
+                to_download.add(self._locked_packages[requirement].to_dependency())
 
-        self._call_pip_wheel(*to_download, index_urls=index_urls)
+        self._call_pip_wheel(*to_download)
 
-    def _call_pip_wheel(self, *packages: Package, index_urls: Set[str] = None) -> None:
+    def _get_default_url_and_extras(self) -> Tuple[Optional[str], Set[str]]:
+        """
+        Returns the --index-url and the --extra-index-urls for this package.
+        If the index url is empty, it wasn't specified and thus should use the system's default.
+        """
+        # determine the base pypi url(s) (--index-url vs --extra-index-url)
+        # https://python-poetry.org/docs/repositories/#install-dependencies-from-a-private-repository
+        default_url: Optional[str] = None
+        maybe_default: Optional[str] = None
+        extra_index_urls: Set[str] = set()
+
+        for source in self.project.poetry.local_config.get("source", []):
+            if source.get("default"):
+                # the default always wins, This is how you override pypi.org completely.
+                default_url = source["url"]
+            elif source.get("secondary"):
+                # these never win
+                extra_index_urls.add(source["url"])
+            else:
+                # this one is complicated. if it's default, we need to consider pypi.org a secondary.
+                # but if there's an explicit default, it should become an extra url.
+                maybe_default = source["url"]
+
+        if maybe_default and default_url:
+            # default wins, overrides pypi.org, the other becomes secondary
+            extra_index_urls.add(maybe_default)
+
+        if maybe_default and not default_url:
+            # it becomes the default and pypi.org becomes secondary
+            default_url = maybe_default
+            extra_index_urls.add("https://pypi.org/simple")
+
+        return default_url, extra_index_urls
+
+    def _call_pip_wheel(self, *packages: Dependency) -> None:
         """Call pip wheel to download the packages, with optional extra index urls."""
         if not packages:
             return
 
+        index_url, extra_index_urls = self._get_default_url_and_extras()
+
+        identifiers = []
+        for package in packages:
+            if isinstance(package, (DirectoryDependency, FileDependency)):
+                raise NotImplementedError(package)
+
+            elif isinstance(package, URLDependency):
+                raise NotImplementedError(package)
+
+            elif isinstance(package, VCSDependency):
+                identifiers.append(
+                    f"{package.vcs}+{package.source_url}@{package.source_resolved_reference}"
+                )
+
+            else:
+                identifiers.append(f"{package.name}=={package.constraint}")
+                if package.source_url:
+                    extra_index_urls.add(package.source_url)
+
         command = self.environment.build_command(
             PythonTool.Pip,
             "wheel",
-            *(f"{requirement.name}=={requirement.version}" for requirement in packages),
             "--wheel-dir",
             self.wheelhouse,
             "--no-deps",
@@ -172,10 +228,13 @@ class _OfflinePublish:
             *_DEFAULT_PIP_OPTIONS,
         )
 
-        if index_urls:
-            command += "--index-url", index_urls.pop()
-            for extra_url in index_urls:
-                command += "--extra-index-url", extra_url
+        if index_url:
+            command += "--index-url", index_url
+
+        for extra_url in extra_index_urls:
+            command += "--extra-index-url", extra_url
+
+        command += identifiers
 
         self._check_call(*command)
 
