@@ -5,14 +5,12 @@ from typing import Set, Dict, cast, List, Optional, Tuple
 
 from coveo_styles.styles import echo
 from coveo_systools.subprocess import check_call, check_output
-from poetry.core.packages import (
-    Package,
-    Dependency,
-    DirectoryDependency,
-    FileDependency,
-    URLDependency,
-    VCSDependency,
-)
+from poetry.core.packages.dependency import Dependency
+from poetry.core.packages.directory_dependency import DirectoryDependency
+from poetry.core.packages.file_dependency import FileDependency
+from poetry.core.packages.package import Package
+from poetry.core.packages.url_dependency import URLDependency
+from poetry.core.packages.vcs_dependency import VCSDependency
 
 from coveo_stew.environment import PythonEnvironment, PythonTool
 from coveo_stew.exceptions import PythonProjectException
