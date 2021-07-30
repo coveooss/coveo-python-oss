@@ -181,13 +181,12 @@ def test_deserialize_enum(value: str) -> None:
     assert deserialize(value, hint=TestEnum) is TestEnum.TestKey
 
 
-@dataclass
-class SomeClass:
-    test: TestEnum
-
-
 @UnitTest
 def test_deserialize_enum_nested() -> None:
+    @dataclass
+    class SomeClass:
+        test: TestEnum
+
     assert deserialize({"Test": "test.key"}, hint=SomeClass).test is TestEnum.TestKey
 
 
