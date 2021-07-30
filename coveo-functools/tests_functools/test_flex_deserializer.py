@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from enum import Enum
 from typing import Final, List, Any, Optional, Union, Dict, Type
 
 import pytest
@@ -12,6 +13,11 @@ from coveo_functools.flex import deserialize, JSON_TYPES
 @dataclass
 class MockType:
     value: str
+
+
+class TestEnum(Enum):
+    OtherKey = "other-value"
+    TestKey = "test-value"
 
 
 DEFAULT_VALUE: Final[str] = "yup"
@@ -159,6 +165,39 @@ def test_deserialize_dict_invalid_union() -> None:
     """Make sure the union rules are respected in the dict value annotation."""
     with pytest.raises(UnsupportedAnnotation):
         _ = deserialize(DEFAULT_PAYLOAD, hint=Dict[str, Union[str, MockType]])
+
+
+@UnitTest
+@parametrize(
+    "value",
+    (
+        "test-value",  # exact value
+        "TestValue",  # fish for value
+        "test-key",  # fish for name
+        "TestKey",  # exact name
+    ),
+)
+def test_deserialize_enum(value: str) -> None:
+    assert deserialize(value, hint=TestEnum) is TestEnum.TestKey
+
+
+@dataclass
+class SomeClass:
+    test: TestEnum
+
+
+@UnitTest
+def test_deserialize_enum_nested() -> None:
+    assert deserialize({"Test": "test.key"}, hint=SomeClass).test is TestEnum.TestKey
+
+
+@UnitTest
+def test_deserialize_enum_list() -> None:
+    assert deserialize(["test-value", "TestKey", "otherkey"], hint=List[TestEnum]) == [
+        TestEnum.TestKey,
+        TestEnum.TestKey,
+        TestEnum.OtherKey,
+    ]
 
 
 def test_deserialize_static_typing() -> None:
