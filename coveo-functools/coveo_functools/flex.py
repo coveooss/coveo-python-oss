@@ -3,6 +3,7 @@ from __future__ import annotations
 import collections
 import functools
 import inspect
+from enum import Enum
 from typing import (
     Type,
     TypeVar,
@@ -19,10 +20,11 @@ from typing import (
     List,
     Sequence,
     cast,
+    Iterable,
 )
 
 from coveo_functools.annotations import find_annotations
-from coveo_functools.casing import unflex, flexcase
+from coveo_functools.casing import unflex, flexcase, TRANSLATION_TABLE
 from coveo_functools.dispatch import dispatch
 from coveo_functools.exceptions import UnsupportedAnnotation
 
@@ -194,7 +196,7 @@ def _deserialize(value: Any, *, hint: TypeHint, contains: Optional[TypeHint] = N
 
 
 @_deserialize.register(list)
-def _deserialize_list(value: Any, *, hint: list, contains: Optional[TypeHint] = None) -> List:
+def _deserialize_list(value: Any, *, hint: Type[list], contains: Optional[TypeHint] = None) -> List:
     """List deserialization into list of things."""
     if _is_array_like(value):
         return [deserialize(item, hint=contains) for item in value]
@@ -203,9 +205,42 @@ def _deserialize_list(value: Any, *, hint: list, contains: Optional[TypeHint] = 
 
 
 @_deserialize.register(dict)
-def _deserialize_dict(value: Any, *, hint: dict, contains: Optional[TypeHint] = None) -> Dict:
+def _deserialize_dict(value: Any, *, hint: Type[dict], contains: Optional[TypeHint] = None) -> Dict:
     if isinstance(value, collections.Mapping):
         return {key: deserialize(val, hint=contains or Any) for key, val in value.items()}
+
+    return value  # type: ignore[no-any-return]
+
+
+def _flex_translate(string: str) -> str:
+    return string.casefold().translate(TRANSLATION_TABLE)
+
+
+@_deserialize.register(Enum)
+def _deserialize_enum(value: Any, *, hint: Type[Enum], contains: Optional[TypeHint] = None) -> Enum:
+    try:
+        # value match
+        return hint(value)
+    except ValueError:
+        pass
+
+    try:
+        # name match
+        return hint[value]
+    except KeyError:
+        pass
+
+    if isinstance(value, str):
+        # fish!
+        simplekey = _flex_translate(value)
+        for enum_item in cast(Iterable[Enum], hint):
+            if (
+                # fish for value typos first
+                (isinstance(enum_item.value, str) and _flex_translate(enum_item.value) == simplekey)
+                # then look if the enum names look like it would match
+                or _flex_translate(enum_item.name) == simplekey
+            ):
+                return enum_item
 
     return value  # type: ignore[no-any-return]
 
