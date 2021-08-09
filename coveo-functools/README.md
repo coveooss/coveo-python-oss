@@ -88,6 +88,7 @@ This is because `json.load()` already returns these values in the proper type. T
 
 Flex can be used with:
 - Classes and dataclasses
+- Enums *(new in 2.0.6)* 
 - Functions
 - Methods
 - `Union[str, bool, int, float, list, dict, None]`  (or any combination of these basic **json-compatible types**)
@@ -108,6 +109,16 @@ Flex can be used with:
 - No support for additional `typing` and `collections` objects other than the ones mentioned in this documentation.
 
 These are subject to change.
+
+
+### About Enums
+
+Enums will resolve by value or name, in this order:
+
+1. By exact value (str/int/etc)
+1. By exact name (str)
+1. By flexed value (str)
+1. By flexed name (str)
 
 
 ## `flex.deserialize`
