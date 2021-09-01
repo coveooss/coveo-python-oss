@@ -7,4 +7,4 @@ class Flexception(CoveoFunctoolsException):  # sorry for the pun :socanadian:
 
 
 class UnsupportedAnnotation(Flexception, NotImplementedError):
-    """When an annotation isn't suported."""
+    """When an annotation isn't supported."""
