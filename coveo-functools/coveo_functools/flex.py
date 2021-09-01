@@ -4,6 +4,7 @@ import collections
 import functools
 import inspect
 from enum import Enum
+from inspect import isabstract
 from typing import (
     Type,
     TypeVar,
@@ -141,6 +142,9 @@ def deserialize(value: Any, *, hint: Union[T, Type[T]]) -> T:
     - If hint is a custom class, the value must be a dictionary to "flex" into the class.
     - Hint may be a `Union[T, List[T]]`, in which case the value must be a dict or a list of them.
     """
+    if isabstract(hint):
+        raise UnsupportedAnnotation(f"{hint} is abstract and cannot be instantiated.")
+
     if value is None:
         return None  # nope!
 
