@@ -1,7 +1,4 @@
-from __future__ import annotations
-
 import collections
-import functools
 import inspect
 from enum import Enum
 from inspect import isabstract
@@ -14,113 +11,38 @@ from typing import (
     get_origin,
     Union,
     Dict,
-    Callable,
     Tuple,
     overload,
-    Final,
     List,
     Sequence,
     cast,
     Iterable,
+    Callable,
 )
 
 from coveo_functools.annotations import find_annotations
-from coveo_functools.casing import unflex, flexcase, TRANSLATION_TABLE
+from coveo_functools.casing import TRANSLATION_TABLE, unflex
 from coveo_functools.dispatch import dispatch
 from coveo_functools.exceptions import UnsupportedAnnotation
+from coveo_functools.flex.types import TypeHint, PASSTHROUGH_TYPES
 
-_ = unflex, flexcase  # mark them as used (forward compatibility vs docs)
-
-
-JSON_TYPES = (
-    str,
-    bool,
-    int,
-    float,
-    type(None),
-    dict,
-)  # list omitted to support list of custom types
-PASSTHROUGH_TYPES = {None, Any, *JSON_TYPES}
 
 T = TypeVar("T")
 
-TypeHint = Any  # :shrug:
 
-RealClass = Type[T]
-RealFunction = Callable[..., T]
-RealObject = Union[RealClass, RealFunction]
-WrappedClass = Type[T]
-WrappedFunction = Callable[..., T]
-WrappedObject = Union[WrappedClass, WrappedFunction]
+def prepare_payload_for_unpacking(
+    fn: Callable[..., T], dirty_kwargs: Dict[str, Any]
+) -> Dict[str, Any]:
+    """Return a copy of `dirty_kwargs` that can be `**unpacked` to fn()."""
+    mapped_kwargs = unflex(fn, dirty_kwargs)
+    converted_kwargs = {}
 
+    for arg_name, arg_type in find_annotations(fn).items():
+        if arg_name not in mapped_kwargs:
+            continue  # this may be ok, for instance if the target argument has a default
+        converted_kwargs[arg_name] = deserialize(mapped_kwargs[arg_name], hint=arg_type)
 
-RAW_KEY: Final[str] = "_coveo_functools_flexed_from_"
-
-
-@overload
-def flex() -> Callable[[RealObject], WrappedObject]:
-    ...
-
-
-@overload
-def flex(obj: None) -> Callable[[RealObject], WrappedObject]:
-    ...
-
-
-@overload
-def flex(obj: RealClass) -> WrappedClass:
-    ...
-
-
-@overload
-def flex(obj: RealFunction) -> WrappedFunction:
-    ...
-
-
-def flex(
-    obj: Optional[RealObject] = None,
-) -> Union[WrappedObject, Callable[[RealObject], WrappedObject]]:
-    """Wraps `obj` into recursive flexcase magic."""
-    if obj is not None:
-
-        """
-        Covers decorator usages without parenthesis:
-
-            @flex
-            def obj(...)
-
-            @flex
-            class C:
-                @flex
-                def obj(self, ...)
-                    ...
-
-        Also covers the complete inline usage:
-
-            f = flex(obj, ...)(**dirty_kwargs)
-
-        """
-
-        return _generate_wrapper(obj)
-
-    else:
-
-        """
-        Covers decorator usages with parenthesis:
-
-            @flex()
-            def obj(...)
-
-            @flex()
-            class C:
-
-                @flex()
-                def obj(self, ...)
-                    ...
-        """
-
-        # python's mechanic is going to call us again with the obj as the first (and only) argument to get a wrapper.
-        return flex
+    return converted_kwargs
 
 
 @overload
@@ -192,9 +114,9 @@ def deserialize(value: Any, *, hint: Union[T, Type[T]]) -> T:
 
 @dispatch(switch_pos="hint")
 def _deserialize(value: Any, *, hint: TypeHint, contains: Optional[TypeHint] = None) -> Any:
-    """Fallback deserialization; if dict and hint is class, flex it. Else just return value."""
+    """Fallback deserialization; if value is dict and hint is class, flex it. Else just return value."""
     if inspect.isclass(hint) and isinstance(value, dict):
-        return flex(hint)(**value)  # type: ignore[call-arg]
+        return hint(**prepare_payload_for_unpacking(hint.__init__, value))
 
     return value
 
@@ -247,65 +169,6 @@ def _deserialize_enum(value: Any, *, hint: Type[Enum], contains: Optional[TypeHi
                 return enum_item
 
     return value  # type: ignore[no-any-return]
-
-
-@overload
-def _generate_wrapper(obj: RealClass) -> WrappedClass:
-    ...
-
-
-@overload
-def _generate_wrapper(obj: RealFunction) -> WrappedFunction:
-    ...
-
-
-def _generate_wrapper(obj: RealObject) -> WrappedObject:
-    """Generates a wrapper over obj."""
-    # handle custom objects
-    if inspect.isclass(obj):
-        return _generate_class_wrapper(obj)  # type: ignore[arg-type]
-
-    # handle custom callables
-    return _generate_callable_wrapper(obj)
-
-
-def _generate_callable_wrapper(fn: RealFunction) -> WrappedFunction:
-    """Class decorators"""
-
-    @functools.wraps(fn)
-    def wrapper(*args: Any, **kwargs: Any) -> T:
-        value: T = fn(*args, **_remap_and_convert(fn, kwargs))
-        if hasattr(value, "__dict__"):
-            value.__dict__[RAW_KEY] = kwargs
-        return value
-
-    return wrapper
-
-
-def _generate_class_wrapper(obj: RealClass) -> WrappedClass:
-    """Function decorators"""
-    fn: RealFunction = obj.__init__
-
-    @functools.wraps(fn)
-    def new_init(*args: Any, **kwargs: Any) -> None:
-        setattr(args[0], RAW_KEY, kwargs)  # set the raw data on self
-        fn(*args, **_remap_and_convert(fn, kwargs))
-
-    obj.__init__ = new_init
-    return obj
-
-
-def _remap_and_convert(fn: RealFunction, dirty_kwargs: Dict[str, Any]) -> Dict[str, Any]:
-    """Orchestrates the deserialization of `dirty_kwargs` into `fn`."""
-    mapped_kwargs = unflex(fn, dirty_kwargs)
-    converted_kwargs = {}
-
-    for arg_name, arg_type in find_annotations(fn).items():
-        if arg_name not in mapped_kwargs:
-            continue  # this may be ok, for instance if the target argument has a default
-        converted_kwargs[arg_name] = deserialize(mapped_kwargs[arg_name], hint=arg_type)
-
-    return converted_kwargs
 
 
 def _resolve_hint(thing: TypeHint) -> Tuple[TypeHint, Sequence[TypeHint]]:
