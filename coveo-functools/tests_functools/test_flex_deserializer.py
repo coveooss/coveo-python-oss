@@ -242,13 +242,3 @@ def test_deserialize_static_typing() -> None:
 
         # mypy sees that fn returns a str, not an int
         _ = deserialize(fn, hint=fn)(value="") / 2  # type: ignore[operator]
-
-
-def test_flex_raise_on_abstract() -> None:
-    class Abstract(metaclass=ABCMeta):
-        @abstractmethod
-        def api(self) -> None:
-            ...
-
-    with pytest.raises(UnsupportedAnnotation):
-        deserialize({}, hint=Abstract)

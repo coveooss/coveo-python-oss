@@ -57,6 +57,22 @@ WrappedObject = Union[WrappedClass, WrappedFunction]
 RAW_KEY: Final[str] = "_coveo_functools_flexed_from_"
 
 
+_subclass_adapters: Dict[Type, Callable[[Any], TypeHint]] = {}
+
+
+def register_subclass_adapter(base_class: Type, adapter: Callable[[Any], TypeHint]) -> None:
+    """
+    Registers a custom callback for a type. This is necessary when an annotation is abstract.
+
+    The callback will receive the raw payload value. It should inspect this payload and return the appropriate type
+    for deserialization.
+    """
+    if base_class in _subclass_adapters:
+        raise RuntimeError("An adapter for this class was already registered.")
+
+    _subclass_adapters[base_class] = adapter
+
+
 @overload
 def flex() -> Callable[[RealObject], WrappedObject]:
     ...
@@ -142,11 +158,15 @@ def deserialize(value: Any, *, hint: Union[T, Type[T]]) -> T:
     - If hint is a custom class, the value must be a dictionary to "flex" into the class.
     - Hint may be a `Union[T, List[T]]`, in which case the value must be a dict or a list of them.
     """
-    if isabstract(hint):
-        raise UnsupportedAnnotation(f"{hint} is abstract and cannot be instantiated.")
-
     if value is None:
         return None  # nope!
+
+    if hint in _subclass_adapters:
+        # ask the adapter what the hint should be for this value
+        hint = _subclass_adapters[hint](value)
+
+    if isabstract(hint):
+        raise UnsupportedAnnotation(f"{hint} is abstract and cannot be instantiated.")
 
     # origin: like `list` for `List` or `Union` for `Optional`
     # args: like (str, int) for Optional[str, int]
@@ -194,7 +214,7 @@ def deserialize(value: Any, *, hint: Union[T, Type[T]]) -> T:
 def _deserialize(value: Any, *, hint: TypeHint, contains: Optional[TypeHint] = None) -> Any:
     """Fallback deserialization; if dict and hint is class, flex it. Else just return value."""
     if inspect.isclass(hint) and isinstance(value, dict):
-        return flex(hint)(**value)  # type: ignore[call-arg]
+        return flex(hint)(**value)
 
     return value
 

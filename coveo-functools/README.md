@@ -88,6 +88,7 @@ This is because `json.load()` already returns these values in the proper type. T
 
 Flex can be used with:
 - Classes and dataclasses
+- Abstract classes *(new in 2.0.9)* (requires adapter; explained below)
 - Enums *(new in 2.0.6)* 
 - Functions
 - Methods
@@ -104,11 +105,55 @@ Flex can be used with:
 - Variable positional args (such as `def fn(*args): ...`) are left untouched.
 - Basic json-compatible types are left untouched. This is determined by the annotation, not the actual value.
 - If `None` is given as a value to deserialize into anything, `None` is given back. Absolutely no validation occurs in this case.
-
 - You can only `Union` basic json-compatible types, or `List[T], T`
 - No support for additional `typing` and `collections` objects other than the ones mentioned in this documentation.
+- If an annotation is an Abstract class, a subclass adapter must be registered.
 
 These are subject to change.
+
+
+### Subclass adapters (required for Abstract classes)
+
+You can selectively decide which subclass to instantiate based on the payload to deserialize.
+
+This is necessary when annotating structures with Abstract classes, 
+but it can be used for any other class as well.
+
+For this to work, you must register the annotated class with a callback:
+
+```python
+from coveo_functools.flex import register_subclass_adapter
+
+class Abstract:
+  @abstractmethod
+  def api(self) -> None:
+    ...
+
+  
+class ThisImplementation(Abstract):
+  def api(self) -> None:
+    ...
+  
+  
+class OtherImplementation(Abstract):
+  def api(self) -> None:
+    ...
+  
+  
+def adapter(payload: Any) -> Type:
+  assert isinstance(payload, dict)  # actual type depends on payload
+  return ThisImplementation if 'this' in payload else OtherImplementation
+  
+  
+register_subclass_adapter(Abstract, adapter)
+```
+
+Thanks to the adapter, this is now possible:
+
+```python
+assert isinstance(deserialize({'this': {}}, hint=Abstract), ThisImplementation)
+assert isinstance(deserialize({}, hint=Abstract), OtherImplementation)
+```
 
 
 ### About Enums
