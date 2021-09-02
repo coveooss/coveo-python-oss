@@ -13,7 +13,7 @@ from typing import (
     Type,
 )
 
-from coveo_functools.flex.deserializer import prepare_payload_for_unpacking
+from coveo_functools.flex.deserializer import convert_kwargs_for_unpacking
 
 
 T = TypeVar("T")
@@ -120,7 +120,7 @@ def _generate_callable_wrapper(fn: RealFunction) -> WrappedFunction:
 
     @functools.wraps(fn)
     def wrapper(*args: Any, **kwargs: Any) -> T:
-        value: T = fn(*args, **prepare_payload_for_unpacking(fn, kwargs))
+        value: T = fn(*args, **convert_kwargs_for_unpacking(kwargs, hint=fn))
         if hasattr(value, "__dict__"):
             value.__dict__[RAW_KEY] = kwargs
         return value
@@ -135,7 +135,7 @@ def _generate_class_wrapper(obj: RealClass) -> WrappedClass:
     @functools.wraps(fn)
     def new_init(*args: Any, **kwargs: Any) -> None:
         setattr(args[0], RAW_KEY, kwargs)  # set the raw data on self
-        fn(*args, **prepare_payload_for_unpacking(fn, kwargs))
+        fn(*args, **convert_kwargs_for_unpacking(kwargs, hint=fn))
 
     obj.__init__ = new_init
     return obj
