@@ -5,10 +5,10 @@ from coveo_functools.flex.types import TypeHint
 
 T = TypeVar("T")
 
-_subclass_adapters: Dict[Type, Callable[[Any], Type]] = {}
+_subclass_adapters: Dict[Type, Callable[[Any], TypeHint]] = {}
 
 
-def register_subclass_adapter(hint: TypeHint, adapter: Callable[[Any], Type]) -> None:
+def register_subclass_adapter(hint: TypeHint, adapter: Callable[[Any], TypeHint]) -> None:
     """
     Registers a custom callback for a type. This is necessary when an annotation is abstract.
 

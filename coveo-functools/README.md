@@ -172,15 +172,20 @@ assert isinstance(instance, ThisImplementation)
 
 The intended use of subclass adapters is to support Abstract classes as annotations.
 
-Any other use will generally mess up your type annotation game because they alter the types dynamically at runtime.
-This will never play well with IDEs and linters which rely on static analysis.
+Any other use will generally:
+  1. Mess up your type annotation game because types are altered dynamically at runtime.
+  1. Make your code more obscure and more likely to investigate the dark arts.
+  1. Break your IDE's autocompletion features.
+  1. Linters which rely on static analysis will not be as powerful as they could be.
 
 
-Keep in mind that:
+That being said, it's a powerful and potentially game-breaking feature 
+that can be used to bend the framework if you accept bearing the consequences:
   - There are no validations, to allow duck typing and stuff
   - This means you don't *have* to return an actual subclass; just something that can handle that payload
   - You can register a callback for `Any` (or anything else really)
   - You're not limited to return custom classes: you can return things like `Dict[str, int]` or `List[Implementation]` and the flex machinery will handle it just as if it was statically annotated that way.
+  - The payload `value` received by the adapter is not a copy, modifications will be honored.
 
 
 ### About Enums

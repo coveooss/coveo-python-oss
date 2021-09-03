@@ -1,10 +1,10 @@
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
-from typing import Type, Any, Generator, List, Dict
+from typing import Type, Any, Generator, List, Dict, Optional
 
 import pytest
 from coveo_functools.exceptions import UnsupportedAnnotation
-from coveo_functools.flex import deserialize
+from coveo_functools.flex import deserialize, TypeHint
 from coveo_functools.flex.subclass_adapter import register_subclass_adapter, _subclass_adapters
 from coveo_testing.parametrize import parametrize
 
@@ -23,7 +23,10 @@ class Abstract(metaclass=ABCMeta):
         ...
 
 
+@dataclass
 class Implementation(Abstract):
+    value: Optional[str] = None
+
     def api(self) -> None:
         ...
 
@@ -69,6 +72,7 @@ def test_deserialize_adapter_nested() -> None:
 
 def test_deserialize_funky_adapter() -> None:
     """The adapter is allowed to provide any substitute."""
+
     def adapter(value: Any) -> Type:
         return List[str]
 
@@ -78,23 +82,51 @@ def test_deserialize_funky_adapter() -> None:
 
 def test_deserialize_any_adapter() -> None:
     """Even Any, which could be very powerful."""
-    def any_adapter(value: Any) -> Type:
+
+    def any_adapter(value: Any) -> TypeHint:
         if isinstance(value, list):
             return List[Abstract]
         if isinstance(value, dict):
             return Dict[str, Abstract]
         return Any
 
-    def abstract_adapter(value: Any) -> Type:
+    def abstract_adapter(value: Any) -> TypeHint:
         return Implementation
 
     register_subclass_adapter(Any, any_adapter)
     register_subclass_adapter(Abstract, abstract_adapter)
 
     instance: Any = deserialize([{}, {}, {}], hint=Any)
-    assert isinstance(instance, list) and instance and all(isinstance(item, Implementation) for item in instance)
+    assert (
+        isinstance(instance, list)
+        and instance
+        and all(isinstance(item, Implementation) for item in instance)
+    )
 
     instance = deserialize({"item1": {}, "item2": {}}, hint=Any)
     assert isinstance(instance, dict) and instance
-    assert isinstance(instance['item1'], Implementation)
-    assert isinstance(instance['item2'], Implementation)
+    assert isinstance(instance["item1"], Implementation)
+    assert isinstance(instance["item2"], Implementation)
+
+
+def test_deserialize_mutate_value_adapter() -> None:
+    """The adapter can mutate the payload."""
+
+    def payload_adapter(value: Any) -> TypeHint:
+        assert isinstance(value, dict)
+        if "test" not in value:
+            value["test"] = {"value": "success"}
+        return Parent
+
+    def abstract_adapter(value: Any) -> TypeHint:
+        return Implementation
+
+    register_subclass_adapter(Parent, payload_adapter)
+    register_subclass_adapter(Abstract, abstract_adapter)
+
+    # the payload will be mutated
+    payload = {}
+    instance = deserialize(payload, hint=Parent)
+    assert "test" in payload
+    assert isinstance(instance.test, Implementation)
+    assert instance.test.value == "success"

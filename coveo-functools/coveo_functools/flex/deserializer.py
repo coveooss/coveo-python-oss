@@ -77,7 +77,6 @@ def deserialize(value: Any, *, hint: Union[T, Type[T]]) -> T:
             f"{hint} is abstract and cannot be instantiated."
             " To use abstract classes with flex, register a subclass adapter for this abstract type:"
             " https://github.com/coveooss/coveo-python-oss/tree/main/coveo-functools#subclassadapters"
-
         )
 
     # origin: like `list` for `List` or `Union` for `Optional`
