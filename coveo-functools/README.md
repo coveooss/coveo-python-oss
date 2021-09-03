@@ -122,7 +122,7 @@ but it can be used for any other class as well.
 For this to work, you must register the annotated class with a callback:
 
 ```python
-from coveo_functools.flex import register_subclass_adapter
+from coveo_functools.flex.subclass_adapter import register_subclass_adapter
 
 class Abstract:
   @abstractmethod

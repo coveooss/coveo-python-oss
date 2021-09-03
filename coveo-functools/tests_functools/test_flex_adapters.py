@@ -55,3 +55,16 @@ def test_deserialize_adapter(implementation_class: Type) -> None:
     register_subclass_adapter(Abstract, adapter)
     parent = deserialize({"test": {}}, hint=Parent)
     assert isinstance(parent.test, implementation_class)
+
+
+def test_deserialize_adapter_nested() -> None:
+    def adapter(value: Any) -> Type:
+        return Implementation
+
+    @dataclass
+    class Nested:
+        nested: Parent
+
+    register_subclass_adapter(Abstract, adapter)
+    instance = deserialize({"nested": {"test": {}}}, hint=Nested)
+    assert isinstance(instance.nested.test, Implementation)
