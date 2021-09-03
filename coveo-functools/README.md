@@ -181,7 +181,7 @@ Any other use will generally:
 
 That being said, it's a powerful and potentially game-breaking feature 
 that can be used to bend the framework if you accept bearing the consequences:
-  - There are no validations, to allow duck typing and stuff
+  - There are no validations (to allow duck typing and stuff)
   - This means you don't *have* to return an actual subclass; just something that can handle that payload
   - You can register a callback for `Any` (or anything else really)
   - You're not limited to return custom classes: you can return things like `Dict[str, int]` or `List[Implementation]` and the flex machinery will handle it just as if it was statically annotated that way.
