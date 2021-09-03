@@ -1,13 +1,12 @@
-from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
 from typing import Final, List, Any, Optional, Union, Dict, Type
 
 import pytest
-from coveo_functools.exceptions import UnsupportedAnnotation
 from coveo_testing.markers import UnitTest
 from coveo_testing.parametrize import parametrize
 
+from coveo_functools.exceptions import UnsupportedAnnotation
 from coveo_functools.flex import deserialize, JSON_TYPES
 
 
@@ -242,13 +241,3 @@ def test_deserialize_static_typing() -> None:
 
         # mypy sees that fn returns a str, not an int
         _ = deserialize(fn, hint=fn)(value="") / 2  # type: ignore[operator]
-
-
-def test_flex_raise_on_abstract() -> None:
-    class Abstract(metaclass=ABCMeta):
-        @abstractmethod
-        def api(self) -> None:
-            ...
-
-    with pytest.raises(UnsupportedAnnotation):
-        deserialize({}, hint=Abstract)

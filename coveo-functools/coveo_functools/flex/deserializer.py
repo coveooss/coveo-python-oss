@@ -22,6 +22,7 @@ from coveo_functools.dispatch import dispatch
 from coveo_functools.exceptions import UnsupportedAnnotation
 from coveo_functools.flex.helpers import resolve_hint
 from coveo_functools.flex.serializer import SerializationMetadata
+from coveo_functools.flex.subclass_adapter import get_subclass_adapter
 from coveo_functools.flex.types import TypeHint, PASSTHROUGH_TYPES
 
 
@@ -69,15 +70,23 @@ def deserialize(value: Any, *, hint: Union[T, Type[T]]) -> T:
     - If hint is a custom class, the value must be a dictionary to "flex" into the class.
     - Hint may be a `Union[T, List[T]]`, in which case the value must be a dict or a list of them.
     """
+    if value is None:
+        return None  # nope!
+
     if isinstance(hint, SerializationMetadata):
         # on a silver platter!
         return cast(T, _deserialize(value, hint=hint))
 
-    if isabstract(hint):
-        raise UnsupportedAnnotation(f"{hint} is abstract and cannot be instantiated.")
+    if adapter := get_subclass_adapter(hint):
+        # ask the adapter what the hint should be for this value
+        hint = adapter(value)
 
-    if value is None:
-        return None  # nope!
+    if isabstract(hint):
+        raise UnsupportedAnnotation(
+            f"{hint} is abstract and cannot be instantiated."
+            " To use abstract classes with flex, register a subclass adapter for this abstract type:"
+            " https://github.com/coveooss/coveo-python-oss/tree/main/coveo-functools#subclassadapters"
+        )
 
     # origin: like `list` for `List` or `Union` for `Optional`
     # args: like (str, int) for Optional[str, int]
