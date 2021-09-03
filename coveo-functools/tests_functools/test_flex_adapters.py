@@ -4,7 +4,8 @@ from typing import Type, Any
 
 import pytest
 from coveo_functools.exceptions import UnsupportedAnnotation
-from coveo_functools.flex import deserialize, register_subclass_adapter, _subclass_adapters
+from coveo_functools.flex import deserialize
+from coveo_functools.flex.subclass_adapter import register_subclass_adapter, _subclass_adapters
 from coveo_testing.parametrize import parametrize
 
 
