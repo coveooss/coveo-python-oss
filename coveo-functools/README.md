@@ -103,21 +103,27 @@ Flex can be used with:
 ### Limitations
 
 - Variable positional args (such as `def fn(*args): ...`) are left untouched.
-- Basic json-compatible types are left untouched. This is determined by the annotation, not the actual value.
+- Basic json-compatible types will be left untouched. This is determined by the annotation, not the actual value.
 - If `None` is given as a value to deserialize into anything, `None` is given back. Absolutely no validation occurs in this case.
-- You can only `Union` basic json-compatible types, or `List[T], T`
+- An Abstract class requires a subclass adapter that returns the non-abstract class to use.
 - No support for additional `typing` and `collections` objects other than the ones mentioned in this documentation.
-- If an annotation is an Abstract class, a subclass adapter must be registered.
+- You can only `Union` basic json-compatible types, or `List[T], T`.
+
 
 These are subject to change.
 
 
-### Subclass adapters (required for Abstract classes)
+### Subclass adapters
 
-You can selectively decide which subclass to instantiate based on the payload to deserialize.
+To use Abstract classes as annotations, you need to register subclass adapters.
 
-This is necessary when annotating structures with Abstract classes, 
-but it can be used for any other class as well.
+The adapter is a `Callable[[Any], TypeHint]` that you provide. 
+It will be called with the payload value as `Any`, so you can inspect the content.
+It must return a `TypeHint` that tells flex which class to use.
+
+With subclass adapters, you can selectively decide the implementation class based on the payload to deserialize.
+While this is necessary when annotating structures with Abstract classes, 
+it can be used for any other class as well.
 
 For this to work, you must register the annotated class with a callback:
 
@@ -153,7 +159,28 @@ Thanks to the adapter, this is now possible:
 ```python
 assert isinstance(deserialize({'this': {}}, hint=Abstract), ThisImplementation)
 assert isinstance(deserialize({}, hint=Abstract), OtherImplementation)
+
+
+@dataclass
+class Payload:
+    owner: Abstract
+    
+
+instance = deserialize({"owner": {"this": {}}}, hint=Payload)
+assert isinstance(instance, ThisImplementation)
 ```
+
+The intended use of subclass adapters is to support Abstract classes as annotations.
+
+Any other use will generally mess up your type annotation game because they alter the types dynamically at runtime.
+This will never play well with IDEs and linters which rely on static analysis.
+
+
+Keep in mind that:
+  - There are no validations, to allow duck typing and stuff
+  - This means you don't *have* to return an actual subclass; just something that can handle that payload
+  - You can register a callback for `Any` (or anything else really)
+  - You're not limited to return custom classes: you can return things like `Dict[str, int]` or `List[Implementation]` and the flex machinery will handle it just as if it was statically annotated that way.
 
 
 ### About Enums

@@ -1,6 +1,6 @@
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
-from typing import Type, Any, Generator
+from typing import Type, Any, Generator, List, Dict
 
 import pytest
 from coveo_functools.exceptions import UnsupportedAnnotation
@@ -65,3 +65,36 @@ def test_deserialize_adapter_nested() -> None:
     register_subclass_adapter(Abstract, adapter)
     instance = deserialize({"nested": {"test": {}}}, hint=Nested)
     assert isinstance(instance.nested.test, Implementation)
+
+
+def test_deserialize_funky_adapter() -> None:
+    """The adapter is allowed to provide any substitute."""
+    def adapter(value: Any) -> Type:
+        return List[str]
+
+    register_subclass_adapter(Abstract, adapter)
+    assert deserialize({"test": ["a", "b", "c"]}, hint=Parent).test == ["a", "b", "c"]
+
+
+def test_deserialize_any_adapter() -> None:
+    """Even Any, which could be very powerful."""
+    def any_adapter(value: Any) -> Type:
+        if isinstance(value, list):
+            return List[Abstract]
+        if isinstance(value, dict):
+            return Dict[str, Abstract]
+        return Any
+
+    def abstract_adapter(value: Any) -> Type:
+        return Implementation
+
+    register_subclass_adapter(Any, any_adapter)
+    register_subclass_adapter(Abstract, abstract_adapter)
+
+    instance: Any = deserialize([{}, {}, {}], hint=Any)
+    assert isinstance(instance, list) and instance and all(isinstance(item, Implementation) for item in instance)
+
+    instance = deserialize({"item1": {}, "item2": {}}, hint=Any)
+    assert isinstance(instance, dict) and instance
+    assert isinstance(instance['item1'], Implementation)
+    assert isinstance(instance['item2'], Implementation)
