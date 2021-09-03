@@ -125,7 +125,7 @@ def test_deserialize_mutate_value_adapter() -> None:
     register_subclass_adapter(Abstract, abstract_adapter)
 
     # the payload will be mutated
-    payload = {}
+    payload: Dict[str, Any] = {}
     instance = deserialize(payload, hint=Parent)
     assert "test" in payload
     assert isinstance(instance.test, Implementation)
