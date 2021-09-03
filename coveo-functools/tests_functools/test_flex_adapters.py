@@ -1,6 +1,6 @@
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
-from typing import Type, Any
+from typing import Type, Any, Generator
 
 import pytest
 from coveo_functools.exceptions import UnsupportedAnnotation
@@ -10,7 +10,7 @@ from coveo_testing.parametrize import parametrize
 
 
 @pytest.fixture(autouse=True)
-def _clear_adapters_between_tests() -> None:
+def _clear_adapters_between_tests() -> Generator[None, None, None]:
     try:
         yield
     finally:
@@ -44,10 +44,7 @@ def test_flex_raise_on_abstract() -> None:
         deserialize({}, hint=Abstract)
 
 
-@parametrize("implementation_class", (
-    Implementation,
-    DataclassImplementation
-))
+@parametrize("implementation_class", (Implementation, DataclassImplementation))
 def test_deserialize_adapter(implementation_class: Type) -> None:
     def adapter(value: Any) -> Type:
         return implementation_class

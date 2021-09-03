@@ -68,7 +68,7 @@ def deserialize(value: Any, *, hint: Union[T, Type[T]]) -> T:
     if value is None:
         return None  # nope!
 
-    if adapter := get_subclass_adapter(hint):
+    if adapter := get_subclass_adapter(cast(Type[T], hint)):
         # ask the adapter what the hint should be for this value
         hint = adapter(value)
 

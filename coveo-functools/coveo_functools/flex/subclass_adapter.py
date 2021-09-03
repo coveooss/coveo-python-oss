@@ -1,5 +1,7 @@
-from typing import Dict, Type, Callable, Any, Optional
+from typing import Dict, Type, Callable, Any, Optional, TypeVar
 
+
+T = TypeVar("T")
 
 _subclass_adapters: Dict[Type, Callable[[Any], Type]] = {}
 
@@ -17,5 +19,5 @@ def register_subclass_adapter(base_class: Type, adapter: Callable[[Any], Type]) 
     _subclass_adapters[base_class] = adapter
 
 
-def get_subclass_adapter(base_class: Type) -> Optional[Callable[[Any], Type]]:
+def get_subclass_adapter(base_class: Type[T]) -> Optional[Callable[[Any], Type[T]]]:
     return _subclass_adapters.get(base_class)
