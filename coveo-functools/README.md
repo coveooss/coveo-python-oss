@@ -88,6 +88,7 @@ This is because `json.load()` already returns these values in the proper type. T
 
 Flex can be used with:
 - Classes and dataclasses
+- Abstract classes *(new in 2.0.9)* (requires adapter; explained below)
 - Enums *(new in 2.0.6)* 
 - Functions
 - Methods
@@ -102,13 +103,89 @@ Flex can be used with:
 ### Limitations
 
 - Variable positional args (such as `def fn(*args): ...`) are left untouched.
-- Basic json-compatible types are left untouched. This is determined by the annotation, not the actual value.
+- Basic json-compatible types will be left untouched. This is determined by the annotation, not the actual value.
 - If `None` is given as a value to deserialize into anything, `None` is given back. Absolutely no validation occurs in this case.
-
-- You can only `Union` basic json-compatible types, or `List[T], T`
+- An Abstract class requires a subclass adapter that returns the non-abstract class to use.
 - No support for additional `typing` and `collections` objects other than the ones mentioned in this documentation.
+- You can only `Union` basic json-compatible types, or `List[T], T`.
+
 
 These are subject to change.
+
+
+### Subclass adapters
+
+To use Abstract classes as annotations, you need to register subclass adapters.
+
+The adapter is a `Callable[[Any], TypeHint]` that you provide. 
+It will be called with the payload value as `Any`, so you can inspect the content.
+It must return a `TypeHint` that tells flex which class to use.
+
+With subclass adapters, you can selectively decide the implementation class based on the payload to deserialize.
+While this is necessary when annotating structures with Abstract classes, 
+it can be used for any other class as well.
+
+For this to work, you must register the annotated class with a callback:
+
+```python
+from coveo_functools.flex.subclass_adapter import register_subclass_adapter
+
+class Abstract:
+  @abstractmethod
+  def api(self) -> None:
+    ...
+
+  
+class ThisImplementation(Abstract):
+  def api(self) -> None:
+    ...
+  
+  
+class OtherImplementation(Abstract):
+  def api(self) -> None:
+    ...
+  
+  
+def adapter(payload: Any) -> Type:
+  assert isinstance(payload, dict)  # actual type depends on payload
+  return ThisImplementation if 'this' in payload else OtherImplementation
+  
+  
+register_subclass_adapter(Abstract, adapter)
+```
+
+Thanks to the adapter, this is now possible:
+
+```python
+assert isinstance(deserialize({'this': {}}, hint=Abstract), ThisImplementation)
+assert isinstance(deserialize({}, hint=Abstract), OtherImplementation)
+
+
+@dataclass
+class Payload:
+    owner: Abstract
+    
+
+instance = deserialize({"owner": {"this": {}}}, hint=Payload)
+assert isinstance(instance, ThisImplementation)
+```
+
+The intended use of subclass adapters is to support Abstract classes as annotations.
+
+Any other use will generally:
+  1. Mess up your type annotation game because types are altered dynamically at runtime.
+  1. Make your code more obscure and more likely to investigate the dark arts.
+  1. Break your IDE's autocompletion features.
+  1. Linters which rely on static analysis will not be as powerful as they could be.
+
+
+That being said, it's a powerful and potentially game-breaking feature 
+that can be used to bend the framework if you accept bearing the consequences:
+  - There are no validations (to allow duck typing and stuff)
+  - This means you don't *have* to return an actual subclass; just something that can handle that payload
+  - You can register a callback for `Any` (or anything else really)
+  - You're not limited to return custom classes: you can return things like `Dict[str, int]` or `List[Implementation]` and the flex machinery will handle it just as if it was statically annotated that way.
+  - The payload `value` received by the adapter is not a copy, modifications will be honored.
 
 
 ### About Enums

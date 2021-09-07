@@ -26,7 +26,10 @@ def find_annotations(
         return fields
 
     assert callable(thing)
-    return get_type_hints(thing, globalns or {}, vars(sys.modules[thing.__module__]))
+
+    # some builtins (such as object.__init__) have no `__module__` even though they exist in the `builtins` module.
+    module = getattr(thing, "__module__", "builtins")
+    return get_type_hints(thing, globalns or {}, vars(sys.modules[module]))
 
 
 def find_return_annotation(method: Callable, globalns: Dict[str, Any] = None) -> Type:
