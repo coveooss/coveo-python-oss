@@ -105,7 +105,7 @@ Flex can be used with:
 - Variable positional args (such as `def fn(*args): ...`) are left untouched.
 - Basic json-compatible types will be left untouched. This is determined by the annotation, not the actual value.
 - If `None` is given as a value to deserialize into anything, `None` is given back. Absolutely no validation occurs in this case.
-- An Abstract class requires a subclass adapter that returns the non-abstract class to use.
+- An Abstract class requires additional metadata or a subclass adapter.
 - No support for additional `typing` and `collections` objects other than the ones mentioned in this documentation.
 - You can only `Union` basic json-compatible types, or `List[T], T`.
 
@@ -113,9 +113,60 @@ Flex can be used with:
 These are subject to change.
 
 
-### Subclass adapters
+### About Abstract classes
 
-To use Abstract classes as annotations, you need to register subclass adapters.
+There are two ways to deal with abstract classes:
+
+1. If you control the serialization aspect, flex can inspect a custom instance and generate metadata information that can be used during the deserialization process. _This is the way._
+1. If you don't control the serialization (e.g.: it's a json payload from an api), you can attach callbacks to inspect the payload and return the non-abstract class to use.
+
+
+#### Abstract using SerializationMetadata
+
+The `SerializationMetadata` class inspects an instance and stores the type of the objects within (not their value!).
+Think of it as a header that must accompany your serialized data, so you can rebuild it later using the same subclasses.
+This allows you to annotate abstract classes, but deserialize into concrete ones:
+
+
+```python
+from coveo_functools.flex.deserializer import deserialize
+from coveo_functools.flex.serializer import SerializationMetadata
+
+class Abstract:
+    @abstractmethod
+    def api(self) -> None:
+        ...
+
+    
+@dataclass
+class Concrete(Abstract):
+    def api(self) -> None:
+      ...
+
+
+@dataclass    
+class Parent:
+    nested: Optional[Abstract] = None
+
+
+meta = SerializationMetadata.from_instance(Parent(Concrete()))
+parent = deserialize({"nested": {}}, hint=meta)
+assert isinstance(parent.nested, Concrete)
+```
+
+Serialization metadata ties to a payload/instance and none other.
+It keeps the type information of your instance, and thus may be different on a different instance.
+For each payload you want to store, you must generate a new `SerializationMetadata` instance.
+
+Example use cases:
+
+  - Serialize objects into a cloud-based queue
+  - Store objects into a no-SQL database
+
+
+### Abstract using Subclass adapters
+
+The other, more involved way to use Abstract classes as annotations is to register subclass adapters.
 
 The adapter is a `Callable[[Any], TypeHint]` that you provide. 
 It will be called with the payload value as `Any`, so you can inspect the content.
@@ -167,7 +218,7 @@ class Payload:
     
 
 instance = deserialize({"owner": {"this": {}}}, hint=Payload)
-assert isinstance(instance, ThisImplementation)
+assert isinstance(instance.owner, ThisImplementation)
 ```
 
 The intended use of subclass adapters is to support Abstract classes as annotations.

@@ -33,19 +33,19 @@ MetaHint = Union[Callable[..., T], SerializationMetadata, Type[T]]
 
 def convert_kwargs_for_unpacking(dirty_kwargs: Dict[str, Any], *, hint: MetaHint) -> Dict[str, Any]:
     """Return a copy of `dirty_kwargs` that can be `**unpacked` to fn(). Values will be deserialized recursively."""
+    additional_metadata: Dict[str, SerializationMetadata] = {}
     if isinstance(hint, SerializationMetadata):
         fn: Callable[..., T] = hint.import_type().__init__
+        additional_metadata = hint.additional_metadata
     elif inspect.isclass(hint):
         fn = hint.__init__  # type: ignore[misc]
-        hint = SerializationMetadata.from_annotations(hint)
     else:
         fn = hint
-        hint = SerializationMetadata.from_annotations(hint)
 
     mapped_kwargs = unflex(fn, dirty_kwargs)
 
     converted_kwargs = {}
-    argument_annotations: Dict[str, MetaHint] = {**find_annotations(fn), **hint.additional_metadata}
+    argument_annotations: Dict[str, MetaHint] = {**find_annotations(fn), **additional_metadata}
     for arg_name, arg_hint in argument_annotations.items():
         if arg_name not in mapped_kwargs:
             continue  # this may be ok, for instance if the target argument has a default
@@ -197,10 +197,15 @@ def _deserialize_enum(value: Any, *, hint: Type[Enum], contains: Optional[TypeHi
 def _deserialize_with_metadata(
     value: Any, *, hint: SerializationMetadata, contains: Optional[TypeHint] = None
 ) -> Any:
+
+    root_type = hint.import_type()
+
     if isinstance(value, dict):
-        root_type = hint.import_type()
         kwargs = convert_kwargs_for_unpacking(value, hint=hint)
         return root_type(**kwargs)  # it's magic!  # type: ignore[no-any-return]
+
+    if issubclass(root_type, Enum):
+        return deserialize(value, hint=root_type)
 
     return value
 

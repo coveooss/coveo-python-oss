@@ -3,20 +3,18 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from importlib import import_module
 from inspect import isclass
-from typing import Dict, Any, Type, Sequence
+from typing import Dict, Any, get_origin
 
 from coveo_functools.annotations import find_annotations
 from coveo_functools.exceptions import UnsupportedAnnotation
-from coveo_functools.flex.types import TypeHint
 from coveo_functools.flex.helpers import resolve_hint
+from coveo_functools.flex.types import TypeHint
 
 
 @dataclass
 class SerializationMetadata:
     module_name: str
     class_name: str
-    generics: Sequence[TypeHint] = field(default_factory=list)
-
     additional_metadata: Dict[str, SerializationMetadata] = field(default_factory=dict)
 
     @classmethod
@@ -61,8 +59,21 @@ class SerializationMetadata:
         else:
             raise UnsupportedAnnotation(origin)
 
-        return SerializationMetadata(origin.__module__, origin_name, args)
+        # if get_origin finds something, we have a generic in hands and the "args" will contain the generics.
+        # todo: apply recursivity in generic args? someone can annotate List[AbstractType] and boom? we may have to let abstract go through since we support adapters...!
+        additional_metadata = (
+            {}
+            if get_origin(obj) is not None
+            else {
+                argument_name: SerializationMetadata.from_annotations(annotation)
+                for argument_name, annotation in find_annotations(obj).items()
+            }
+        )
 
-    def import_type(self) -> Type:
+        return SerializationMetadata(
+            origin.__module__, origin_name, additional_metadata=additional_metadata
+        )
+
+    def import_type(self) -> TypeHint:
         """Import and return the task's class type for deserialization."""
-        return getattr(import_module(str(self.module_name)), str(self.class_name))  # type: ignore[no-any-return]
+        return getattr(import_module(str(self.module_name)), str(self.class_name))
