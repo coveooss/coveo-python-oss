@@ -163,6 +163,9 @@ Example use cases:
   - Serialize objects into a cloud-based queue
   - Store objects into a no-SQL database
 
+*Limitation*: The concrete implementation must be importable using the normal python mechanisms.
+A class returned from a function is not importable, and will not deserialize correctly.
+
 
 ### Abstract using Subclass adapters
 
