@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass, asdict
-from typing import List, Type, Sequence, Any, Dict, Union
+from typing import List, Type, Any, Dict, Union, Optional
 
 from coveo_functools.flex import deserialize, TypeHint
 from coveo_functools.flex.serializer import SerializationMetadata
@@ -42,14 +42,20 @@ def test_serialization_metadata_from_annotations() -> None:
     assert meta.import_type() is MockSubClass
 
 
-@parametrize(("hint", "expected_type", "expected_generics"), (
-    (List[str], list, [str]),
-    (List[Union[str, int]], list, [Union[str, int]]),
-    (Dict[str, Any], dict, [str, Any]),
-    (Union[List[str], str], )
-
-))
-def test_serialization_metadata_from_annotations2(hint: TypeHint, expected_type: Type, expected_generics: List[Type]) -> None:
+@parametrize(
+    ("hint", "expected_type", "expected_generics"),
+    (
+        (List[str], list, [str]),
+        (List[Union[str, int]], list, [Union[str, int]]),
+        (Dict[str, Any], dict, [str, Any]),
+        (Union[List[str], str], Union, [str, List[str]]),
+        (Optional[str], Union, [str]),
+    ),
+)
+def test_serialization_metadata_from_annotations2(
+    hint: TypeHint, expected_type: Type, expected_generics: List[Type]
+) -> None:
     meta = SerializationMetadata.from_annotations(hint)
     assert meta.import_type() is expected_type
-    assert meta.generics == expected_generics
+    assert meta.generics and expected_generics
+    assert set(meta.generics) == set(expected_generics)

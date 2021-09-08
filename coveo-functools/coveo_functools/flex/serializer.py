@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from functools import cached_property
 from importlib import import_module
 from inspect import isclass
-from typing import Tuple, Dict, Any, Type, Sequence
+from typing import Dict, Any, Type, Sequence
 
 from coveo_functools.annotations import find_annotations
+from coveo_functools.exceptions import UnsupportedAnnotation
 from coveo_functools.flex.types import TypeHint
 from coveo_functools.flex.helpers import resolve_hint
 
@@ -54,26 +54,15 @@ class SerializationMetadata:
     @classmethod
     def from_annotations(cls, obj: Any) -> SerializationMetadata:
         origin, args = resolve_hint(obj)
-        return SerializationMetadata(origin.__module__, origin.__name__, args)
+
+        for key in "__name__", "_name":
+            if origin_name := getattr(origin, key, None):
+                break
+        else:
+            raise UnsupportedAnnotation(origin)
+
+        return SerializationMetadata(origin.__module__, origin_name, args)
 
     def import_type(self) -> Type:
         """Import and return the task's class type for deserialization."""
         return getattr(import_module(str(self.module_name)), str(self.class_name))  # type: ignore[no-any-return]
-
-    @cached_property
-    def hint(self) -> Any:
-        ...
-
-
-
-Serialized = Tuple[Dict[str, Any], Dict[str, Any]]
-
-
-def serialize(obj: Any) -> None:
-    if obj is None:
-        raise Exception(":travolta-meme:")
-
-    if isclass(obj) or not hasattr(obj, "__class__"):
-        raise Exception("Can only reliably serialize from instances.")
-
-    meta = SerializationMetadata.from_instance(obj)

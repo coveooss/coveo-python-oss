@@ -35,18 +35,22 @@ def convert_kwargs_for_unpacking(dirty_kwargs: Dict[str, Any], *, hint: MetaHint
     """Return a copy of `dirty_kwargs` that can be `**unpacked` to fn(). Values will be deserialized recursively."""
     if isinstance(hint, SerializationMetadata):
         fn: Callable[..., T] = hint.import_type().__init__
+    elif inspect.isclass(hint):
+        fn = hint.__init__  # type: ignore[misc]
+        hint = SerializationMetadata.from_annotations(hint)
     else:
         fn = hint
-        hint = SerializationMetadata.from_annotations(fn)
+        hint = SerializationMetadata.from_annotations(hint)
 
     mapped_kwargs = unflex(fn, dirty_kwargs)
 
     converted_kwargs = {}
-    for arg_name, hint in {**find_annotations(fn), **hint.additional_metadata}.items():
+    argument_annotations: Dict[str, MetaHint] = {**find_annotations(fn), **hint.additional_metadata}
+    for arg_name, arg_hint in argument_annotations.items():
         if arg_name not in mapped_kwargs:
             continue  # this may be ok, for instance if the target argument has a default
 
-        converted_kwargs[arg_name] = deserialize(mapped_kwargs[arg_name], hint=hint)
+        converted_kwargs[arg_name] = deserialize(mapped_kwargs[arg_name], hint=arg_hint)
 
     return converted_kwargs
 
@@ -134,7 +138,7 @@ def deserialize(value: Any, *, hint: Union[T, Type[T]]) -> T:
 def _deserialize(value: Any, *, hint: TypeHint, contains: Optional[TypeHint] = None) -> Any:
     """Fallback deserialization; if value is dict and hint is class, flex it. Else just return value."""
     if inspect.isclass(hint) and isinstance(value, dict):
-        return hint(**convert_kwargs_for_unpacking(value, hint=hint.__init__))
+        return hint(**convert_kwargs_for_unpacking(value, hint=hint))
 
     return value
 
@@ -196,11 +200,9 @@ def _deserialize_with_metadata(
     if isinstance(value, dict):
         root_type = hint.import_type()
         kwargs = convert_kwargs_for_unpacking(value, hint=hint)
+        return root_type(**kwargs)  # it's magic!  # type: ignore[no-any-return]
 
-        # call deserialize again to take care of everything else.
-        return deserialize(kwargs, hint=root_type)
-
-    return value  # type: ignore[no-any-return]
+    return value
 
 
 def _is_array_like(thing: Any) -> bool:

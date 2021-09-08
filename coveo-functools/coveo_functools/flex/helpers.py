@@ -73,5 +73,3 @@ def _as_union_of_thing_or_list_of_things(*annotation: TypeHint) -> Tuple[TypeHin
             return target_type, List[target_type]  # type: ignore[valid-type]
 
     raise UnsupportedAnnotation(annotation)
-
-
