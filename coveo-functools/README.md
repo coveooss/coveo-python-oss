@@ -125,7 +125,7 @@ There are two ways to deal with abstract classes:
 
 The `SerializationMetadata` class inspects an instance and stores the type of the objects within (not their value!).
 Think of it as a header that must accompany your serialized data, so you can rebuild it later using the same subclasses.
-This allows you to annotate abstract classes, but deserialize into concrete ones:
+This allows you use abstract classes in annotations, but deserialize into concrete ones:
 
 
 ```python
@@ -167,7 +167,7 @@ Example use cases:
 A class returned from a function is not importable, and will not deserialize correctly.
 
 
-### Abstract using Subclass adapters
+#### Abstract using Subclass adapters
 
 The other, more involved way to use Abstract classes as annotations is to register subclass adapters.
 

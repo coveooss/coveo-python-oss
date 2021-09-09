@@ -3,6 +3,7 @@ from __future__ import annotations
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
 from enum import Enum, auto
+from typing import List, Dict
 
 import pytest
 from coveo_functools.flex import deserialize
@@ -22,6 +23,15 @@ class MockEnum(Enum):
 
 @dataclass
 class MockSubClass(AbstractClass):
+    value: str
+    enum_test: MockEnum = MockEnum.Default
+
+    def api(self) -> None:
+        ...
+
+
+@dataclass
+class MockSubClass2(AbstractClass):
     value: str
     enum_test: MockEnum = MockEnum.Default
 
@@ -73,3 +83,31 @@ def test_serialization_enum() -> None:
     meta = SerializationMetadata.from_instance(instance)
     payload = {"value": "test", "enum_test": "Value"}
     assert deserialize(payload, hint=meta).enum_test is MockEnum.Value  # type: ignore[attr-defined]
+
+
+def test_serialization_abstract_in_list() -> None:
+    lst = [MockSubClass("first"), MockSubClass2("second")]
+    meta = SerializationMetadata.from_instance(lst)
+
+    with pytest.raises(Exception):
+        deserialize([{"value": "first"}, {"value": "second"}], hint=List[AbstractClass])
+
+    result = deserialize([{"value": "first"}, {"value": "second"}], hint=meta)
+    assert result[0].value == "first" and result[1].value == "second"
+    assert isinstance(result[0], MockSubClass)
+    assert isinstance(result[1], MockSubClass2)
+
+
+def test_serialization_abstract_in_dict() -> None:
+    payload = {"first": {"value": "first"}, "second": {"value": "second"}}
+    dct = {"first": MockSubClass("first"), "second": MockSubClass2("second")}
+
+    meta = SerializationMetadata.from_instance(dct)
+
+    with pytest.raises(Exception):
+        deserialize(payload, hint=Dict[str, AbstractClass])
+
+    result = deserialize({"first": {"value": "first"}, "second": {"value": "second"}}, hint=meta)
+    assert result['first'].value == "first" and result['second'].value == "second"
+    assert isinstance(result['first'], MockSubClass)
+    assert isinstance(result['second'], MockSubClass2)

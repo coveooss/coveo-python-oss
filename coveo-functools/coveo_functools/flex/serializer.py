@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from importlib import import_module
 from inspect import isclass
-from typing import Dict, Any, get_origin
+from typing import Dict, Any, get_origin, Union
 
 from coveo_functools.annotations import find_annotations
 from coveo_functools.exceptions import UnsupportedAnnotation
@@ -15,7 +15,7 @@ from coveo_functools.flex.types import TypeHint
 class SerializationMetadata:
     module_name: str
     class_name: str
-    additional_metadata: Dict[str, SerializationMetadata] = field(default_factory=dict)
+    additional_metadata: Dict[Union[str, int], SerializationMetadata] = field(default_factory=dict)
 
     @classmethod
     def from_instance(cls, instance: Any) -> SerializationMetadata:
@@ -28,20 +28,28 @@ class SerializationMetadata:
 
         actual_type = instance.__class__
 
-        additional_metadata: Dict[str, SerializationMetadata] = {}
+        additional_metadata: Dict[Union[str, int], SerializationMetadata] = {}
 
-        for argument_name, annotated_type in find_annotations(actual_type).items():
-            try:
-                # todo: enums probably ain't gonna like this!
-                value = getattr(instance, argument_name)
-            except AttributeError:
-                raise Exception(
-                    "Limitation: the argument name must have a matching attribute in the instance."
-                )
+        if isinstance(instance, list):
+            additional_metadata: Dict[Union[str, int], SerializationMetadata] = {
+                idx: SerializationMetadata.from_instance(obj) for idx, obj in enumerate(instance)
+            }
+        elif isinstance(instance, dict):
+            additional_metadata = {
+                key: SerializationMetadata.from_instance(obj) for key, obj in instance.items()
+            }
+        else:
+            for argument_name, annotated_type in find_annotations(actual_type).items():
+                try:
+                    value = getattr(instance, argument_name)
+                except AttributeError:
+                    raise Exception(
+                        "Limitation: the argument name must have a matching attribute in the instance."
+                    )
 
-            if actual_type is not annotated_type:
-                # a subclass of the annotation was provided
-                additional_metadata[argument_name] = SerializationMetadata.from_instance(value)
+                if actual_type is not annotated_type:
+                    # a subclass of the annotation was provided
+                    additional_metadata[argument_name] = SerializationMetadata.from_instance(value)
 
         return SerializationMetadata(
             module_name=actual_type.__module__,

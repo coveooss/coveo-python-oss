@@ -200,6 +200,18 @@ def _deserialize_with_metadata(
 
     root_type = hint.import_type()
 
+    if root_type is dict:
+        return {
+            key: deserialize(value, hint=hint.additional_metadata.get(key, value))
+            for key, value in value.items()
+        }
+
+    if root_type is list:
+        return [
+            deserialize(item_value, hint=item_meta)
+            for item_value, item_meta in zip(value, hint.additional_metadata.values())
+        ]
+
     if isinstance(value, dict):
         kwargs = convert_kwargs_for_unpacking(value, hint=hint)
         return root_type(**kwargs)  # it's magic!  # type: ignore[no-any-return]
