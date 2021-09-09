@@ -14,6 +14,7 @@ from typing import (
     cast,
     Iterable,
     Callable,
+    Mapping,
 )
 
 from coveo_functools.annotations import find_annotations
@@ -33,7 +34,7 @@ MetaHint = Union[Callable[..., T], SerializationMetadata, Type[T]]
 
 def convert_kwargs_for_unpacking(dirty_kwargs: Dict[str, Any], *, hint: MetaHint) -> Dict[str, Any]:
     """Return a copy of `dirty_kwargs` that can be `**unpacked` to fn(). Values will be deserialized recursively."""
-    additional_metadata: Dict[str, SerializationMetadata] = {}
+    additional_metadata: Mapping[str, SerializationMetadata] = {}
     if isinstance(hint, SerializationMetadata):
         fn: Callable[..., T] = hint.import_type().__init__
         additional_metadata = hint.additional_metadata

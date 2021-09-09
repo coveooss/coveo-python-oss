@@ -93,9 +93,9 @@ def test_serialization_abstract_in_list() -> None:
         deserialize([{"value": "first"}, {"value": "second"}], hint=List[AbstractClass])
 
     result = deserialize([{"value": "first"}, {"value": "second"}], hint=meta)
-    assert result[0].value == "first" and result[1].value == "second"
-    assert isinstance(result[0], MockSubClass)
-    assert isinstance(result[1], MockSubClass2)
+    assert result[0].value == "first" and result[1].value == "second"  # type: ignore[index]
+    assert isinstance(result[0], MockSubClass)  # type: ignore[index]
+    assert isinstance(result[1], MockSubClass2)  # type: ignore[index]
 
 
 def test_serialization_abstract_in_dict() -> None:
@@ -108,6 +108,6 @@ def test_serialization_abstract_in_dict() -> None:
         deserialize(payload, hint=Dict[str, AbstractClass])
 
     result = deserialize({"first": {"value": "first"}, "second": {"value": "second"}}, hint=meta)
-    assert result['first'].value == "first" and result['second'].value == "second"
-    assert isinstance(result['first'], MockSubClass)
-    assert isinstance(result['second'], MockSubClass2)
+    assert result["first"].value == "first" and result["second"].value == "second"  # type: ignore[index]
+    assert isinstance(result["first"], MockSubClass)  # type: ignore[index]
+    assert isinstance(result["second"], MockSubClass2)  # type: ignore[index]

@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from importlib import import_module
 from inspect import isclass
-from typing import Dict, Any, get_origin, Union
+from typing import Any, get_origin, Mapping, Dict
 
 from coveo_functools.annotations import find_annotations
 from coveo_functools.exceptions import UnsupportedAnnotation
@@ -15,7 +15,7 @@ from coveo_functools.flex.types import TypeHint
 class SerializationMetadata:
     module_name: str
     class_name: str
-    additional_metadata: Dict[Union[str, int], SerializationMetadata] = field(default_factory=dict)
+    additional_metadata: Mapping[str, SerializationMetadata] = field(default_factory=dict)
 
     @classmethod
     def from_instance(cls, instance: Any) -> SerializationMetadata:
@@ -28,11 +28,12 @@ class SerializationMetadata:
 
         actual_type = instance.__class__
 
-        additional_metadata: Dict[Union[str, int], SerializationMetadata] = {}
+        additional_metadata: Dict[str, SerializationMetadata] = {}
 
         if isinstance(instance, list):
-            additional_metadata: Dict[Union[str, int], SerializationMetadata] = {
-                idx: SerializationMetadata.from_instance(obj) for idx, obj in enumerate(instance)
+            additional_metadata = {
+                str(idx): SerializationMetadata.from_instance(obj)
+                for idx, obj in enumerate(instance)
             }
         elif isinstance(instance, dict):
             additional_metadata = {
@@ -68,8 +69,7 @@ class SerializationMetadata:
             raise UnsupportedAnnotation(origin)
 
         # if get_origin finds something, we have a generic in hands and the "args" will contain the generics.
-        # todo: apply recursivity in generic args? someone can annotate List[AbstractType] and boom? we may have to let abstract go through since we support adapters...!
-        additional_metadata = (
+        additional_metadata: Dict[str, SerializationMetadata] = (
             {}
             if get_origin(obj) is not None
             else {
