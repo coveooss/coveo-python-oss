@@ -63,13 +63,6 @@ def test_serialization_recursive() -> None:
 
     payload = {"root": {"extra": {"value": "test"}}}
 
-    # we can create annotations metadata from abstract classes, because an adapter could handle it later
-    meta = SerializationMetadata.from_annotations(MockWithNested)
-
-    with pytest.raises(Exception):
-        # without an adapter, you cannot deserialize the payload using that meta information because of the abstract.
-        deserialize(payload, hint=meta)
-
     # from an instance, the implementation is detected and then restored.
     meta = SerializationMetadata.from_instance(
         MockWithNested(MockWithAbstract(MockSubClass("test")))

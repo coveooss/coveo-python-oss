@@ -200,29 +200,34 @@ def _deserialize_with_metadata(
     if isclass(hint) and issubclass(hint, SerializationMetadata):  # type: ignore[arg-type]
         # this is an edge case; the dispatch will end up here when hint is either the SerializationMetadata type,
         # or an instance thereof.
-        # Deserialize `value` into an instance of `SerializationMetadata`
+        # Here, we deserialize `value` into an instance of `SerializationMetadata`.
         return hint(**convert_kwargs_for_unpacking(value, hint=hint))  # type: ignore[operator]
 
     root_type = hint.import_type()
 
     if root_type is dict:
+        # each value is converted to the type provided in the meta
         return {
             key: deserialize(value, hint=hint.additional_metadata.get(key, value))
             for key, value in value.items()
         }
 
     if root_type is list:
+        # each value is converted to the type provided in the meta
         return [
             deserialize(item_value, hint=item_meta)
+            # they are expected to be in order!
             for item_value, item_meta in zip(value, hint.additional_metadata.values())
         ]
 
+    if issubclass(root_type, Enum):
+        # special handling for enums.
+        return deserialize(value, hint=root_type)
+
     if isinstance(value, dict):
+        # typical case of unpacking value into an instance of the root type.
         kwargs = convert_kwargs_for_unpacking(value, hint=hint)
         return root_type(**kwargs)  # it's magic!  # type: ignore[no-any-return]
-
-    if issubclass(root_type, Enum):
-        return deserialize(value, hint=root_type)
 
     return value
 

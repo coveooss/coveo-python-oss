@@ -3,11 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from importlib import import_module
 from inspect import isclass
-from typing import Any, get_origin, Dict
+from typing import Any, Dict
 
 from coveo_functools.annotations import find_annotations
-from coveo_functools.exceptions import UnsupportedAnnotation
-from coveo_functools.flex.helpers import resolve_hint
 from coveo_functools.flex.types import TypeHint
 
 
@@ -31,17 +29,20 @@ class SerializationMetadata:
         additional_metadata: Dict[str, SerializationMetadata] = {}
 
         if isinstance(instance, list):
+            # the additional metadata will be a map of the index to that object's type (order is important)
             additional_metadata = {
-                str(idx): SerializationMetadata.from_instance(obj)
+                str(idx).zfill(6): SerializationMetadata.from_instance(obj)
                 for idx, obj in enumerate(instance)
             }
         elif isinstance(instance, dict):
+            # the additional metadata maps arguments to their actual type
             additional_metadata = {
                 key: SerializationMetadata.from_instance(obj)
                 for key, obj in instance.items()
                 if obj is not None
             }
         else:
+            # custom objects; start from the static annotations...
             for argument_name, annotated_type in find_annotations(actual_type).items():
                 try:
                     value = getattr(instance, argument_name)
@@ -50,38 +51,13 @@ class SerializationMetadata:
                         "Limitation: the argument name must have a matching attribute in the instance."
                     )
 
-                if actual_type is not annotated_type:
-                    # a subclass of the annotation was provided
-                    additional_metadata[argument_name] = SerializationMetadata.from_instance(value)
+                # save this meta / recurse
+                additional_metadata[argument_name] = SerializationMetadata.from_instance(value)
 
         return SerializationMetadata(
             module_name=actual_type.__module__,
             class_name=actual_type.__name__,
             additional_metadata=additional_metadata,
-        )
-
-    @classmethod
-    def from_annotations(cls, obj: Any) -> SerializationMetadata:
-        origin, args = resolve_hint(obj)
-
-        for key in "__name__", "_name":
-            if origin_name := getattr(origin, key, None):
-                break
-        else:
-            raise UnsupportedAnnotation(origin)
-
-        # if get_origin finds something, we have a generic in hands and the "args" will contain the generics.
-        additional_metadata: Dict[str, SerializationMetadata] = (
-            {}
-            if get_origin(obj) is not None
-            else {
-                argument_name: SerializationMetadata.from_annotations(annotation)
-                for argument_name, annotation in find_annotations(obj).items()
-            }
-        )
-
-        return SerializationMetadata(
-            origin.__module__, origin_name, additional_metadata=additional_metadata
         )
 
     def import_type(self) -> TypeHint:
