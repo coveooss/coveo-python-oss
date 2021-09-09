@@ -1,7 +1,7 @@
 import collections
 import inspect
 from enum import Enum
-from inspect import isabstract
+from inspect import isabstract, isclass
 from typing import (
     Type,
     TypeVar,
@@ -78,7 +78,11 @@ def deserialize(value: Any, *, hint: Union[T, Type[T]]) -> T:
     if value is None:
         return None  # nope!
 
-    if isinstance(hint, SerializationMetadata):
+    if (
+        isinstance(hint, SerializationMetadata)
+        or isclass(hint)
+        and issubclass(hint, SerializationMetadata)  # type: ignore[arg-type]
+    ):
         # on a silver platter!
         return cast(T, _deserialize(value, hint=hint))
 
@@ -198,6 +202,12 @@ def _deserialize_enum(value: Any, *, hint: Type[Enum], contains: Optional[TypeHi
 def _deserialize_with_metadata(
     value: Any, *, hint: SerializationMetadata, contains: Optional[TypeHint] = None
 ) -> Any:
+
+    if isclass(hint) and issubclass(hint, SerializationMetadata):  # type: ignore[arg-type]
+        # this is an edge case; the dispatch will end up here when hint is either the SerializationMetadata type,
+        # or an instance thereof.
+        # Deserialize `value` into an instance of `SerializationMetadata`
+        return hint(**convert_kwargs_for_unpacking(value, hint=hint))  # type: ignore[operator]
 
     root_type = hint.import_type()
 

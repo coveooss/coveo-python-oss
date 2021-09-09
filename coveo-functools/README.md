@@ -88,7 +88,7 @@ This is because `json.load()` already returns these values in the proper type. T
 
 Flex can be used with:
 - Classes and dataclasses
-- Abstract classes *(new in 2.0.9)* (requires adapter; explained below)
+- Abstract classes *(new in 2.0.9)* (requires adapter or serialization; explained below)
 - Enums *(new in 2.0.6)* 
 - Functions
 - Methods
@@ -121,7 +121,9 @@ There are two ways to deal with abstract classes:
 1. If you don't control the serialization (e.g.: it's a json payload from an api), you can attach callbacks to inspect the payload and return the non-abstract class to use.
 
 
-#### Abstract using SerializationMetadata
+#### Abstract using SerializationMetadata 
+
+__new in 2.0.10__
 
 The `SerializationMetadata` class inspects an instance and stores the type of the objects within (not their value!).
 Think of it as a header that must accompany your serialized data, so you can rebuild it later using the same subclasses.
@@ -168,6 +170,8 @@ A class returned from a function is not importable, and will not deserialize cor
 
 
 #### Abstract using Subclass adapters
+
+__new in 2.0.9__
 
 The other, more involved way to use Abstract classes as annotations is to register subclass adapters.
 

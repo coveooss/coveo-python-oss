@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABCMeta, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 from enum import Enum, auto
 from typing import List, Dict
 
@@ -111,3 +111,12 @@ def test_serialization_abstract_in_dict() -> None:
     assert result["first"].value == "first" and result["second"].value == "second"  # type: ignore[index]
     assert isinstance(result["first"], MockSubClass)  # type: ignore[index]
     assert isinstance(result["second"], MockSubClass2)  # type: ignore[index]
+
+
+def test_serialization_can_serialize_serialization_metadata() -> None:
+    """There was an issue where you couldn't serialize/deserialize the SerializationMetadata class."""
+    instance = SerializationMetadata("patate", "poire")
+    meta = SerializationMetadata.from_instance(instance)
+    payload = asdict(instance)
+    assert deserialize(payload, hint=SerializationMetadata).module_name == "patate"
+    assert deserialize(payload, hint=meta).module_name == "patate"

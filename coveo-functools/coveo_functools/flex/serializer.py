@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from importlib import import_module
 from inspect import isclass
-from typing import Any, get_origin, Mapping, Dict
+from typing import Any, get_origin, Dict
 
 from coveo_functools.annotations import find_annotations
 from coveo_functools.exceptions import UnsupportedAnnotation
@@ -15,7 +15,7 @@ from coveo_functools.flex.types import TypeHint
 class SerializationMetadata:
     module_name: str
     class_name: str
-    additional_metadata: Mapping[str, SerializationMetadata] = field(default_factory=dict)
+    additional_metadata: Dict[str, SerializationMetadata] = field(default_factory=dict)
 
     @classmethod
     def from_instance(cls, instance: Any) -> SerializationMetadata:
