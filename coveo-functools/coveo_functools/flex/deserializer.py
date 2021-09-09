@@ -200,7 +200,8 @@ def _deserialize_with_metadata(
     if isclass(hint) and issubclass(hint, SerializationMetadata):  # type: ignore[arg-type]
         # this is an edge case; the dispatch will end up here when hint is either the SerializationMetadata type,
         # or an instance thereof.
-        # Here, we deserialize `value` into an instance of `SerializationMetadata`.
+        # Here, we take a shortcut to deserialize `value` into an instance of `SerializationMetadata`.
+        # This happens when flex is also used to serialize the metadata headers.
         return hint(**convert_kwargs_for_unpacking(value, hint=hint))  # type: ignore[operator]
 
     root_type = hint.import_type()
@@ -224,10 +225,11 @@ def _deserialize_with_metadata(
         # special handling for enums.
         return deserialize(value, hint=root_type)
 
-    if isinstance(value, dict):
+    if isclass(root_type) and isinstance(value, dict):
         # typical case of unpacking value into an instance of the root type.
-        kwargs = convert_kwargs_for_unpacking(value, hint=hint)
-        return root_type(**kwargs)  # it's magic!  # type: ignore[no-any-return]
+        return root_type(
+            **convert_kwargs_for_unpacking(value, hint=hint)
+        )  # it's magic!  # type: ignore[no-any-return]
 
     return value
 
