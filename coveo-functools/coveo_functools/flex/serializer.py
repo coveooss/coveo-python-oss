@@ -37,7 +37,9 @@ class SerializationMetadata:
             }
         elif isinstance(instance, dict):
             additional_metadata = {
-                key: SerializationMetadata.from_instance(obj) for key, obj in instance.items()
+                key: SerializationMetadata.from_instance(obj)
+                for key, obj in instance.items()
+                if obj is not None
             }
         else:
             for argument_name, annotated_type in find_annotations(actual_type).items():

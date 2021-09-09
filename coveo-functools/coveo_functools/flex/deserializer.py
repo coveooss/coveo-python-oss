@@ -14,7 +14,6 @@ from typing import (
     cast,
     Iterable,
     Callable,
-    Mapping,
 )
 
 from coveo_functools.annotations import find_annotations
@@ -33,21 +32,24 @@ MetaHint = Union[Callable[..., T], SerializationMetadata, Type[T]]
 
 
 def convert_kwargs_for_unpacking(dirty_kwargs: Dict[str, Any], *, hint: MetaHint) -> Dict[str, Any]:
-    """Return a copy of `dirty_kwargs` that can be `**unpacked` to fn(). Values will be deserialized recursively."""
-    additional_metadata: Mapping[str, SerializationMetadata] = {}
+    """Return a copy of `dirty_kwargs` that can be `**unpacked` to hint. Values will be deserialized recursively."""
+    # start by determining what fn should be based on the hint
+    additional_metadata: Dict[str, SerializationMetadata] = {}
     if isinstance(hint, SerializationMetadata):
         fn: Callable[..., T] = hint.import_type().__init__
+        # the additional metadata will be applied on the arguments of `fn` and may contain more specific type info
         additional_metadata = hint.additional_metadata
     elif inspect.isclass(hint):
         fn = hint.__init__  # type: ignore[misc]
     else:
         fn = hint
 
+    # clean the casing of the kwargs so they match fn's argument names.
     mapped_kwargs = unflex(fn, dirty_kwargs)
 
+    # convert the values so they match the additional metadata if available, else fn's annotations.
     converted_kwargs = {}
-    argument_annotations: Dict[str, MetaHint] = {**find_annotations(fn), **additional_metadata}
-    for arg_name, arg_hint in argument_annotations.items():
+    for arg_name, arg_hint in {**find_annotations(fn), **additional_metadata}.items():
         if arg_name not in mapped_kwargs:
             continue  # this may be ok, for instance if the target argument has a default
 
@@ -77,14 +79,6 @@ def deserialize(value: Any, *, hint: Union[T, Type[T]]) -> T:
     """
     if value is None:
         return None  # nope!
-
-    if (
-        isinstance(hint, SerializationMetadata)
-        or isclass(hint)
-        and issubclass(hint, SerializationMetadata)  # type: ignore[arg-type]
-    ):
-        # on a silver platter!
-        return cast(T, _deserialize(value, hint=hint))
 
     if adapter := get_subclass_adapter(hint):
         # ask the adapter what the hint should be for this value

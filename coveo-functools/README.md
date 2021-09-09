@@ -125,8 +125,12 @@ There are two ways to deal with abstract classes:
 
 __new in 2.0.10__
 
+Note: This is a dumbed down / magic version of the functionality offered by `pickle` and `yaml`,
+with the difference that the metadata and the payload are kept separate and readable.
+
 The `SerializationMetadata` class inspects an instance and stores the type of the objects within (not their value!).
 Think of it as a header that must accompany your serialized data, so you can rebuild it later using the same subclasses.
+
 This allows you use abstract classes in annotations, but deserialize into concrete ones:
 
 
