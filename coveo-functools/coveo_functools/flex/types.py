@@ -14,5 +14,11 @@ JSON_TYPES = (
 
 PASSTHROUGH_TYPES = {None, Any, *JSON_TYPES}
 
-
 TypeHint = Any  # :shrug:
+
+
+def is_passthrough_type(obj: Any) -> bool:
+    try:
+        return obj in PASSTHROUGH_TYPES
+    except TypeError:
+        return False

@@ -1,5 +1,5 @@
-import collections
 import inspect
+from collections import abc
 from enum import Enum
 from inspect import isabstract, isclass
 from typing import (
@@ -23,7 +23,7 @@ from coveo_functools.exceptions import UnsupportedAnnotation
 from coveo_functools.flex.helpers import resolve_hint
 from coveo_functools.flex.serializer import SerializationMetadata
 from coveo_functools.flex.subclass_adapter import get_subclass_adapter
-from coveo_functools.flex.types import TypeHint, PASSTHROUGH_TYPES
+from coveo_functools.flex.types import TypeHint, is_passthrough_type, PASSTHROUGH_TYPES
 
 
 T = TypeVar("T")
@@ -49,7 +49,7 @@ def convert_kwargs_for_unpacking(dirty_kwargs: Dict[str, Any], *, hint: MetaHint
 
     # convert the values so they match the additional metadata if available, else fn's annotations.
     converted_kwargs = {}
-    for arg_name, arg_hint in {**find_annotations(fn), **additional_metadata}.items():
+    for arg_name, arg_hint in {**find_annotations(fn), **additional_metadata}.items():  # type: ignore[arg-type]
         if arg_name not in mapped_kwargs:
             continue  # this may be ok, for instance if the target argument has a default
 
@@ -121,7 +121,7 @@ def deserialize(value: Any, *, hint: Union[T, Type[T]]) -> T:
         # json can't have maps or lists as keys, so we can't either. Ditch the key annotation, but convert values.
         return cast(T, _deserialize(value, hint=dict, contains=args[1] if args else Any))
 
-    if origin in PASSTHROUGH_TYPES:
+    if is_passthrough_type(origin):
         # we always return those without validation
         return cast(T, value)
 
@@ -153,7 +153,7 @@ def _deserialize_list(value: Any, *, hint: Type[list], contains: Optional[TypeHi
 
 @_deserialize.register(dict)
 def _deserialize_dict(value: Any, *, hint: Type[dict], contains: Optional[TypeHint] = None) -> Dict:
-    if isinstance(value, collections.Mapping):
+    if isinstance(value, abc.Mapping):
         return {key: deserialize(val, hint=contains or Any) for key, val in value.items()}
 
     return value  # type: ignore[no-any-return]
@@ -231,8 +231,8 @@ def _is_array_like(thing: Any) -> bool:
     """We don't want to mix up dictionaries and strings with tuples, sets and lists."""
     return all(
         (
-            isinstance(thing, collections.Iterable),
+            isinstance(thing, abc.Iterable),
             not isinstance(thing, (str, bytes)),
-            not isinstance(thing, collections.Mapping),
+            not isinstance(thing, abc.Mapping),
         )
     )

@@ -15,7 +15,7 @@ class MockType:
     value: str
 
 
-class TestEnum(Enum):
+class MockEnum(Enum):
     OtherKey = "other-value"
     TestKey = "test-value"
 
@@ -178,24 +178,24 @@ def test_deserialize_dict_invalid_union() -> None:
     ),
 )
 def test_deserialize_enum(value: str) -> None:
-    assert deserialize(value, hint=TestEnum) is TestEnum.TestKey
+    assert deserialize(value, hint=MockEnum) is MockEnum.TestKey
 
 
 @UnitTest
 def test_deserialize_enum_nested() -> None:
     @dataclass
     class SomeClass:
-        test: TestEnum
+        test: MockEnum
 
-    assert deserialize({"Test": "test.key"}, hint=SomeClass).test is TestEnum.TestKey
+    assert deserialize({"Test": "test.key"}, hint=SomeClass).test is MockEnum.TestKey
 
 
 @UnitTest
 def test_deserialize_enum_list() -> None:
-    assert deserialize(["test-value", "TestKey", "otherkey"], hint=List[TestEnum]) == [
-        TestEnum.TestKey,
-        TestEnum.TestKey,
-        TestEnum.OtherKey,
+    assert deserialize(["test-value", "TestKey", "otherkey"], hint=List[MockEnum]) == [
+        MockEnum.TestKey,
+        MockEnum.TestKey,
+        MockEnum.OtherKey,
     ]
 
 

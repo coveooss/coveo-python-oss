@@ -99,7 +99,7 @@ def test_flex_raise_not_set() -> None:
         _ = flex(MockUnion)()
 
 
-class TestInterface(Protocol):
+class MockInterface(Protocol):
     """Just a trick for annotations"""
 
     value: str
@@ -108,7 +108,7 @@ class TestInterface(Protocol):
         ...
 
 
-def _class_decorator_styles() -> Generator[Type[TestInterface], None, None]:
+def _class_decorator_styles() -> Generator[Type[MockInterface], None, None]:
     @flex
     class ClassNoParenthesis:
         def __init__(self, value: str) -> None:
@@ -140,7 +140,7 @@ def _class_decorator_styles() -> Generator[Type[TestInterface], None, None]:
 
 @UnitTest
 @parametrize("obj", _class_decorator_styles())
-def test_flex_decorator_class(obj: Type[TestInterface]) -> None:
+def test_flex_decorator_class(obj: Type[MockInterface]) -> None:
     """Ensures that different class decorator styles work with
     **, as well as direct/typical usage.
     """

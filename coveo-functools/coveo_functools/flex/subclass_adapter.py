@@ -1,6 +1,5 @@
 from typing import Dict, Type, Callable, Any, Optional, TypeVar
 
-from coveo_functools.exceptions import Flexception
 from coveo_functools.flex.types import TypeHint
 
 
