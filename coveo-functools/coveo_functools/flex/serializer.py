@@ -13,7 +13,7 @@ from coveo_functools.flex.types import TypeHint
 class SerializationMetadata:
     module_name: str
     class_name: str
-    additional_metadata: Dict[str, SerializationMetadata] = field(default_factory=dict)
+    additional_metadata: Dict[Any, SerializationMetadata] = field(default_factory=dict)
 
     @classmethod
     def from_instance(cls, instance: Any) -> SerializationMetadata:
@@ -25,14 +25,12 @@ class SerializationMetadata:
             raise Exception("Can only reliably serialize from instances.")
 
         actual_type = instance.__class__
-
-        additional_metadata: Dict[str, SerializationMetadata] = {}
+        additional_metadata: Dict[Any, SerializationMetadata] = {}
 
         if isinstance(instance, list):
-            # the additional metadata will be a map of the index to that object's type (order is important)
+            # the additional metadata will be a map of the index (int) to that object's metadata
             additional_metadata = {
-                str(idx).zfill(6): SerializationMetadata.from_instance(obj)
-                for idx, obj in enumerate(instance)
+                idx: SerializationMetadata.from_instance(obj) for idx, obj in enumerate(instance)
             }
         elif isinstance(instance, dict):
             # the additional metadata maps arguments to their actual type

@@ -214,11 +214,10 @@ def _deserialize_with_metadata(
         }
 
     if root_type is list:
-        # each value is converted to the type provided in the meta
+        # the value in this case is a Dict[int, SerializationMetadata] where int is the index within the list.
         return [
-            deserialize(item_value, hint=item_meta)
-            # they are expected to be in order!
-            for item_value, item_meta in zip(value, hint.additional_metadata.values())
+            deserialize(value[index], hint=hint.additional_metadata[index])
+            for index in sorted(hint.additional_metadata)
         ]
 
     if issubclass(root_type, Enum):
