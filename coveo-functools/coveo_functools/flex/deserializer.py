@@ -214,10 +214,10 @@ def _deserialize_with_metadata(
         }
 
     if root_type is list:
-        # the value in this case is a Dict[int, SerializationMetadata] where int is the index within the list.
+        # the value in this case is a Dict[str, SerializationMetadata] where they key is the index within the list.
         return [
-            deserialize(value[index], hint=hint.additional_metadata[index])
-            for index in sorted(hint.additional_metadata)
+            deserialize(value[int(index)], hint=hint.additional_metadata[index])
+            for index in sorted(hint.additional_metadata, key=int)
         ]
 
     if issubclass(root_type, Enum):

@@ -13,7 +13,7 @@ from coveo_functools.flex.types import TypeHint
 class SerializationMetadata:
     module_name: str
     class_name: str
-    additional_metadata: Dict[Any, SerializationMetadata] = field(default_factory=dict)
+    additional_metadata: Dict[str, SerializationMetadata] = field(default_factory=dict)
 
     @classmethod
     def from_instance(cls, instance: Any) -> SerializationMetadata:
@@ -28,9 +28,11 @@ class SerializationMetadata:
         additional_metadata: Dict[Any, SerializationMetadata] = {}
 
         if isinstance(instance, list):
-            # the additional metadata will be a map of the index (int) to that object's metadata
+            # the additional metadata will be a map of the index to that object's metadata.
+            # we use strings to accommodate json, which cannot have ints as keys.
             additional_metadata = {
-                idx: SerializationMetadata.from_instance(obj) for idx, obj in enumerate(instance)
+                str(idx): SerializationMetadata.from_instance(obj)
+                for idx, obj in enumerate(instance)
             }
         elif isinstance(instance, dict):
             # the additional metadata maps arguments to their actual type
