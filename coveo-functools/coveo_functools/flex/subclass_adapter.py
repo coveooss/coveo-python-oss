@@ -22,4 +22,9 @@ def register_subclass_adapter(hint: TypeHint, adapter: Callable[[Any], TypeHint]
 
 
 def get_subclass_adapter(hint: TypeHint) -> Optional[Callable[[Any], Type[T]]]:
+    try:
+        hash(hint)
+    except TypeError:
+        return None
+
     return _subclass_adapters.get(hint)

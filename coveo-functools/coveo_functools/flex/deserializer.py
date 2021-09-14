@@ -1,20 +1,16 @@
-import collections
 import inspect
+from collections import abc
 from enum import Enum
-from inspect import isabstract
+from inspect import isabstract, isclass
 from typing import (
     Type,
     TypeVar,
     Optional,
     Any,
-    get_args,
-    get_origin,
     Union,
     Dict,
-    Tuple,
     overload,
     List,
-    Sequence,
     cast,
     Iterable,
     Callable,
@@ -24,24 +20,40 @@ from coveo_functools.annotations import find_annotations
 from coveo_functools.casing import TRANSLATION_TABLE, unflex
 from coveo_functools.dispatch import dispatch
 from coveo_functools.exceptions import UnsupportedAnnotation
+from coveo_functools.flex.helpers import resolve_hint
+from coveo_functools.flex.serializer import SerializationMetadata
 from coveo_functools.flex.subclass_adapter import get_subclass_adapter
-from coveo_functools.flex.types import TypeHint, PASSTHROUGH_TYPES
+from coveo_functools.flex.types import TypeHint, is_passthrough_type, PASSTHROUGH_TYPES
 
 
 T = TypeVar("T")
 
+MetaHint = Union[Callable[..., T], SerializationMetadata, Type[T]]
 
-def prepare_payload_for_unpacking(
-    fn: Callable[..., T], dirty_kwargs: Dict[str, Any]
-) -> Dict[str, Any]:
-    """Return a copy of `dirty_kwargs` that can be `**unpacked` to fn()."""
+
+def convert_kwargs_for_unpacking(dirty_kwargs: Dict[str, Any], *, hint: MetaHint) -> Dict[str, Any]:
+    """Return a copy of `dirty_kwargs` that can be `**unpacked` to hint. Values will be deserialized recursively."""
+    # start by determining what fn should be based on the hint
+    additional_metadata: Dict[str, SerializationMetadata] = {}
+    if isinstance(hint, SerializationMetadata):
+        fn: Callable[..., T] = hint.import_type().__init__
+        # the additional metadata will be applied on the arguments of `fn` and may contain more specific type info
+        additional_metadata = hint.additional_metadata
+    elif inspect.isclass(hint):
+        fn = hint.__init__  # type: ignore[misc]
+    else:
+        fn = hint
+
+    # clean the casing of the kwargs so they match fn's argument names.
     mapped_kwargs = unflex(fn, dirty_kwargs)
-    converted_kwargs = {}
 
-    for arg_name, arg_type in find_annotations(fn).items():
+    # convert the values so they match the additional metadata if available, else fn's annotations.
+    converted_kwargs = {}
+    for arg_name, arg_hint in {**find_annotations(fn), **additional_metadata}.items():  # type: ignore[arg-type]
         if arg_name not in mapped_kwargs:
             continue  # this may be ok, for instance if the target argument has a default
-        converted_kwargs[arg_name] = deserialize(mapped_kwargs[arg_name], hint=arg_type)
+
+        converted_kwargs[arg_name] = deserialize(mapped_kwargs[arg_name], hint=arg_hint)
 
     return converted_kwargs
 
@@ -81,7 +93,7 @@ def deserialize(value: Any, *, hint: Union[T, Type[T]]) -> T:
 
     # origin: like `list` for `List` or `Union` for `Optional`
     # args: like (str, int) for Optional[str, int]
-    origin, args = _resolve_hint(hint)
+    origin, args = resolve_hint(hint)
     # implementation detail: in the presence of a custom type in the args, the `_resolve_hint` function
     # always puts the real type first. This is only applicable to the thing-or-list-of-things feature.
     target_type: TypeHint = args[0] if args else Any
@@ -109,7 +121,7 @@ def deserialize(value: Any, *, hint: Union[T, Type[T]]) -> T:
         # json can't have maps or lists as keys, so we can't either. Ditch the key annotation, but convert values.
         return cast(T, _deserialize(value, hint=dict, contains=args[1] if args else Any))
 
-    if origin in PASSTHROUGH_TYPES:
+    if is_passthrough_type(origin):
         # we always return those without validation
         return cast(T, value)
 
@@ -125,7 +137,7 @@ def deserialize(value: Any, *, hint: Union[T, Type[T]]) -> T:
 def _deserialize(value: Any, *, hint: TypeHint, contains: Optional[TypeHint] = None) -> Any:
     """Fallback deserialization; if value is dict and hint is class, flex it. Else just return value."""
     if inspect.isclass(hint) and isinstance(value, dict):
-        return hint(**prepare_payload_for_unpacking(hint.__init__, value))
+        return hint(**convert_kwargs_for_unpacking(value, hint=hint))
 
     return value
 
@@ -141,7 +153,7 @@ def _deserialize_list(value: Any, *, hint: Type[list], contains: Optional[TypeHi
 
 @_deserialize.register(dict)
 def _deserialize_dict(value: Any, *, hint: Type[dict], contains: Optional[TypeHint] = None) -> Dict:
-    if isinstance(value, collections.Mapping):
+    if isinstance(value, abc.Mapping):
         return {key: deserialize(val, hint=contains or Any) for key, val in value.items()}
 
     return value  # type: ignore[no-any-return]
@@ -180,76 +192,53 @@ def _deserialize_enum(value: Any, *, hint: Type[Enum], contains: Optional[TypeHi
     return value  # type: ignore[no-any-return]
 
 
-def _resolve_hint(thing: TypeHint) -> Tuple[TypeHint, Sequence[TypeHint]]:
-    """
-    Transform e.g. List[Union[str, bool]] into (list, (str, bool)) or Dict[str, Any] into (dict, (str, Any)).
-    Also validates that the annotation is supported and removes "NoneType" if present.
+@_deserialize.register(SerializationMetadata)
+def _deserialize_with_metadata(
+    value: Any, *, hint: SerializationMetadata, contains: Optional[TypeHint] = None
+) -> Any:
 
-    Some rules are enforced here:
-        - It's allowed to have unions of multiple JSON types; we assume they're already converted.
-        - A union containing multiple custom types is forbidden (we don't support it... yet?)
-        - A union is allowed to contain a Union[List[Thing], Thing] where Thing is any custom class.
-          In this case, Thing is always the first arg in the list of args.
-          i.e.: we may return (Thing, List[Thing]), but never (List[Thing], Thing)
-    """
-    origin = get_origin(thing) or thing
-    args = list(get_args(thing))
+    if isclass(hint) and issubclass(hint, SerializationMetadata):  # type: ignore[arg-type]
+        # this is an edge case; the dispatch will end up here when hint is either the SerializationMetadata type,
+        # or an instance thereof.
+        # Here, we take a shortcut to deserialize `value` into an instance of `SerializationMetadata`.
+        # This happens when flex is also used to serialize the metadata headers.
+        return hint(**convert_kwargs_for_unpacking(value, hint=hint))  # type: ignore[operator]
 
-    # typing implementation detail -- At runtime, Optional exists as Union[None, ...]
-    assert origin is not Optional
+    root_type = hint.import_type()
 
-    if origin is dict:
-        # the annotation in this case is [key, value]; they shall be reevaluated separately.
-        return origin, args
+    if root_type is dict:
+        # each value is converted to the type provided in the meta
+        return {
+            key: deserialize(value, hint=hint.additional_metadata.get(key, value))
+            for key, value in value.items()
+        }
 
-    # Remove NoneType if it's present. If the value is given as None, we return None, no questions asked,
-    # so we really don't need to keep this information.
-    while type(None) in args:
-        args.remove(type(None))
+    if root_type is list:
+        # the value in this case is a Dict[str, SerializationMetadata] where they key is the index within the list.
+        return [
+            deserialize(value[int(index)], hint=hint.additional_metadata[index])
+            for index in sorted(hint.additional_metadata, key=int)
+        ]
 
-    if not set(args).difference(PASSTHROUGH_TYPES):
-        # If all containing types are passthrough types, everything shall be fine.
-        return origin, args
+    if issubclass(root_type, Enum):
+        # special handling for enums.
+        return deserialize(value, hint=root_type)
 
-    if len(args) < 2:
-        return origin, args
+    if isclass(root_type) and isinstance(value, dict):
+        # typical case of unpacking value into an instance of the root type.
+        return root_type(
+            **convert_kwargs_for_unpacking(value, hint=hint)
+        )  # it's magic!  # type: ignore[no-any-return]
 
-    if len(args) == 2:
-        return origin, _as_union_of_thing_or_list_of_things(*args)
-
-    raise UnsupportedAnnotation(thing)
-
-
-def _as_union_of_thing_or_list_of_things(*annotation: TypeHint) -> Tuple[TypeHint, TypeHint]:
-    """
-    Validates that the annotation accepts "thing or a list of things" and returns it. Raise otherwise.
-    Returns the ordered args; we always move the target type to the first thing in the tuple.
-    """
-    if len(annotation) == 2:
-        target_type: Optional[TypeHint] = None
-        container_kind: Optional[TypeHint] = None
-
-        for hint in annotation:
-            origin = get_origin(hint)
-            if origin is None:
-                target_type = hint
-            else:
-                container_kind = origin
-
-        if container_kind is list and target_type is not None:
-            # note: ignore is required because mypy thinks this should be part of the static analysis.
-            # I suppose we should create our own wrappers instead of piggy-backing on typing constructs at runtime.
-            return target_type, List[target_type]  # type: ignore[valid-type]
-
-    raise UnsupportedAnnotation(annotation)
+    return value
 
 
 def _is_array_like(thing: Any) -> bool:
     """We don't want to mix up dictionaries and strings with tuples, sets and lists."""
     return all(
         (
-            isinstance(thing, collections.Iterable),
+            isinstance(thing, abc.Iterable),
             not isinstance(thing, (str, bytes)),
-            not isinstance(thing, collections.Mapping),
+            not isinstance(thing, abc.Mapping),
         )
     )
