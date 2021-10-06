@@ -5,4 +5,4 @@ from coveo_settings.float_setting import FloatSetting
 from coveo_settings.int_setting import IntSetting
 from coveo_settings.path_setting import PathSetting
 from coveo_settings.setting_abc import Setting, settings_adapter, ConfigValue
-from coveo_settings.string_setting import StringSetting
+from coveo_settings.string_setting import StringSetting, EmptyStringSetting

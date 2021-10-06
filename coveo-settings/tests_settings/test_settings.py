@@ -7,11 +7,13 @@ from unittest.mock import MagicMock
 from typing import Any, Type, Optional, Generator, Final
 
 import pytest
+from _pytest.monkeypatch import MonkeyPatch
 
 from coveo_settings import (
     DictSetting,
     AnySetting,
     StringSetting,
+    EmptyStringSetting,
     BoolSetting,
     IntSetting,
     FloatSetting,
@@ -211,6 +213,16 @@ def test_setting_environment_variable() -> None:
     del os.environ[environment_variable]
     assert not test_setting.is_set
     assert not test_setting
+
+
+@UnitTest
+def test_empty_string_setting(monkeypatch: MonkeyPatch) -> None:
+    """Tests the behavior of the EmptyStringSetting class."""
+    empty_setting = EmptyStringSetting("ut")
+    assert not empty_setting.is_set
+    monkeypatch.setenv("ut", "")
+    assert empty_setting.is_set
+    assert str(empty_setting) == empty_setting.value == ""
 
 
 @UnitTest
