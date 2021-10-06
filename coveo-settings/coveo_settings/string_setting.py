@@ -18,3 +18,18 @@ class StringSetting(Setting[str]):
             raise ValueError(f"StringSettings cannot be empty.")
 
         return value
+
+
+class EmptyStringSetting(Setting[str]):
+    """Setting that handles string values and supports the empty string as a valid choice."""
+
+    @staticmethod
+    def _cast(value: ConfigValue) -> str:
+        """Converts a value to a string."""
+        if not isinstance(value, (str, bool, int, float)):
+            raise ValueError(f"Cannot convert objects of type {type(value)}.")
+
+        if not isinstance(value, str):
+            value = str(value)
+
+        return value
