@@ -152,5 +152,5 @@ def test_deserialize_adapter_factory(raw: bool) -> None:
 
     register_subclass_adapter(TestFactory, factory_adapter)
 
-    payload = {'raw': {"value": "success"}} if raw else {"value": "success"}
+    payload: Dict[str, Any] = {'raw': {"value": "success"}} if raw else {"value": "success"}
     assert deserialize(payload, hint=TestFactory).value == 'success'
