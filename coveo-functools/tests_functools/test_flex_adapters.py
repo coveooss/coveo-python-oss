@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
 from typing import Type, Any, Generator, List, Dict, Optional
@@ -130,3 +132,25 @@ def test_deserialize_mutate_value_adapter() -> None:
     assert "test" in payload
     assert isinstance(instance.test, Implementation)
     assert instance.test.value == "success"
+
+
+@dataclass
+class TestFactory:
+    value: str
+
+    @classmethod
+    def factory(cls, raw: Dict[str, str]) -> TestFactory:
+        return deserialize(raw, hint=TestFactory)
+
+
+@parametrize('raw', (True, False))
+def test_deserialize_adapter_factory(raw: bool) -> None:
+    """The adapter may return a callable."""
+
+    def factory_adapter(value: Any) -> TypeHint:
+        return TestFactory.factory if 'raw' in value else TestFactory
+
+    register_subclass_adapter(TestFactory, factory_adapter)
+
+    payload = {'raw': {"value": "success"}} if raw else {"value": "success"}
+    assert deserialize(payload, hint=TestFactory).value == 'success'
