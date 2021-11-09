@@ -135,8 +135,8 @@ def deserialize(value: Any, *, hint: Union[T, Type[T]]) -> T:
 
 @dispatch(switch_pos="hint")
 def _deserialize(value: Any, *, hint: TypeHint, contains: Optional[TypeHint] = None) -> Any:
-    """Fallback deserialization; if value is dict and hint is class, flex it. Else just return value."""
-    if inspect.isclass(hint) and isinstance(value, dict):
+    """Fallback deserialization; if value is dict and hint is callable, flex it. Else just return value."""
+    if callable(hint) and isinstance(value, dict):
         return hint(**convert_kwargs_for_unpacking(value, hint=hint))
 
     return value

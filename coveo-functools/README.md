@@ -108,9 +108,93 @@ Flex can be used with:
 - An Abstract class requires additional metadata or a subclass adapter.
 - No support for additional `typing` and `collections` objects other than the ones mentioned in this documentation.
 - You can only `Union` basic json-compatible types, or `List[T], T`.
+- All referenced types must be importable from the module it is defined in. This means that you cannot use inline and dynamic classes.
 
 
 These are subject to change.
+
+
+## Features and FAQs
+### Subclass Adapters
+
+__new in 2.0.9__
+
+You can direct and override how to instantiate a payload by registering a callback adapter.
+
+The adapter is a `Callable[[Any], TypeHint]` that you provide. 
+It will be called with the payload value as `Any`, so you can inspect the content.
+It must return a `TypeHint` that tells flex which class to use.
+
+__new in 2.0.10__: TypeHint may also be a callable (previously, it had to be a class).
+
+With subclass adapters, you can selectively decide the implementation class based on the payload to deserialize.
+While this is necessary when annotating structures with Abstract classes, 
+it can be used for any other class as well.
+
+For this to work, you must register the annotated class with a callback:
+
+```python
+from coveo_functools.flex.subclass_adapter import register_subclass_adapter
+
+class Abstract:
+  @abstractmethod
+  def api(self) -> None:
+    ...
+
+  
+class ThisImplementation(Abstract):
+  def api(self) -> None:
+    ...
+  
+  
+class OtherImplementation(Abstract):
+  def api(self) -> None:
+    ...
+  
+  
+def adapter(payload: Any) -> Type:
+  assert isinstance(payload, dict)  # actual type depends on payload
+  return ThisImplementation if 'this' in payload else OtherImplementation
+  
+  
+register_subclass_adapter(Abstract, adapter)
+```
+
+Thanks to the adapter, this is now possible:
+
+```python
+assert isinstance(deserialize({'this': {}}, hint=Abstract), ThisImplementation)
+assert isinstance(deserialize({}, hint=Abstract), OtherImplementation)
+
+
+@dataclass
+class Payload:
+    owner: Abstract
+    
+
+instance = deserialize({"owner": {"this": {}}}, hint=Payload)
+assert isinstance(instance.owner, ThisImplementation)
+```
+
+The intended use of subclass adapters is to:
+  1. Support Abstract classes as annotations
+  1. Being able to specify a delegate for a specific kind of payload
+  1. To enhance/clean a payload before it is used
+
+Any other use will generally:
+  1. Mess up your type annotation game because types are altered dynamically at runtime.
+  1. Make your code more obscure and more likely to investigate the dark arts.
+  1. Break your IDE's autocompletion features.
+  1. Linters which rely on static analysis will not be as powerful as they could be.
+
+
+That being said, it's a powerful and potentially game-breaking feature 
+that can be used to bend the framework if you accept bearing the consequences:
+  - There are no validations (to allow duck typing and stuff)
+  - This means you don't *have* to return an actual subclass; just something that can handle that payload
+  - You can register a callback for `Any` (or anything else really)
+  - You're not limited to return custom classes: you can return things like `Dict[str, int]` or `List[Implementation]` and the flex machinery will handle it just as if it was statically annotated that way.
+  - The payload `value` received by the adapter is not a copy, modifications will be honored.
 
 
 ### About Abstract classes
@@ -179,76 +263,7 @@ __new in 2.0.9__
 
 The other, more involved way to use Abstract classes as annotations is to register subclass adapters.
 
-The adapter is a `Callable[[Any], TypeHint]` that you provide. 
-It will be called with the payload value as `Any`, so you can inspect the content.
-It must return a `TypeHint` that tells flex which class to use.
-
-With subclass adapters, you can selectively decide the implementation class based on the payload to deserialize.
-While this is necessary when annotating structures with Abstract classes, 
-it can be used for any other class as well.
-
-For this to work, you must register the annotated class with a callback:
-
-```python
-from coveo_functools.flex.subclass_adapter import register_subclass_adapter
-
-class Abstract:
-  @abstractmethod
-  def api(self) -> None:
-    ...
-
-  
-class ThisImplementation(Abstract):
-  def api(self) -> None:
-    ...
-  
-  
-class OtherImplementation(Abstract):
-  def api(self) -> None:
-    ...
-  
-  
-def adapter(payload: Any) -> Type:
-  assert isinstance(payload, dict)  # actual type depends on payload
-  return ThisImplementation if 'this' in payload else OtherImplementation
-  
-  
-register_subclass_adapter(Abstract, adapter)
-```
-
-Thanks to the adapter, this is now possible:
-
-```python
-assert isinstance(deserialize({'this': {}}, hint=Abstract), ThisImplementation)
-assert isinstance(deserialize({}, hint=Abstract), OtherImplementation)
-
-
-@dataclass
-class Payload:
-    owner: Abstract
-    
-
-instance = deserialize({"owner": {"this": {}}}, hint=Payload)
-assert isinstance(instance.owner, ThisImplementation)
-```
-
-The intended use of subclass adapters is to support Abstract classes as annotations.
-
-Any other use will generally:
-  1. Mess up your type annotation game because types are altered dynamically at runtime.
-  1. Make your code more obscure and more likely to investigate the dark arts.
-  1. Break your IDE's autocompletion features.
-  1. Linters which rely on static analysis will not be as powerful as they could be.
-
-
-That being said, it's a powerful and potentially game-breaking feature 
-that can be used to bend the framework if you accept bearing the consequences:
-  - There are no validations (to allow duck typing and stuff)
-  - This means you don't *have* to return an actual subclass; just something that can handle that payload
-  - You can register a callback for `Any` (or anything else really)
-  - You're not limited to return custom classes: you can return things like `Dict[str, int]` or `List[Implementation]` and the flex machinery will handle it just as if it was statically annotated that way.
-  - The payload `value` received by the adapter is not a copy, modifications will be honored.
-
+See the [Subclass Adapters](#subclass-adapters) section for more info.
 
 ### About Enums
 
