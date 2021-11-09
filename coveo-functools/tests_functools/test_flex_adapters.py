@@ -143,14 +143,13 @@ class TestFactory:
         return deserialize(raw, hint=TestFactory)
 
 
-@parametrize('raw', (True, False))
-def test_deserialize_adapter_factory(raw: bool) -> None:
+def test_deserialize_adapter_factory_classmethod() -> None:
     """The adapter may return a callable."""
 
     def factory_adapter(value: Any) -> TypeHint:
-        return TestFactory.factory if 'raw' in value else TestFactory
+        return TestFactory.factory if "raw" in value else TestFactory
 
     register_subclass_adapter(TestFactory, factory_adapter)
 
-    payload: Dict[str, Any] = {'raw': {"value": "success"}} if raw else {"value": "success"}
-    assert deserialize(payload, hint=TestFactory).value == 'success'
+    payload: Dict[str, Any] = {"raw": {"value": "success"}}
+    assert deserialize(payload, hint=TestFactory).value == "success"
