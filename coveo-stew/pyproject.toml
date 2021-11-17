@@ -22,12 +22,8 @@ coveo-systools = { version = "^2.0.0" }
 coveo-styles = { version = "^2.0.0" }
 junit-xml = "*"
 mypy = "0.812"
-poetry = [
-    { version = "^1.1.4,!=1.1.9,!=1.1.10,!=1.1.11", markers = "sys_platform == 'win32'" },
-    { version = "^1.1.4", markers = "sys_platform != 'win32'" }
-]
+poetry = "1.1.8"
 toml = "*"
-typing_extensions = "*"
 
 
 [tool.poetry.dev-dependencies]
