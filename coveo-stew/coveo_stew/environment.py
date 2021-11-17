@@ -3,8 +3,7 @@ from functools import lru_cache
 from pathlib import Path
 import platform
 import sys
-from typing import Union, Optional, Any, List
-from typing_extensions import Final
+from typing import Union, Optional, Any, List, Final
 
 from coveo_systools.subprocess import check_output
 

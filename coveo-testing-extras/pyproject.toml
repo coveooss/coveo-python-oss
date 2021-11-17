@@ -25,7 +25,6 @@ coveo-settings = { path = "../coveo-settings/", develop = true }
 coveo-systools = { path = "../coveo-systools/", develop = true }
 coveo-testing = { path = "../coveo-testing/", develop = true }
 mypy = "0.812"
-typing_extensions = "*"
 
 
 [tool.stew.ci]

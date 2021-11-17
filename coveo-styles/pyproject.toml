@@ -12,7 +12,6 @@ python = ">=3.8"
 
 click = "*"
 emoji = "*"
-typing_extensions = "*"
 
 
 [tool.poetry.dev-dependencies]

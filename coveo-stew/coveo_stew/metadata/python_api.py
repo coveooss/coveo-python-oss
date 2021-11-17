@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing_extensions import Final
+from typing import Final
 
 
 class PythonFile:

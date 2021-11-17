@@ -1,6 +1,5 @@
 from pathlib import Path
-from typing import Optional, TYPE_CHECKING, Iterator
-from typing_extensions import Protocol
+from typing import Optional, TYPE_CHECKING, Iterator, Protocol
 
 from poetry.poetry import Poetry
 

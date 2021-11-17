@@ -3,8 +3,7 @@
 
 from functools import singledispatch as _singledispatch, update_wrapper
 import inspect
-from typing import Any, Type, cast, Union, Callable, TypeVar
-from typing_extensions import Protocol
+from typing import Any, Type, cast, Union, Callable, TypeVar, Protocol
 
 T = TypeVar("T")
 

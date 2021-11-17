@@ -4,11 +4,10 @@ import os
 import platform
 import re
 import threading
-from typing import Dict, ClassVar, Iterator
+from typing import Dict, ClassVar, Iterator, Final
 
 import pytest
 from _pytest.fixtures import SubRequest
-from typing_extensions import Final
 
 
 class TestId:

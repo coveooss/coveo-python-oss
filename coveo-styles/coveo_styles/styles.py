@@ -25,18 +25,9 @@ from typing import (
     Type,
     Iterable,
     Union,
-    TYPE_CHECKING,
-    Callable,
+    Final,
+    Protocol
 )
-
-if TYPE_CHECKING:
-    from typing_extensions import Final, Protocol
-else:
-    try:  # python 3.8
-        from typing import Final, Protocol
-    except ImportError:
-        # use the extension module
-        from typing_extensions import Final, Protocol
 
 import click
 from emoji import emojize

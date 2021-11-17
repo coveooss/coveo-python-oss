@@ -24,7 +24,6 @@ junit-xml = "*"
 mypy = "0.812"
 poetry = "^1.1.4"
 toml = "*"
-typing_extensions = "*"
 
 
 [tool.poetry.dev-dependencies]

@@ -16,7 +16,6 @@ pytest = "*"
 
 [tool.poetry.dev-dependencies]
 black = { version = "21.6b0", allow-prereleases = true }
-typing_extensions = "*"
 mypy = "0.812"
 
 
