@@ -523,6 +523,32 @@ testing = ["pytest", "pytest-benchmark"]
 
 [[package]]
 name = "poetry"
+version = "1.1.8"
+description = "Python dependency management and packaging made easy."
+category = "main"
+optional = false
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
+
+[package.dependencies]
+cachecontrol = {version = ">=0.12.4,<0.13.0", extras = ["filecache"]}
+cachy = ">=0.3.0,<0.4.0"
+cleo = ">=0.8.1,<0.9.0"
+clikit = ">=0.6.2,<0.7.0"
+crashtest = {version = ">=0.3.0,<0.4.0", markers = "python_version >= \"3.6\" and python_version < \"4.0\""}
+html5lib = ">=1.0,<2.0"
+keyring = {version = ">=21.2.0,<22.0.0", markers = "python_version >= \"3.6\" and python_version < \"4.0\""}
+packaging = ">=20.4,<21.0"
+pexpect = ">=4.7.0,<5.0.0"
+pkginfo = ">=1.4,<2.0"
+poetry-core = ">=1.0.4,<1.1.0"
+requests = ">=2.18,<3.0"
+requests-toolbelt = ">=0.9.1,<0.10.0"
+shellingham = ">=1.1,<2.0"
+tomlkit = ">=0.7.0,<1.0.0"
+virtualenv = ">=20.0.26,<21.0.0"
+
+[[package]]
+name = "poetry"
 version = "1.1.11"
 description = "Python dependency management and packaging made easy."
 category = "main"
@@ -782,7 +808,7 @@ python-versions = "*"
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.8"
-content-hash = "5300e40774c5847b17563458d2a1f120317091889b79f350a0617c51512c1111"
+content-hash = "d97b35852baa4fff93839af548f0e293cf134c5d55c6c9da67fe45e332c95451"
 
 [metadata.files]
 appdirs = [
@@ -1057,6 +1083,8 @@ pluggy = [
     {file = "pluggy-1.0.0.tar.gz", hash = "sha256:4224373bacce55f955a878bf9cfa763c1e360858e330072059e10bad68531159"},
 ]
 poetry = [
+    {file = "poetry-1.1.8-py2.py3-none-any.whl", hash = "sha256:44fee7cbb5a8c49b7ca012be589557ac704bfed9733f2e23d63cf4b2e7bc3315"},
+    {file = "poetry-1.1.8.tar.gz", hash = "sha256:6dc82e85d919ab99a0b18baea1933a00a40d85eedce24f80a6099909e387914e"},
     {file = "poetry-1.1.11-py2.py3-none-any.whl", hash = "sha256:628e2a933c9f7c28fa0edbee09f9e2e6b25301e610929b5414f3d55ed40fc712"},
     {file = "poetry-1.1.11.tar.gz", hash = "sha256:7d7d22f55fbebb830cc85b1c69cd7a91fd85f49e5396e7a14b953645a470f69e"},
 ]
