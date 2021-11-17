@@ -1,7 +1,7 @@
 import functools
 import json
 from pathlib import Path
-from typing import Set, Dict, cast, List, Optional, Tuple
+from typing import Set, Dict, cast, List, Optional, Tuple, Iterable
 
 from coveo_styles.styles import echo
 from coveo_systools.subprocess import check_call, check_output
@@ -144,6 +144,8 @@ class _OfflinePublish:
         to_download: Set[Dependency] = set()
 
         for requirement in self.valid_packages:
+            requirement = _adjust_to_lock_name(requirement, self._locked_packages) or requirement
+
             if requirement not in self._locked_packages:
                 continue  # could be a dev dependency, or something the dev installed
             if requirement in self._local_projects:
@@ -253,3 +255,16 @@ class _OfflinePublish:
             ),
             working_directory=self.wheelhouse,
         )
+
+
+def _adjust_to_lock_name(requirement: str, locked_packages: Iterable[str]) -> Optional[str]:
+    """
+    Fixes some cases of mismatch between the name in the lock and the name in pip freeze.
+    e.g.: the lock uses `typing-extensions` but pip freeze shows `typing_extensions` :shrug:
+    """
+    match = {
+        requirement,
+        requirement.replace("-", "_"),
+        requirement.replace("_", "-"),
+    }.intersection(locked_packages)
+    return match.pop() if match else None
