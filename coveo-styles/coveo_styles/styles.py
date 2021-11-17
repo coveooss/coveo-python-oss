@@ -26,7 +26,7 @@ from typing import (
     Iterable,
     Union,
     Final,
-    Protocol
+    Protocol,
 )
 
 import click

@@ -15,7 +15,6 @@ coveo-settings = { version = "^2.0.0" }
 coveo-styles = { version = "^2.0.0" }
 coveo-systools = { version = "^2.0.0" }
 requests = "*"
-typing-extensions = "*"
 
 
 [tool.poetry.dev-dependencies]

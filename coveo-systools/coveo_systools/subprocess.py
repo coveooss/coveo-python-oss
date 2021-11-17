@@ -5,7 +5,20 @@ import logging
 import shlex
 import subprocess
 from os import PathLike
-from typing import Union, Any, Optional, cast, List, Dict, Tuple, Iterable, Generator, Protocol, Final, Literal
+from typing import (
+    Union,
+    Any,
+    Optional,
+    cast,
+    List,
+    Dict,
+    Tuple,
+    Iterable,
+    Generator,
+    Protocol,
+    Final,
+    Literal,
+)
 
 from coveo_functools.dispatch import dispatch
 
