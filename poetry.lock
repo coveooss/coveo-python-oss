@@ -222,7 +222,6 @@ coveo-settings = "^2.0.0"
 coveo-styles = "^2.0.0"
 coveo-systools = "^2.0.0"
 requests = "*"
-typing-extensions = "*"
 
 [package.source]
 type = "directory"
