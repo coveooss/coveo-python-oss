@@ -144,3 +144,12 @@ def test_adapter_strip_scheme_recursion() -> None:
         return mapping[value[5:]]
 
     assert str(AnySetting("ut", fallback="key->first")) == "goal!"
+
+
+@UnitTest
+def test_adapter_returns_none() -> None:
+    @settings_adapter("none->", strip_scheme=False)
+    def return_dict(value: str) -> Optional[ConfigValue]:
+        return None
+
+    assert not AnySetting("ut", fallback="none->whatever")
