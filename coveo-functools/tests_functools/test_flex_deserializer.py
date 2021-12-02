@@ -199,6 +199,18 @@ def test_deserialize_enum_list() -> None:
     ]
 
 
+@UnitTest
+def test_deserialize_enum_alias() -> None:
+    class SomeEnum(Enum):
+        Job = "job"
+        Task = Job
+        Status = "status"
+
+    assert deserialize("job", hint=SomeEnum) is SomeEnum.Job
+    assert deserialize("task", hint=SomeEnum) is SomeEnum.Task
+    assert SomeEnum.Job is SomeEnum.Task  # it's the same picture.
+
+
 def test_deserialize_static_typing() -> None:
     """
     This is actually a static typing test to ensure that `deserialize` correctly handles the generic annotations.

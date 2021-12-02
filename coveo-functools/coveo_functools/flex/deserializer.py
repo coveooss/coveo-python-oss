@@ -14,6 +14,7 @@ from typing import (
     cast,
     Iterable,
     Callable,
+    Tuple,
 )
 
 from coveo_functools.annotations import find_annotations
@@ -180,14 +181,17 @@ def _deserialize_enum(value: Any, *, hint: Type[Enum], contains: Optional[TypeHi
     if isinstance(value, str):
         # fish!
         simplekey = _flex_translate(value)
-        for enum_item in cast(Iterable[Enum], hint):
+        for enum_name, enum_instance in cast(Iterable[Tuple[str, Enum]], hint.__members__.items()):
             if (
                 # fish for value typos first
-                (isinstance(enum_item.value, str) and _flex_translate(enum_item.value) == simplekey)
+                (
+                    isinstance(enum_instance.value, str)
+                    and _flex_translate(enum_instance.value) == simplekey
+                )
                 # then look if the enum names look like it would match
-                or _flex_translate(enum_item.name) == simplekey
+                or _flex_translate(enum_name) == simplekey
             ):
-                return enum_item
+                return enum_instance
 
     return value  # type: ignore[no-any-return]
 
