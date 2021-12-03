@@ -7,6 +7,7 @@ authors = ["Jonathan Piché <jpiche@coveo.com>"]
 
 [tool.poetry.dependencies]
 python = ">=3.8"
+coveo-arnparse = { path = 'coveo-arnparse/', develop = true }
 coveo-example-library = { path = 'coveo-example-library/', develop = true }
 coveo-functools = { path = 'coveo-functools/', develop = true }
 coveo-itertools = { path = 'coveo-itertools/', develop = true }
