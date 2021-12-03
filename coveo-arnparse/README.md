@@ -1,6 +1,6 @@
 # coveo-arnparse
 
-Simple dataclass around Amazon Resource NAmes (ARNs).
+Simple dataclass and parser around Amazon Resource Names (ARNs).
 
 Ref: https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html
 

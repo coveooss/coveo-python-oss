@@ -24,7 +24,7 @@ AWS_ARN_REGEX: Final = re.compile(
 )
 
 
-@dataclass()
+@dataclass
 class Arn:
     """
     Used to access individual components in an arn.

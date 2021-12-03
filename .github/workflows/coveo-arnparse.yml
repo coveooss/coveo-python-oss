@@ -59,4 +59,4 @@ jobs:
           project-name: ${{ github.workflow }}
           pypi-token: ${{ secrets.PYPI_TOKEN_COVEO_ARNPARSE }}
           pre-release: ${{ github.ref != 'refs/heads/main' }}
-          dry-run: true
+          dry-run: ${{ github.ref != 'refs/heads/main' && github.event.inputs.publish != 'true' }}
