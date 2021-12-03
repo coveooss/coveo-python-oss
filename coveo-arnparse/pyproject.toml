@@ -1,0 +1,40 @@
+[tool.poetry]
+name = "coveo-arnparse"
+version = "1.0.0"
+description = "Parse an arn in multiple components."
+license = "Apache-2.0"
+readme = "README.md"
+repository = "https://github.com/coveooss/coveo-python-oss/tree/main/coveo-arnparse"
+authors = ["Jonathan Piché <tools@coveo.com>"]
+
+
+[tool.poetry.dependencies]
+python = ">=3.8"
+
+
+[tool.poetry.dev-dependencies]
+bandit = "*"
+black = { version = "*", allow-prereleases = true }
+coveo-testing = { path = "../coveo-testing", develop = true }
+flake8 = "*"
+mypy = "*"
+
+
+[tool.stew.ci]
+pytest = true
+offline-build = true
+black = true
+
+
+[tool.stew.ci.custom-runners]
+flake8 = { args = ["--ignore=E501,W503", "coveo_arnparse", "tests_coveo_arnparse"] }
+bandit = { args = ["--quiet --recursive ."] }
+
+
+[tool.black]
+line-length = 100
+
+
+[build-system]
+requires = ["poetry_core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
