@@ -42,7 +42,7 @@ jobs:
   publish:
     name: Publish to pypi.org
     runs-on: ubuntu-20.04
-    needs: pyprojectci
+    needs: stew
 
     steps:
       - name: Checkout repository
