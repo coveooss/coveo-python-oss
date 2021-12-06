@@ -11,5 +11,5 @@ def mock_config_value(
     setting: Setting, value: Optional[ConfigValue]
 ) -> Generator[None, None, None]:
     """Mocks a setting value during a block of code so that it always returns `value`."""
-    with patch.object(setting, "_get_value", return_value=value):
+    with patch.object(setting, Setting._get_value_before_redirections.__name__, return_value=value):
         yield

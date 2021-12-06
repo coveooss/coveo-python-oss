@@ -130,7 +130,7 @@ class Setting(SupportsInt, SupportsFloat, Generic[T], Container, Iterable):
     @property
     def value(self) -> Optional[T]:
         """Returns the validated value of the setting, or None when not set."""
-        value = self._get_value()
+        value = settings_adapter.evaluate(self._get_value_before_redirections())
         return None if value is None else self._cast_and_validate(value)
 
     @value.setter
@@ -153,7 +153,7 @@ class Setting(SupportsInt, SupportsFloat, Generic[T], Container, Iterable):
             - Values with defaults are always set
             - Values that should redirect to a custom adapter are always set
         """
-        return self._get_value() is not None
+        return self._get_value_before_redirections() is not None
 
     @property
     def is_valid(self) -> bool:
@@ -166,7 +166,7 @@ class Setting(SupportsInt, SupportsFloat, Generic[T], Container, Iterable):
     @property
     def is_redirect(self) -> bool:
         """True if the value invokes a custom adapter."""
-        return settings_adapter.is_redirect(self._get_value())
+        return settings_adapter.is_redirect(self._get_value_before_redirections())
 
     def get_if_set(self, default: T) -> T:
         """Return the value, or a default if not set."""
@@ -196,10 +196,10 @@ class Setting(SupportsInt, SupportsFloat, Generic[T], Container, Iterable):
         return value
 
     def _cast_and_validate(self, value: ConfigValue) -> T:
-        """Redirect/cast and validate the value or raise an exception."""
-        return self._validate_or_raise(self._cast_or_raise(settings_adapter.evaluate(value)))
+        """Cast and validate the value or raise an exception."""
+        return self._validate_or_raise(self._cast_or_raise(value))
 
-    def _get_value(self) -> Optional[ConfigValue]:
+    def _get_value_before_redirections(self) -> Optional[ConfigValue]:
         """Returns the raw value/fallback/override of this setting, else None."""
         if self._cached and self._cache_validated is not None:
             log.debug(f"Setting {self.key} retrieved from cache.")
