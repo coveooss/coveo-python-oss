@@ -4,8 +4,7 @@ from coveo_systools.streams import filter_ansi
 def test_conflicting_character() -> None:
     """ Legacy bug; this sequence was introduced in a pip upgrade (a progress bar!) and broke the decoder. """
     content = b"\xe2\x94\x81"
-    assert content.decode()
-    filter_ansi(content).decode()
+    assert filter_ansi(content) == content
 
 
 def test_filter_ansi() -> None:
