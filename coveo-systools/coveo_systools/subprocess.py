@@ -238,7 +238,11 @@ def check_run(
             encoding = ("utf-8",)  # py3 strings are always utf-8
             output = output.encode(*encoding)
         assert isinstance(output, bytes)  # mypy
-        return filter_ansi(output).decode(*encoding).strip()
+        try:
+            return filter_ansi(output).decode(*encoding).strip()
+        except UnicodeDecodeError:
+            log.warning("An error occurred decoding the output stream; retrying in safe mode.")
+            return output.decode(errors="ignore").strip()
 
     return None
 
