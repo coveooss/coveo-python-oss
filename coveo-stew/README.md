@@ -1,39 +1,44 @@
 # coveo-stew
 
-Extra magic for poetry-backed projects with CI and batch operations in mind.
-
-
-## Use cases
-
-- You don't want to spend time writing the setup/test/report/publish/tag CI workflow
-- You want to work with multiple python projects in a single repository
-- You need a way to download locked dependencies and install them offline later
+coveo-stew delivers a complete Continuous Integration (CI) and Continuous Delivery (CD) solution
+using [poetry](https://python-poetry.org) as its backend.
 
 
 # Features
 
-## poetry on steroids / offline distribution
-- Orchestrates several isolated poetry projects in one repo
-- Supports unpublished, local-only libraries and projects
-- Generates offline installation package from lock files
-
-## developer tools
-- Batch support for common operations, such as poetry lock and poetry install
-- Specialized development environment support (called pydev)
-
-## ci tools
-- Builtin, config-free pytest and mypy checks
-- Able to resolve some checks automatically (e.g.: lock file is outdated? call poetry lock!)
+## CI tools
+- Builtin, config-free pytest, mypy and black runners
+- Add your own linters and tools
 - JUnit report generation
-- Github action
+- GitHub Action that runs all your CI tools
+
+Similar to: tox
+
+## CD tools
+- GitHub Action for Continuous Delivery (CD) (publish to pypi)
+- Automated "patch" version bumps (requires a `pypi` server)
+- Can download locked dependencies into a folder, for offline distribution
+
+Similar to: poetry, flit, pbr, setuptools
+
+## Multiple projects
+- Support for several isolated poetry projects in one GitHub repository
+- Support for local path references
+- A "one ring to rule them all" virtual environment that includes all subprojects within the repository
+- Batch operations
+- Note: Single projects are also supported! 😅
+
+Similar to: nothing! it's unique! 😎 
 
 
 # Installation
 
+Just like poetry, `stew` is a CLI tool that you install in your system.
+
 It is recommended to install using [pipx](https://github.com/pipxproject/pipx) in order to isolate this into a nice little space:
 
 ```
-pip3 install pipx --user
+pip install pipx --user
 pipx install coveo-stew
 ```
 
@@ -55,43 +60,110 @@ Unless a project name is specified, most commands will operate on all projects i
 - `stew <command> <project-name> --exact-match`
     - Disable partial project name matching
 
-The main commands are summarized below.
+The main commands are explained below.
 
 
 ## `stew ci`
 
-Orchestrates the CI process over one or multiple projects. 
+The main show; it runs all CI tools on one or multiple projects.
 
-Errors will show in the console and in junit xml reports generated inside the `.ci` folder.
+Errors will show in the console, and junit xml reports will be generated inside the `.ci` folder.
+
+Without configuration, this command will run the following checks:
+
+- mypy (using opinionated, strict rules)
+- poetry check
+- stew check-outdated
+
+Options:
+
+- `--fix` will reformat the code if `black` fails. Additional fix routines may be added in the future.
+- `--check <runner>` will launch only that runner. This option can be repeated.
+- `--quick` skips running `poetry install --remove-untracked` before running the checks.
+
+
+## `stew build`
+
+Store the project and its **locked dependencies** to disk, so it can be installed without contacting a `pypi` server.
+
+Optimally used to create truly repeatable builds and workflows (e.g.: containerized images, cloud storage, etc).
+
+The folder can later be installed offline with `pip install --no-index --find-links <folder> <project-name>`.
+
+
+Options:
+
+- `--directory` specifies where the wheels should be downloaded.
+- `--python` may be used to target a different python. It's important to use the same python version, architecture and OS than the target system.
+
+**Make sure your target `<folder>` is clean**: Keep in mind that `pip` will still use the `pyproject.toml` constraints when installing, not `poetry.lock`. 
+The locked version system works when the locked version is the only thing that `pip` can find in the `<folder>`.
+
+
+## `stew check-outdated` and `stew fix-outdated` 
+
+Checks for out-of-date files or automatically update them.
+
+Summary of actions:
+- `poetry lock` if `pyproject.toml` changed but not the `poetry.lock`
+- `stew pull-dev-requirements` if a pydev project's dev-requirements are out of sync
+
+
+## `stew bump`
+
+Calls `poetry lock` on all projects.
+
+
+## `stew refresh`
+
+Calls `poetry install` on all projects.
+
+
+## `stew fresh-eggs`
+
+Clears the `.egg-info` folder from your projects. Usually followed by a `poetry install` or a `stew refresh`.
+
+Use this if you change a `[tool.poetry.scripts]` section, else the changes will not be honored.
+
+
+## `stew locate <project>`
+
+Returns the path to a project:
+
+```
+$ stew locate coveo-stew
+/home/jonapich/code/coveo-python-oss/coveo-stew
+```
+
+# Configuration
 
 Configuration is done through each `pyproject.toml` file; default values are shown:
 
 ```
 [tool.stew.ci]
 mypy = true
+pytest = false
+black = false
 poetry-check = true
 check-outdated = true
-pytest = false
 offline-build = false
 ```
 
-### runner options
+You don't have to include the `[tool.stew.ci]` section at all if these defaults suit you!
 
-The value type of these items is designed to be extensible.
 
-#### pytest options
+## Builtin Runners
 
-```
-[tool.stew.ci]
+Even though `coveo-stew` provides builtin `mypy` and `black`, we strongly suggest pinning them to your
+`pyproject.toml` file in the `[tool.poetry.dev-dependencies]` section.
 
-# configure the markers to test
-pytest = { marker-expression = 'not docker_tests' }
+This way, mypy won't surprise you with new failures when they release new versions! 😎
 
-# disable the doctests
-pytest = { doctest-modules = False }
-```
+### mypy
 
-#### mypy options
+A strict mypy configuration is provided. 
+
+You can provide your own mypy configuration, but you'll have to specify the `set-config` option: 
 
 ```
 [tool.stew.ci]
@@ -103,86 +175,75 @@ mypy = { set-config = False }
 mypy = { set-config = "mypy.ini" }
 ```
 
+See https://mypy.readthedocs.io/en/stable/config_file.html#using-a-pyproject-toml
 
-## `stew build`
+### pytest
 
-Store the project and its **locked dependencies** to disk. 
+Pytest is configured to run with `--doctest-modules --tb=short --durations=5` as well as JUnit report generation.
 
-Optimally used to create truly repeatable builds and workflows (e.g.: docker images, terraform, S3, puppet...)
-
-The folder can later be installed offline with `pip install --no-index --find-links <folder> <project-name>`
-
-**Make sure your target `<folder>` is clean**: Keep in mind that `pip` will still use the `pyproject.toml` constraints when installing, not `poetry.lock`. 
-The system works when the locked version is the only thing that `pip` can find in the `<folder>`.
-
-
-### `stew fix-outdated`
-
-Checks for out-of-date files and automatically updates them.
-
-Summary of actions:
-- `poetry lock` if `pyproject.toml` changed but not the `poetry.lock`
-- `stew pull-dev-requirements` if a pydev project's dev-requirements are out of sync
-
-
-### `stew bump`
-
-Calls `poetry lock` on all projects.
-
-
-# How to depend on a local library
-
-We leverage poetry's `path` constraint in a very specific way:
+Some additional options are available:
 
 ```
-[tool.poetry.dependencies]
-my-package = { version = "^2.4" }
+[tool.stew.ci]
 
-[tool.poetry.dev-dependencies]
-my-package = { path = "../my-package/" }
+# configure the markers to test (i.e.: `-m`)
+pytest = { marker-expression = 'not docker_tests' }
+
+# disable the doctests
+pytest = { doctest-modules = False }
 ```
 
-Essentially, the behavior we're looking for:
-
-- Through `pip install`, it will obtain the latest `^2.4` from `pypi.org`
-- Through `poetry install`, which is only meant for development, the source is fetched from the disk
+Note: `pytest` is not bundled with `coveo-stew` at all! Make sure you add it to your project's dependencies.
 
 
-# pydev (development environment)
+### black
 
-Projects marked as pydev behave as "one ring to rule them all"; its pyproject.toml file links most/all the 
-python projects in a repository for developer convenience, so that one can work in any of the projects of the 
-repository without having to configure multiple environments in the IDE). 
-
-
-## How to enable pydev
-
-This functionality is enabled by adding the following to your `pyproject.toml`:
+Black supports the `pyproject.toml` file natively:
 
 ```
-[tool.stew]
-pydev = true
+[tool.black]
+line-length = 100
 ```
 
-The marker above comes with a few behavior differences in the way it interacts with stew and poetry:
+See https://black.readthedocs.io/en/stable/usage_and_configuration/the_basics.html#configuration-via-a-file
 
-- it cannot be packaged, published or even pip-installed
-- `stew ci` will skip it
-- the `tool.poetry.dev-dependencies` section is reserved, can be generated and updated through stew's `pull-dev-requirements` and `fix-outdated` commands
+### poetry-check
 
-As such, the pydev functionality is only suitable to enable seamless development between python projects in the repository.
-
-## How to use pydev
-
-1. Call `poetry install` from the root of the repository
-1. Obtain the location of the virtual environment (i.e.: `poetry env list --full-path`)
-1. Configure your IDE to use the python interpreter from that location
-
-If your IDE is python-smart, it should be able to pick up all imports automatically, regardless of your PYTHONPATH or your working directory.
-Since the local source is linked to, any change to the source code will be reflected on the next run.
+Runs `poetry check` on each project.
 
 
-# FAQ
+### check-outdated
+
+Runs `stew check-outdated`.
+
+
+### offline-build
+
+Runs `stew build` to a temporary folder and ensures that pip is able to reinstall everything from there.
+
+
+## Custom Runners
+
+You can add any tool to `stew ci`:
+
+```
+[tool.stew.ci.custom-runners]
+flake8 = true
+bandit = { args = ["--quiet --recursive ."] }
+```
+
+### Options
+
+The following options are supported for custom runners:
+
+- name: You can specify the CLI executable if it differs from the name of the tool.
+- args: Can be a string or a list of strings.
+- check-failed-exit-codes: A list of ints denoting the exit codes to consider "failed" (anything else will be "error"). 0 is always a success. default is `[1]`.
+- create-generic-report: Whether to create a generic pass/fail JUnit report for this check.
+- working-directory: The default is "project" which corresponds to the project's `pyproject.toml` file. You can change it to "repository" in order to run from the root.
+
+
+# FAQ, Tips and Tricks
 
 ## constraints vs locks - where do they apply?
 
@@ -202,17 +263,18 @@ Essentially, you want `poetry install` without the dev requirements.
 This functionality is provided out of the box by `stew build`, which creates a pip-installable package from the lock file that you can then stash in a private storage of your choice or pass around your deployments.
 
 
-## How to provision a production system
-
-### Preparing the virtual environment
+## How to provision a business production system / how to freeze your project for "offline" distribution
 
 You can keep `poetry` and `stew` off your production environment by creating a frozen archive of your application or library from your CI servers (docker used as example):
 
 - Use the `stew build` tool which:
     - performs a `poetry build` on your project
     - calls `pip download` based on the content of the lock file
-    - Moves the artifacts to the `.wheels` folder of your repo (can be configured with `--target`)
-- Recommended: Use the `--python` switch when calling `stew build` to specify which python executable to use! Make sure to use a python interpreter that matches the os/arch/bits of the system you want to provision
+    - Moves the artifacts to the `.wheels` folder of your repo
+- Recommended: Use the `--python` switch when calling `stew build` to specify which python executable to use! Make sure to use a python interpreter that matches the os/arch/bits of the system you want to provision.
+
+The content in `.wheels` can then be zipped and moved around. A typical scenario is to push it into a Docker Container:
+
 - Include the `.wheels` folder into your Docker build context
 - In your Dockerfile:
     - ADD the `.wheels` folder
@@ -221,13 +283,31 @@ You can keep `poetry` and `stew` off your production environment by creating a f
         - Use `python -m venv <location>` to create a virtual environment natively.
         - Note the executable location... typically (`location/bin/python` or `location/Scripts/python.exe`)
     - Install your application into the python environment you just created:
-        - Use `<venv-python-exec> -m pip install <your-package> --no-index --find-links <wheels-folder-location>`
-    - You may delete the `.wheels` folder if you want. Consider keeping a copy of the lock file within the docker image, for reference
-    
+        - Use `<venv-python-executable> -m pip install <your-package> --no-index --find-links <wheels-folder-location>`
+    - You may delete the `.wheels` folder if you want. Consider keeping a copy of the lock file within the docker image, for reference.
 
-### Using the environment
 
-Using the correct interpreter is all you need to do. There is no activation script or environment variables to set up: the interpreter's executable is a fully bootstrapped and isolated environment.
+## How to hook your IDE with the virtual environment
+
+If your IDE supports poetry, it should detect and use the `pyproject.toml` file.
+
+To set it up manually:
+
+1. Call `poetry install` from the location of the `pyproject.toml` file
+1. Obtain the location of the virtual environment (i.e.: `poetry env list --full-path`)
+1. Configure your IDE to use the python interpreter from that location
+
+Your IDE should proceed to analyze the environment and will pick up all imports automatically, 
+regardless of your PYTHONPATH or your working directory.
+Since the local source is editable, any change to the source code will be reflected on the next interpreter run.
+
+If you use the multiple-projects approach, you should hook your IDE to the `pydev` environment. See [this documentation](./README_MULTIPLE_LIBRARIES.md) for more information.
+
+
+## Using the virtual environment without activating it
+
+Using the correct interpreter is all you need to do. 
+There is no activation script or environment variables to set up: the interpreter's executable inside the virtual environment's folder is a fully bootstrapped and isolated environment.
 
 - A python dockerfile may call `<venv-python-exec>` directly in the dockerfile's CMD
 - A service that spawns other processes should receive the path to the `<venv-python-exec>`
