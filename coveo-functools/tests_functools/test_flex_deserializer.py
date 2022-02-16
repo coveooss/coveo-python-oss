@@ -211,6 +211,19 @@ def test_deserialize_enum_alias() -> None:
     assert SomeEnum.Job is SomeEnum.Task  # it's the same picture.
 
 
+@parametrize("immutable_type", (str, int, bytes, float))
+def test_deserialize_immutable(immutable_type: Type) -> None:
+    class SubclassImmutable(immutable_type):  # type: ignore[valid-type,misc]
+        @property
+        def builtin_type(self) -> Type:
+            return immutable_type
+
+    value = deserialize(1, hint=SubclassImmutable)
+    assert isinstance(value, immutable_type)
+    assert isinstance(value, SubclassImmutable)
+    assert value.builtin_type is immutable_type
+
+
 def test_deserialize_static_typing() -> None:
     """
     This is actually a static typing test to ensure that `deserialize` correctly handles the generic annotations.

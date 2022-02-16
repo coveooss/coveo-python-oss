@@ -4,6 +4,7 @@ from typing import Any
 
 
 JSON_TYPES = (
+    bytes,  # technically not a json type, but maximizes compatibility
     str,
     bool,
     int,
