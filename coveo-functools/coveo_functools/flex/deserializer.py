@@ -153,7 +153,7 @@ def _deserialize_immutable(
     hint: Union[Type[str], Type[int], Type[bytes], Type[float]],
     contains: Optional[TypeHint] = None,
 ) -> Union[str, int, bytes, float]:
-    """If the hint is type that subclasses an immutable builtin, convert it."""
+    """If the hint is a type that subclasses an immutable builtin, convert it."""
     # note: the actual builtins are skipped early and won't call this method. See `is_passthrough_type`.
     return hint(value)
 
