@@ -4,7 +4,6 @@ from typing import Any
 
 
 JSON_TYPES = (
-    bytes,  # technically not a json type, but maximizes compatibility
     str,
     bool,
     int,
@@ -13,7 +12,7 @@ JSON_TYPES = (
     dict,
 )  # list omitted to support list of custom types
 
-PASSTHROUGH_TYPES = {None, Any, *JSON_TYPES}
+PASSTHROUGH_TYPES = {None, Any, bytes, *JSON_TYPES}
 
 TypeHint = Any  # :shrug:
 
