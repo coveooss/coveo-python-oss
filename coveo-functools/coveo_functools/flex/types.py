@@ -12,7 +12,7 @@ JSON_TYPES = (
     dict,
 )  # list omitted to support list of custom types
 
-PASSTHROUGH_TYPES = {None, Any, *JSON_TYPES}
+PASSTHROUGH_TYPES = {None, Any, bytes, *JSON_TYPES}
 
 TypeHint = Any  # :shrug:
 

@@ -143,6 +143,21 @@ def _deserialize(value: Any, *, hint: TypeHint, contains: Optional[TypeHint] = N
     return value
 
 
+@_deserialize.register(str)
+@_deserialize.register(int)
+@_deserialize.register(bytes)
+@_deserialize.register(float)
+def _deserialize_immutable(
+    value: Any,
+    *,
+    hint: Union[Type[str], Type[int], Type[bytes], Type[float]],
+    contains: Optional[TypeHint] = None,
+) -> Union[str, int, bytes, float]:
+    """If the hint is a type that subclasses an immutable builtin, convert it."""
+    # note: the actual builtins are skipped early and won't call this method. See `is_passthrough_type`.
+    return hint(value)
+
+
 @_deserialize.register(list)
 def _deserialize_list(value: Any, *, hint: Type[list], contains: Optional[TypeHint] = None) -> List:
     """List deserialization into list of things."""
