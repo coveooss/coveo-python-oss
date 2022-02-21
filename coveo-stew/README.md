@@ -45,6 +45,14 @@ pipx install coveo-stew
 If you don't use pipx, make sure to isolate the installation into a virtual environment, otherwise it may interfere with an existing poetry installation.
 
 
+# Repository Structure
+
+Please read these guides in order to learn how to organize your repository for maximum compatibility:
+
+- [For a single library](README_SINGLE_LIBRARY.md)
+- [For multiple libraries](README_MULTIPLE_LIBRARIES.md)
+
+
 # Commands
 
 ## General command usage

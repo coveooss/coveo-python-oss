@@ -19,11 +19,12 @@ While we don't have a reference to showcase, we use this setup extensively in ou
 
 ## Option 2: In a folder
 
+This setup will suit both the single library and multiple-libraries setups.
+
+See the [multiple libraries guide](./README_MULTIPLE_LIBRARIES.md) for more information. 
+
 1. The `pyproject.toml` file is contained in a folder somewhere in the repository (e.g.: `/src/python/pyproject.toml`)
 2. There's a folder that matches the name of your module import, next to the `pyproject.toml` file (e.g.: `/src/python/coveo_systools/*.py`)
 3. An `__init__.py` file inside the importable folder  (e.g.: `/src/python/coveo_systools/__init__.py`)
 
 Single library in a folder reference: [coveo-systools](../coveo-systools)
-
-Note: This is the setup you must use if you're planning on having multiple libraries in the repository.
-See the [multiple libraries guide](./README_MULTIPLE_LIBRARIES.md) for more information.
