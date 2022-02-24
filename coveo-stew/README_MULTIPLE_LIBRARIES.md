@@ -10,7 +10,7 @@ To combine multiple projects in a repository, you need to respect the following:
 1. At a defined root, such as the root of your repository or a folder within, create a new `pyproject.toml` file. It will be the dev environment; we will come back to this soon.
 2. Python libraries should then exist within that folder's hierarchy, in subfolders.
 
-[The current repository](../) is a good example. The `pydev` environment is in the root's `pyproject.toml`, and subfolders contain the python libraries
+[The current repository](https://github.com/coveooss/coveo-python-oss) is a good example. The `pydev` environment is in the root's `pyproject.toml`, and subfolders contain the python libraries
 
 
 ## Python libraries structure
