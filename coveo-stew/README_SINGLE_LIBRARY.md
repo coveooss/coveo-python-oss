@@ -19,7 +19,7 @@ While we don't have a reference to showcase, we use this setup extensively in ou
 
 ## Option 2: In a folder
 
-This setup will suit both the single library and multiple-libraries setups.
+This setup will suit both the single library and multiple-library setups.
 
 See the [multiple libraries guide](./README_MULTIPLE_LIBRARIES.md) for more information. 
 

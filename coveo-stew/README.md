@@ -201,7 +201,7 @@ pytest = { marker-expression = 'not docker_tests' }
 pytest = { doctest-modules = False }
 ```
 
-Note: `pytest` is not bundled with `coveo-stew` at all! Make sure you add it to your project's dependencies.
+Note: `pytest` is not bundled with `coveo-stew` at all! Make sure you add it to your project dependencies.
 
 
 ### black
@@ -294,6 +294,8 @@ The content in `.wheels` can then be zipped and moved around. A typical scenario
         - Use `<venv-python-executable> -m pip install <your-package> --no-index --find-links <wheels-folder-location>`
     - You may delete the `.wheels` folder if you want. Consider keeping a copy of the lock file within the docker image, for reference.
 
+To make sure you use the python interpreter that matches the os/arch/bits of the system you want to provision, you can run `stew build` directly when building the container image.
+In order to do so without packaging `stew` in production, you can use [multi-stage builds](https://docs.docker.com/develop/develop-images/multistage-build/).
 
 ## How to hook your IDE with the virtual environment
 
@@ -315,7 +317,7 @@ If you use the multiple-projects approach, you should hook your IDE to the `pyde
 ## Using the virtual environment without activating it
 
 Using the correct interpreter is all you need to do. 
-There is no activation script or environment variables to set up: the interpreter's executable inside the virtual environment's folder is a fully bootstrapped and isolated environment.
+There is no activation script or environment variables to set up: the interpreter executable inside the virtual environment folder is a fully bootstrapped and isolated environment.
 
 - A python dockerfile may call `<venv-python-exec>` directly in the dockerfile's CMD
 - A service that spawns other processes should receive the path to the `<venv-python-exec>`

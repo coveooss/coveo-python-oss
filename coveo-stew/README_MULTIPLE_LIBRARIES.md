@@ -5,12 +5,12 @@ Follow this guide to configure your repository to work with multiple projects.
 
 ## Repository structure
 
-To combine multiple projects in a repository, you need to respect the following:
+To combine multiple projects in a repository, you need to adhere to the following:
 
 1. At a defined root, such as the root of your repository or a folder within, create a new `pyproject.toml` file. It will be the dev environment; we will come back to this soon.
-2. Python libraries should then exist within that folder's hierarchy, in subfolders.
+2. Python libraries should then exist within that folder hierarchy, in subfolders.
 
-[The current repository](../) is a good example. The `pydev` environment is in the root's `pyproject.toml`, and subfolders contain the python libraries
+[The current repository](../) is a good example. The `pydev` environment is in the root `pyproject.toml`, and subfolders contain the python libraries
 
 
 ## Python libraries structure
@@ -20,7 +20,7 @@ Each individual python library must be able to work on its own, meaning that:
 1. It has a dedicated folder (e.g.: `coveo-systools`). 
 2. It has `pyproject.toml` file in that dedicated folder. 
 3. The dedicated folder has a folder that matches the name of the project (e.g.: `coveo_systools`)
-4. The project's folder contains the "first" `__init__.py` in that hierarchy.
+4. The project folder contains the "first" `__init__.py` in that hierarchy.
 
 The expected setup is also defined as the "sub-folder" setup (Option 2!) in [the single library setup guide](./README_SINGLE_LIBRARY.md)
 
@@ -110,8 +110,8 @@ However, when you publish B, users will most likely run into an ImportError sinc
 
 To circumvent this, `stew ci` mostly skips testing the `pydev` environment.
 It will instead create an environment for A using A's `pyproject.toml` for tests.
-Then it will create the environment for B using B's `pyproject.toml` for tests. 
-And technically, it should explode here if you forgot to include Z!
+Then it will create the environment for B using B's `pyproject.toml` for tests.
+Technically, it should explode here if you forgot to include Z!
 
-Otherwise said, `stew` treats each individual library as a product on its own, while the `pydev` environment
+In other words, `stew` treats each individual library as a product on its own, while the `pydev` environment
 only serves as a convenience for the developer to benefit from multiple editable python sources in a single environment.
