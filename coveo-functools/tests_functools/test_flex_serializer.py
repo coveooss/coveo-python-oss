@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass, asdict
 from enum import Enum, auto
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 import pytest
 from coveo_functools.flex import deserialize
@@ -47,6 +47,11 @@ class MockWithAbstract:
 @dataclass
 class MockWithNested:
     root: MockWithAbstract
+
+
+@dataclass
+class MockOptionalList:
+    value: Optional[List[Optional[int]]]
 
 
 def test_serialization_metadata() -> None:
@@ -104,6 +109,20 @@ def test_serialization_abstract_in_dict() -> None:
     assert result["first"].value == "first" and result["second"].value == "second"  # type: ignore[index]
     assert isinstance(result["first"], MockSubClass)  # type: ignore[index]
     assert isinstance(result["second"], MockSubClass2)  # type: ignore[index]
+
+
+def test_serialization_none_in_list() -> None:
+    lst = MockOptionalList([1, 2, None, 4])
+    meta = SerializationMetadata.from_instance(lst)
+    result = deserialize({"value": [1, 2, None, 4]}, hint=meta)
+    assert result.value == [1, 2, None, 4]  # type: ignore[attr-defined]
+
+
+def test_serialization_none_in_custom_object() -> None:
+    obj = MockOptionalList(None)
+    meta = SerializationMetadata.from_instance(obj)
+    result = deserialize({"value": None}, hint=meta)
+    assert result.value is None  # type: ignore[attr-defined]
 
 
 def test_serialization_can_serialize_serialization_metadata() -> None:

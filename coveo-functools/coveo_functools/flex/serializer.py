@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from importlib import import_module
 from inspect import isclass
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from coveo_functools.annotations import find_annotations
 from coveo_functools.flex.types import TypeHint
@@ -13,7 +13,7 @@ from coveo_functools.flex.types import TypeHint
 class SerializationMetadata:
     module_name: str
     class_name: str
-    additional_metadata: Dict[str, SerializationMetadata] = field(default_factory=dict)
+    additional_metadata: Dict[str, Optional[SerializationMetadata]] = field(default_factory=dict)
 
     @classmethod
     def from_instance(cls, instance: Any) -> SerializationMetadata:
@@ -25,13 +25,13 @@ class SerializationMetadata:
             raise Exception("Can only reliably serialize from instances.")
 
         actual_type = instance.__class__
-        additional_metadata: Dict[Any, SerializationMetadata] = {}
+        additional_metadata: Dict[Any, Optional[SerializationMetadata]] = {}
 
         if isinstance(instance, list):
             # the additional metadata will be a map of the index to that object's metadata.
             # we use strings to accommodate json, which cannot have ints as keys.
             additional_metadata = {
-                str(idx): SerializationMetadata.from_instance(obj)
+                str(idx): (None if obj is None else SerializationMetadata.from_instance(obj))
                 for idx, obj in enumerate(instance)
             }
         elif isinstance(instance, dict):
@@ -50,6 +50,9 @@ class SerializationMetadata:
                     raise Exception(
                         "Limitation: the argument name must have a matching attribute in the instance."
                     )
+
+                if value is None:
+                    continue  # similar to how we treat dicts, just above; no value, or None, means None.
 
                 # save this meta / recurse
                 additional_metadata[argument_name] = SerializationMetadata.from_instance(value)
