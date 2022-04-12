@@ -1,11 +1,187 @@
-from typing import Any
+import importlib
+import inspect
+from dataclasses import dataclass
+from types import ModuleType
+from typing import Any, Tuple, Optional, Union
+
+
+class CannotFindSymbol(AttributeError):
+    """Occurs when a symbol cannot be imported from a module."""
+
+
+@dataclass(frozen=True)
+class PythonReference:
+    """A helper class around resolving symbols."""
+
+    module_name: str
+    symbol_name: Optional[str] = None
+    attribute_name: Optional[str] = None
+
+    def import_module(self) -> ModuleType:
+        return importlib.import_module(self.module_name)
+
+    def import_symbol(self) -> Any:
+        """Imports the module and retrieves the symbol."""
+        module = self.import_module()
+        try:
+            return getattr(module, self.symbol_name) if self.symbol_name else module
+        except AttributeError as exception:
+            raise CannotFindSymbol from exception
+
+    def fully_qualified_name(self) -> str:
+        return ".".join(filter(bool, (self.module_name, self.symbol_name, self.attribute_name)))
+
+    def with_module(self, module: Union[str, ModuleType]) -> "PythonReference":
+        """Returns a new instance of PythonReference that targets the same symbol in a different module."""
+        reference = PythonReference(
+            module_name=module if isinstance(module, str) else module.__name__,
+            symbol_name=self.symbol_name,
+            attribute_name=self.attribute_name,
+        )
+
+        try:
+            _ = reference.import_symbol()
+        except CannotFindSymbol:
+            # symbol was renamed? fish!
+            module = reference.import_module()
+            symbol_to_find = self.import_symbol()
+            for symbol_name, symbol in module.__dict__.items():
+                if symbol is symbol_to_find:
+                    return reference.with_name(symbol_name)
+            raise  # will reraise CannotFindSymbol
+
+        return reference
+
+    def with_name(self, name: str) -> "PythonReference":
+        """Returns a new instance of PythonReference that targets a different symbol."""
+        return PythonReference(
+            module_name=self.module_name, symbol_name=name, attribute_name=self.attribute_name
+        )
+
+    @classmethod
+    def from_any(cls, obj: Any) -> "PythonReference":
+        """
+        Returns a PythonReference based on an object.
+        If obj is a string, it will be imported as is; therefore, it has to be a fully qualified, importable symbol.
+        """
+        if isinstance(obj, str):
+            return cls.from_any(importlib.import_module(obj))
+
+        if inspect.ismodule(obj):
+            return cls(obj.__name__)
+
+        qualifiers = (obj if isinstance(obj, str) else obj.__qualname__).split(".")
+
+        if len(qualifiers) == 1:
+            # this is symbol defined at the module level
+            return cls(obj.__module__, qualifiers[0], None)
+
+        importable = qualifiers[0] or None
+        attribute = ".".join(qualifiers[1:]) or None
+        return cls(obj.__module__, importable, attribute)
 
 
 def resolve_mock_target(target: Any) -> str:
     """
+
+    Deprecated: You are encouraged to use `ref` instead, which can resolve a name in a target module.
+
+    ---
+    Deprecated docs:
+
     `mock.patch` uses a str-representation of an object to find it, but this doesn't play well with
     refactors and renames. This method extracts the str-representation of an object.
 
     This method will not handle _all_ kinds of objects, in which case an AttributeError will most likely be raised.
+
+    e,g,:
+     - the function `fn` on `Class` in `Module.Innner`      -> `Module.Inner.Class.fn`.
+     - the function `fn` in module `Module.Inner`           -> `Module.Inner.fn`
+     - the class `Class` in module `Module.Inner`           -> `Module.Inner.Class`
+     - A nested class                                       -> `Module.Inner.Class.NestedClass`
+     - the module `Module.Inner`                            -> `Module.Inner`
+
+    Variables (either at the module, class or instance level) are not supported because they are passed
+    by value and not by reference; they contain no metadata to inspect.
     """
     return f"{target.__module__}.{target.__name__}"
+
+
+def ref(
+    target: Any, *, context: Optional[Any] = None, obj: bool = False
+) -> Union[Tuple[str], Tuple[str, str]]:
+    """
+    Replaces `resolves_mock_target`.
+
+    Returns a tuple meant to be unpacked into the `mock.patch` or `mock.patch.object` functions in order to enable
+    refactorable mocks.
+
+    In order to target the module where the mock will be used, use the `context` argument. It can be either:
+        - A module name as a string (e.g.: "coveo_testing.logging", or __name__)
+        - A symbol that belongs to the module to patch (i.e.: any function or class defined in that module)
+
+    In order to unpack into `mock.patch.object`, set `obj=True`. The return value will
+    be a tuple(object, attribute_name).
+
+    Examples:
+
+    How to patch a module-level symbol, such as a function or class, for any given module:
+
+        with mock.patch(*ref(MyClass, context=fn)):
+            ...
+
+        - In this example, we want to test `fn`, which is defined in module A.
+        - Module A imports `MyClass` from module B.
+        - Therefore, MyClass's reference is `B.MyClass`.
+        - `fn` uses MyClass.
+        - If we used `mock.patch("B.MyClass")`, then it would not affect module A's namespace.
+        - Therefore, `fn` would still have the original B.MyClass symbol in its namespace.
+        - The correct method is to use `mock.patch("A.MyClass")` even though MyClass is defined in B.
+        - This is what `context` achieves. It will return the reference to `MyClass` for the namespace context of `fn`.
+
+    How to patch a module-level symbol, such as a function or class, for the current module:
+
+        with mock.patch(*ref(MyClass, context=__name__)):
+            ...
+
+        - In this example, the unit test imports and use `MyClass` directly, which belongs to another module.
+        - Therefore, it has to provide itself as the context.
+        - Therefore, use the `__name__` shortcut to provide the current module as the context.
+
+    How to patch a function or class on an instance:
+
+        instance = MyClass()
+        with mock.patch.object(*ref(instance.fn, obj=True)):
+            ...
+
+        - In this example, we want to patch `fn` exclusively on this instance of `MyClass`.
+        - Therefore, we don't need a context because it can be inferred.
+        - Therefore, the whole A vs B saga doesn't apply!
+        - The `obj=True` switch will cause the return value to be (instance, "fn") in this case.
+
+    How to patch a renamed symbol:
+
+        with mock.patch(*ref(MyClass, context=fn)):
+
+        - If you provide the context, we will inspect the context's module and fish for the object.
+        - You can provide either the renamed class or the original class as the target.
+        - You must provide the context where the renamed symbol can be found.
+        - Caveat: If you happen to have 2x the same object imported with different names in the same module,
+          the behavior is undefined as you will get the first one we find.
+    """
+    source_reference = PythonReference.from_any(target)
+
+    if obj:
+        # Not having an attribute name would be an error for `mock.patch.object` anyway.
+        assert source_reference.attribute_name
+        return target.__self__, source_reference.attribute_name
+
+    context_reference = PythonReference.from_any(context or target)
+    target_reference = source_reference.with_module(context_reference.module_name)
+
+    if target_reference.attribute_name:
+        # this can only be a method or property, which can be patched globally.
+        return (target_reference.fully_qualified_name(),)
+
+    # everything else is patched in the context module
+    return (target_reference.fully_qualified_name(),)
