@@ -9,6 +9,10 @@ class CannotFindSymbol(AttributeError):
     """Occurs when a symbol cannot be imported from a module."""
 
 
+class DuplicateSymbol(CannotFindSymbol):
+    """Occurs when a symbol occurs more than once within a module."""
+
+
 @dataclass(frozen=True)
 class PythonReference:
     """A helper class around resolving symbols."""
@@ -45,9 +49,16 @@ class PythonReference:
             # symbol was renamed? fish!
             module = reference.import_module()
             symbol_to_find = self.import_symbol()
+            symbols_found = []
             for symbol_name, symbol in module.__dict__.items():
                 if symbol is symbol_to_find:
-                    return reference.with_name(symbol_name)
+                    symbols_found.append(reference.with_name(symbol_name))
+            if len(symbols_found) == 1:
+                return symbols_found.pop()
+            if len(symbols_found) > 1:
+                raise DuplicateSymbol(
+                    f"Duplicate symbols found for {symbol_to_find} in {module.__name__}: {symbols_found}"
+                )
             raise  # will reraise CannotFindSymbol
 
         return reference
@@ -70,10 +81,10 @@ class PythonReference:
         if inspect.ismodule(obj):
             return cls(obj.__name__)
 
-        qualifiers = (obj if isinstance(obj, str) else obj.__qualname__).split(".")
+        qualifiers = obj.__qualname__.split(".")
 
         if len(qualifiers) == 1:
-            # this is symbol defined at the module level
+            # this is a symbol defined at the module level
             return cls(obj.__module__, qualifiers[0], None)
 
         importable = qualifiers[0] or None
@@ -111,7 +122,7 @@ def ref(
     target: Any, *, context: Optional[Any] = None, obj: bool = False
 ) -> Union[Tuple[str], Tuple[str, str]]:
     """
-    Replaces `resolves_mock_target`.
+    Replaces `resolves_mock_target`. Named for brevity.
 
     Returns a tuple meant to be unpacked into the `mock.patch` or `mock.patch.object` functions in order to enable
     refactorable mocks.
@@ -134,7 +145,7 @@ def ref(
         - Module A imports `MyClass` from module B.
         - Therefore, MyClass's reference is `B.MyClass`.
         - `fn` uses MyClass.
-        - If we used `mock.patch("B.MyClass")`, then it would not affect module A's namespace.
+        - If we used `mock.patch("B.MyClass")`, then it would not affect module A's namespace where `fn` resides.
         - Therefore, `fn` would still have the original B.MyClass symbol in its namespace.
         - The correct method is to use `mock.patch("A.MyClass")` even though MyClass is defined in B.
         - This is what `context` achieves. It will return the reference to `MyClass` for the namespace context of `fn`.
@@ -155,19 +166,22 @@ def ref(
             ...
 
         - In this example, we want to patch `fn` exclusively on this instance of `MyClass`.
-        - Therefore, we don't need a context because it can be inferred.
+        - To achieve this, we use the `mock.patch.object` function instead.
+        - We don't need a context when using `obj=True`.
         - Therefore, the whole A vs B saga doesn't apply!
         - The `obj=True` switch will cause the return value to be (instance, "fn") in this case.
+        - Therefore, the `mock.patch.object` will target the `fn` function on your instance.
 
-    How to patch a renamed symbol:
+    How to patch a renamed symbol / more info about `context`:
 
         with mock.patch(*ref(MyClass, context=fn)):
 
         - If you provide the context, we will inspect the context's module and fish for the object.
         - You can provide either the renamed class or the original class as the target.
         - You must provide the context where the renamed symbol can be found.
-        - Caveat: If you happen to have 2x the same object imported with different names in the same module,
-          the behavior is undefined as you will get the first one we find.
+        - The context CANNOT be the renamed class. It has to be the context module, or a symbol defined within.
+        - Caveat: If you happen to have the same object defined as multiple names in the same module,
+          a DuplicateSymbol exception will be raised because the mock target becomes ambiguous.
     """
     source_reference = PythonReference.from_any(target)
 
