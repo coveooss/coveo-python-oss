@@ -22,10 +22,11 @@ class PythonReference:
     attribute_name: Optional[str] = None
 
     def import_module(self) -> ModuleType:
+        """Import and return the module as an object."""
         return importlib.import_module(self.module_name)
 
     def import_symbol(self) -> Any:
-        """Imports the module and retrieves the symbol."""
+        """Import and return the module and symbol. Note: The symbol of a module is the module!"""
         module = self.import_module()
         try:
             return getattr(module, self.symbol_name) if self.symbol_name else module
@@ -33,35 +34,16 @@ class PythonReference:
             raise CannotFindSymbol from exception
 
     def fully_qualified_name(self) -> str:
+        """Returns the fully dotted name, such as `tests_testing.mock_module.inner.MockClass.inner_function`"""
         return ".".join(filter(bool, (self.module_name, self.symbol_name, self.attribute_name)))
 
     def with_module(self, module: Union[str, ModuleType]) -> "PythonReference":
         """Returns a new instance of PythonReference that targets the same symbol in a different module."""
-        reference = PythonReference(
+        return PythonReference(
             module_name=module if isinstance(module, str) else module.__name__,
             symbol_name=self.symbol_name,
             attribute_name=self.attribute_name,
         )
-
-        try:
-            _ = reference.import_symbol()
-        except CannotFindSymbol:
-            # symbol was renamed? fish!
-            module = reference.import_module()
-            symbol_to_find = self.import_symbol()
-            symbols_found = []
-            for symbol_name, symbol in module.__dict__.items():
-                if symbol is symbol_to_find:
-                    symbols_found.append(reference.with_name(symbol_name))
-            if len(symbols_found) == 1:
-                return symbols_found.pop()
-            if len(symbols_found) > 1:
-                raise DuplicateSymbol(
-                    f"Duplicate symbols found for {symbol_to_find} in {module.__name__}: {symbols_found}"
-                )
-            raise  # will reraise CannotFindSymbol
-
-        return reference
 
     def with_name(self, name: str) -> "PythonReference":
         """Returns a new instance of PythonReference that targets a different symbol."""
@@ -79,17 +61,46 @@ class PythonReference:
             return cls.from_any(importlib.import_module(obj))
 
         if inspect.ismodule(obj):
-            return cls(obj.__name__)
+            return cls(module_name=obj.__name__)
 
         qualifiers = obj.__qualname__.split(".")
 
         if len(qualifiers) == 1:
             # this is a symbol defined at the module level
-            return cls(obj.__module__, qualifiers[0], None)
+            return cls(module_name=obj.__module__, symbol_name=qualifiers[0], attribute_name=None)
 
         importable = qualifiers[0] or None
         attribute = ".".join(qualifiers[1:]) or None
-        return cls(obj.__module__, importable, attribute)
+        return cls(module_name=obj.__module__, symbol_name=importable, attribute_name=attribute)
+
+
+def _coerce(reference: PythonReference, module: Union[ModuleType, str]) -> PythonReference:
+    """Find `reference` in module and return a PythonReference that points to it."""
+    new_reference = reference.with_module(module if isinstance(module, str) else module.__name__)
+
+    try:
+        _ = new_reference.import_symbol()
+    except CannotFindSymbol:
+        # symbol was renamed? fish!
+        module = new_reference.import_module()
+        symbol_to_find = reference.import_symbol()
+        symbols_found = tuple(
+            symbol_name
+            for symbol_name, symbol in module.__dict__.items()
+            if symbol is symbol_to_find
+        )
+
+        if not symbols_found:
+            raise  # reraise CannotFindSymbol
+
+        if len(symbols_found) > 1:
+            raise DuplicateSymbol(
+                f"Duplicate symbols found for {symbol_to_find} in {module.__name__}: {symbols_found}"
+            )
+
+        return new_reference.with_name(symbols_found[0])
+
+    return new_reference
 
 
 def resolve_mock_target(target: Any) -> str:
@@ -191,7 +202,7 @@ def ref(
         return target.__self__, source_reference.attribute_name
 
     context_reference = PythonReference.from_any(context or target)
-    target_reference = source_reference.with_module(context_reference.module_name)
+    target_reference = _coerce(source_reference, context_reference.module_name)
 
     if target_reference.attribute_name:
         # this can only be a method or property, which can be patched globally.
