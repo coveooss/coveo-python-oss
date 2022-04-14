@@ -234,7 +234,7 @@ class Setting(SupportsInt, SupportsFloat, Generic[T], Container, Iterable):
 
         return InSequence(*iterable)
 
-    def _raise_if_missing(self) -> None:
+    def raise_if_missing(self) -> None:
         """Raises an MandatoryConfigurationError exception if the setting is required but missing."""
         if not self.is_set:
             raise MandatoryConfigurationError(f'Mandatory config item "{self.key}" is missing.')
@@ -254,7 +254,7 @@ class Setting(SupportsInt, SupportsFloat, Generic[T], Container, Iterable):
 
     def __eq__(self, other: Any) -> bool:
         """Indicates if the value is equal to another one."""
-        self._raise_if_missing()
+        self.raise_if_missing()
         equal = other == self.value
         if isinstance(equal, bool):
             return equal
@@ -266,17 +266,17 @@ class Setting(SupportsInt, SupportsFloat, Generic[T], Container, Iterable):
 
     def __str__(self) -> str:
         """Returns the value, blindly converted to a string."""
-        self._raise_if_missing()
+        self.raise_if_missing()
         return str(self.value)
 
     def __int__(self) -> int:
         """Returns the value, blindly converted to int."""
-        self._raise_if_missing()
+        self.raise_if_missing()
         return int(self.value)  # type: ignore[call-overload, no-any-return]
 
     def __float__(self) -> float:
         """Return the value, blindly converted to float."""
-        self._raise_if_missing()
+        self.raise_if_missing()
         return float(self.value)  # type: ignore[arg-type]
 
     def __iter__(self) -> Iterator:
@@ -284,12 +284,12 @@ class Setting(SupportsInt, SupportsFloat, Generic[T], Container, Iterable):
         Note: T will not be used here, because in the case of e.g. Dictionaries you would get strings,
         or a List of str would give back str...
         """
-        self._raise_if_missing()
+        self.raise_if_missing()
         return iter(self.value)  # type: ignore[no-any-return,call-overload]
 
     def __contains__(self, item: Any) -> bool:
         """Tells if item is in `value`. Will raise on unsupported types or missing values."""
-        self._raise_if_missing()
+        self.raise_if_missing()
         return item in self.value  # type: ignore[operator]
 
 
