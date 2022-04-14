@@ -1,6 +1,7 @@
 import importlib
 import inspect
 from dataclasses import dataclass
+from unittest.mock import Mock
 from types import ModuleType
 from typing import Any, Tuple, Optional, Union
 
@@ -194,12 +195,20 @@ def ref(
         - Caveat: If you happen to have the same object defined as multiple names in the same module,
           a DuplicateSymbol exception will be raised because the mock target becomes ambiguous.
     """
+    if isinstance(target, Mock):
+        raise Exception("Mocks cannot be resolved as a string.")
+
     source_reference = PythonReference.from_any(target)
 
     if obj:
         # Not having an attribute name would be an error for `mock.patch.object` anyway.
         assert source_reference.attribute_name
-        return target.__self__, source_reference.attribute_name
+
+        if self := getattr(target, "__self__", None):
+            # how convenient, the instance is given to us!
+            return self, source_reference.attribute_name
+        else:
+            raise Exception("You can patch this with patch(), no need for object.")
 
     context_reference = PythonReference.from_any(context or target)
     target_reference = _coerce(source_reference, context_reference.module_name)
