@@ -28,7 +28,7 @@ class PathSetting(Setting[Path], PathLike):
 
     def __fspath__(self) -> str:
         """Implements PathLike: https://docs.python.org/3/library/os.html#os.PathLike."""
-        self._raise_if_missing()
+        self.raise_if_missing()
         return str(self.value)
 
     @staticmethod
@@ -37,9 +37,9 @@ class PathSetting(Setting[Path], PathLike):
         return Path(value)  # type: ignore[arg-type]
 
     def __truediv__(self, other: Any) -> Path:
-        self._raise_if_missing()
+        self.raise_if_missing()
         return self.value / other  # type: ignore[no-any-return]
 
     def __rtruediv__(self, other: Any) -> Path:
-        self._raise_if_missing()
+        self.raise_if_missing()
         return other / self.value  # type: ignore[no-any-return]
