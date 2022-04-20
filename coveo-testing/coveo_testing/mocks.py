@@ -3,7 +3,7 @@ import inspect
 from dataclasses import dataclass
 from unittest.mock import Mock
 from types import ModuleType
-from typing import Any, Tuple, Optional, Union
+from typing import Any, Tuple, Optional, Union, overload, Literal
 
 
 class CannotFindSymbol(AttributeError):
@@ -128,6 +128,31 @@ def resolve_mock_target(target: Any) -> str:
     by value and not by reference; they contain no metadata to inspect.
     """
     return f"{target.__module__}.{target.__name__}"
+
+
+@overload
+def ref(target: Any) -> Tuple[str]: ...
+
+
+@overload
+def ref(target: Any, *, context: Optional[Any]) -> Tuple[str]: ...
+
+
+@overload
+def ref(target: Any, *, obj: Literal[True]) -> Tuple[str, str]: ...
+
+
+@overload
+def ref(target: Any, *, obj: Literal[False]) -> Tuple[str]: ...
+
+
+@overload
+def ref(target: Any, *, context: Optional[Any], obj: Literal[False]) -> Tuple[str]: ...
+
+
+# It's an error to provide `obj=True` and a context, but there was no way to express this overload at the moment.
+# @overload
+# def ref(target: Any, *, context: Any, obj: Literal[True]) -> Tuple[str]: ...
 
 
 def ref(

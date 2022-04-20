@@ -1,6 +1,8 @@
 from typing import Final, Any, Tuple, Optional, Callable, Type
 from unittest import mock
 
+import pytest
+
 from coveo_testing.parametrize import parametrize
 from coveo_testing.mocks import PythonReference, ref
 
@@ -187,3 +189,24 @@ def test_ref_with_mock_patch_object() -> None:
 
         # new instances are not impacted, of course
         assert MockClass().instance_function() != MOCKED
+
+
+@pytest.mark.skip(reason="Annotation test only.")
+def test_ref_overloads() -> None:
+    def tuple_one_string(arg: Tuple[str]) -> None:
+        ...
+
+    def tuple_two_strings(arg: Tuple[str, str]) -> None:
+        ...
+
+    # noinspection PyUnreachableCode
+    # these are the correct usages
+    tuple_one_string(ref('target'))
+    tuple_one_string(ref('target'))
+    tuple_one_string(ref('target', context="context"))
+    tuple_two_strings(ref('target', obj=True))
+
+    # these are incorrect
+    tuple_one_string(ref('target', obj=True))  # type: ignore[arg-type]
+    tuple_two_strings(ref('target', context='context'))  # type: ignore[arg-type]
+    tuple_two_strings(ref('target'))  # type: ignore[arg-type]
