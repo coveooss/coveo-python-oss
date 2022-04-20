@@ -1,3 +1,6 @@
+from typing import Any, Callable
+
+
 def inner_function() -> str:
     return "Un pangolin ça marche comme M.Burns."
 
@@ -9,11 +12,19 @@ def inner_function_wrapper() -> str:
 class MockClass:
     class NestedClass:
         class DoubleNestedClass:
+            @property
+            def property(self) -> str:
+                return "Genre que leur pattes avant sont trop occuppé à dire 'excellent'."
+
             def instance_function(self) -> str:
                 return "Sont vraiment cute!"
 
     def instance_function(self) -> str:
         return "Faudrait tu puisses voir la vidéo sur reddit."
+
+    @property
+    def property(self) -> str:
+        return "Ouain."
 
     @classmethod
     def classmethod(cls) -> str:
@@ -24,9 +35,19 @@ class MockClass:
         return "L'histoire est pas mal finie!"
 
 
+def _hidden_getter(_self: "MockClassToRename") -> str:
+    return "À prochaine!"
+
+
 class MockClassToRename:
     def instance_function(self) -> str:
-        return "À prochaine!"
+        return "Bon àprochainaaaaage!"
+
+    def hidden_property_setter(self, value: str) -> None:
+        ...
+
+    # this is the custom form of the @property decorator
+    property = property(_hidden_getter, hidden_property_setter)
 
 
 def inner_mock_class_factory() -> MockClass:

@@ -18,5 +18,9 @@ def return_renamed_mock_class_instance() -> RenamedClass:
     return RenamedClass()
 
 
+def return_property_from_renamed_mock_class_instance() -> str:
+    return RenamedClass().property  # type: ignore[no-any-return]  # mypy doesn't like the custom property :shrug:
+
+
 class MockSubClass(MockClass):
     ...

@@ -1,5 +1,6 @@
 from typing import Final, Any, Tuple, Optional, Callable, Type
 from unittest import mock
+from unittest.mock import PropertyMock
 
 import pytest
 
@@ -20,6 +21,7 @@ from tests_testing.mock_module import (
     MockSubClass,
     RenamedClass,
     return_renamed_mock_class_instance,
+    return_property_from_renamed_mock_class_instance,
 )
 
 MOCKED: Final[str] = "mocked"
@@ -38,6 +40,7 @@ MOCKED: Final[str] = "mocked"
         ),
         (MockClass.classmethod, (_INNER_MODULE, "MockClass", "classmethod")),
         (MockClass.staticmethod, (_INNER_MODULE, "MockClass", "staticmethod")),
+        (MockClass.property, (_INNER_MODULE, "MockClass", "property")),
         (MockClass, (_INNER_MODULE, "MockClass", None)),
         # this is equivalent to the previous test: the original module always prevails.
         (TransitiveMockClass, (_INNER_MODULE, "MockClass", None)),
@@ -86,6 +89,11 @@ def test_ref(target: Any, expected: Tuple[str, Optional[str], Optional[str]]) ->
             "tests_testing.mock_module.MockClass.instance_function",
         ),
         (
+            MockClass.property,
+            call_inner_function_from_another_module,
+            "tests_testing.mock_module.MockClass.property",
+        ),
+        (
             MockClassToRename.instance_function,
             call_inner_function_from_another_module,
             "tests_testing.mock_module.RenamedClass.instance_function",
@@ -94,6 +102,12 @@ def test_ref(target: Any, expected: Tuple[str, Optional[str], Optional[str]]) ->
             MockClassToRename,
             call_inner_function_from_another_module,
             "tests_testing.mock_module.RenamedClass",
+        ),
+        (
+            # this tests the long-shot discovery of properties, with a getter we can't use and a hidden setter.
+            MockClassToRename.property,
+            call_inner_function_from_another_module,
+            "tests_testing.mock_module.RenamedClass.property",
         ),
     ),
 )
@@ -142,6 +156,19 @@ def test_ref_function_different_module(to_patch: Any, check: Callable[[], Any]) 
 
 
 @parametrize(
+    ("to_patch", "check"),
+    ((MockClassToRename.property, return_property_from_renamed_mock_class_instance),),
+)
+def test_ref_property_different_module(to_patch: Any, check: Callable[[], Any]) -> None:
+    """Mock a property."""
+    with mock.patch(
+        *ref(to_patch, context=check), new_callable=PropertyMock, return_value=MOCKED
+    ) as mocked_property:
+        assert check() == MOCKED
+        mocked_property.assert_called_once()
+
+
+@parametrize(
     ("to_patch", "calling_type"),
     (
         (MockClass.instance_function, MockClass),
@@ -163,6 +190,30 @@ def test_ref_instance_functions(to_patch: Any, calling_type: Type[MockClass]) ->
         mocked_fn.assert_called_once()
 
 
+@parametrize(
+    ("to_patch", "calling_type"),
+    (
+        (MockClass.property, MockClass),
+        (MockClass.property, MockSubClass),
+        (MockClass.property, TransitiveMockClass),
+        (MockSubClass.property, MockSubClass),
+        (TransitiveMockClass.property, TransitiveMockClass),
+        # comical example because why not
+        (
+            MockClass.NestedClass.DoubleNestedClass.property,
+            TransitiveMockClass.NestedClass.DoubleNestedClass,
+        ),
+    ),
+)
+def test_ref_properties(to_patch: Any, calling_type: Type[MockClass]) -> None:
+    """Mocking a property on a class is trivial, and works across modules."""
+    with mock.patch(
+        *ref(to_patch), new_callable=PropertyMock, return_value=MOCKED
+    ) as mocked_property:
+        assert calling_type().property == MOCKED
+        mocked_property.assert_called_once()
+
+
 @parametrize("context", (__name__, test_python_reference))
 def test_ref_class(context: Any) -> None:
     """
@@ -179,14 +230,12 @@ def test_ref_with_mock_patch_object() -> None:
     In order to unpack into `mock.patch.object`, we use `obj=True`.
     It will only affect the instance passed in the target.
     """
-
     instance = MockClass()
     with mock.patch.object(
         *ref(instance.instance_function, obj=True), return_value=MOCKED
     ) as mocked_fn:
         assert instance.instance_function() == MOCKED
         mocked_fn.assert_called_once()
-
         # new instances are not impacted, of course
         assert MockClass().instance_function() != MOCKED
 

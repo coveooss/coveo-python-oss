@@ -3,7 +3,7 @@ import inspect
 from dataclasses import dataclass
 from unittest.mock import Mock
 from types import ModuleType
-from typing import Any, Tuple, Optional, Union, overload, Literal
+from typing import Any, Tuple, Optional, Union, overload, Literal, Sequence
 
 
 class CannotFindSymbol(AttributeError):
@@ -34,9 +34,31 @@ class PythonReference:
         except AttributeError as exception:
             raise CannotFindSymbol from exception
 
+    def import_nested_symbol(self) -> Any:
+        """
+        Imports the main symbol and resolves any nested attributes. If no nested attributes exist, the main symbol
+        is returned.
+        """
+        symbol = self.import_symbol()
+        for nested_attribute in self.nested_attribute_sequence():
+            symbol = getattr(symbol, nested_attribute)
+        return symbol
+
+    def last_attribute_name(self) -> Optional[str]:
+        if not self.attribute_name:
+            return None
+        return self.attribute_name.split(".")[-1]
+
     def fully_qualified_name(self) -> str:
         """Returns the fully dotted name, such as `tests_testing.mock_module.inner.MockClass.inner_function`"""
         return ".".join(filter(bool, (self.module_name, self.symbol_name, self.attribute_name)))
+
+    def nested_attribute_sequence(self) -> Sequence[str]:
+        """Returns the nested attributes, if any. Doesn't include the last attribute."""
+        if not self.attribute_name:
+            return ()
+
+        return self.attribute_name.split(".")[:-1]
 
     def with_module(self, module: Union[str, ModuleType]) -> "PythonReference":
         """Returns a new instance of PythonReference that targets the same symbol in a different module."""
@@ -46,10 +68,20 @@ class PythonReference:
             attribute_name=self.attribute_name,
         )
 
-    def with_name(self, name: str) -> "PythonReference":
+    def with_symbol(self, symbol_name: str) -> "PythonReference":
         """Returns a new instance of PythonReference that targets a different symbol."""
         return PythonReference(
-            module_name=self.module_name, symbol_name=name, attribute_name=self.attribute_name
+            module_name=self.module_name,
+            symbol_name=symbol_name,
+            attribute_name=self.attribute_name,
+        )
+
+    def with_attribute(self, attribute_name: str) -> "PythonReference":
+        """Returns a new instance of PythonReference that targets a different symbol."""
+        return PythonReference(
+            module_name=self.module_name,
+            symbol_name=self.symbol_name,
+            attribute_name=attribute_name,
         )
 
     @classmethod
@@ -64,15 +96,54 @@ class PythonReference:
         if inspect.ismodule(obj):
             return cls(module_name=obj.__name__)
 
-        qualifiers = obj.__qualname__.split(".")
+        try:
+            qualifiers = obj.__qualname__.split(".")
+        except AttributeError:
+            if isinstance(obj, property):
+                return cls.from_property(obj)
+            raise  # reraise
+
+        return cls.from_info(obj.__module__, qualifiers)
+
+    @classmethod
+    def from_property(cls, prop: property) -> "PythonReference":
+        for fn in filter(bool, (prop.fget, prop.fset, prop.fdel)):
+            qualifiers = fn.__qualname__.split(".")
+
+            if len(qualifiers) == 1:
+                continue  # if the function is attached to a module, we can't find the owner
+
+            fn_reference = cls.from_info(fn.__module__, qualifiers)
+            symbol = fn_reference.import_nested_symbol()
+
+            # try a direct hit first
+            if (
+                other_property := symbol.__dict__.get(fn_reference.last_attribute_name())
+            ) and other_property is prop:
+                return fn_reference
+
+            # fish for identity
+            for attribute_name, obj in symbol.__dict__.items():
+                if obj is prop:
+                    return fn_reference.with_attribute(attribute_name)
+
+        raise CannotFindSymbol(prop)
+
+    @classmethod
+    def from_info(cls, module_name: str, qualifiers: Sequence[str]) -> "PythonReference":
+        if not any(qualifiers):
+            return cls(module_name=module_name)
+
+        importable = qualifiers[0]
 
         if len(qualifiers) == 1:
             # this is a symbol defined at the module level
-            return cls(module_name=obj.__module__, symbol_name=qualifiers[0], attribute_name=None)
+            return cls(module_name=module_name, symbol_name=importable, attribute_name=None)
 
-        importable = qualifiers[0] or None
-        attribute = ".".join(qualifiers[1:]) or None
-        return cls(module_name=obj.__module__, symbol_name=importable, attribute_name=attribute)
+        # this is an attribute on a symbol
+        return cls(
+            module_name=module_name, symbol_name=importable, attribute_name=".".join(qualifiers[1:])
+        )
 
 
 def _coerce(reference: PythonReference, module: Union[ModuleType, str]) -> PythonReference:
@@ -99,7 +170,7 @@ def _coerce(reference: PythonReference, module: Union[ModuleType, str]) -> Pytho
                 f"Duplicate symbols found for {symbol_to_find} in {module.__name__}: {symbols_found}"
             )
 
-        return new_reference.with_name(symbols_found[0])
+        return new_reference.with_symbol(symbols_found[0])
 
     return new_reference
 
