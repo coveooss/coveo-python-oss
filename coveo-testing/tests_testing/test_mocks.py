@@ -201,12 +201,12 @@ def test_ref_overloads() -> None:
 
     # noinspection PyUnreachableCode
     # these are the correct usages
-    tuple_one_string(ref('target'))
-    tuple_one_string(ref('target'))
-    tuple_one_string(ref('target', context="context"))
-    tuple_two_strings(ref('target', obj=True))
+    tuple_one_string(ref("target"))
+    tuple_one_string(ref("target"))
+    tuple_one_string(ref("target", context="context"))
+    tuple_two_strings(ref("target", obj=True))
 
     # these are incorrect
-    tuple_one_string(ref('target', obj=True))  # type: ignore[arg-type]
-    tuple_two_strings(ref('target', context='context'))  # type: ignore[arg-type]
-    tuple_two_strings(ref('target'))  # type: ignore[arg-type]
+    tuple_one_string(ref("target", obj=True))  # type: ignore[arg-type]
+    tuple_two_strings(ref("target", context="context"))  # type: ignore[arg-type]
+    tuple_two_strings(ref("target"))  # type: ignore[arg-type]

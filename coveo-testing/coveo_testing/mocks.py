@@ -131,23 +131,28 @@ def resolve_mock_target(target: Any) -> str:
 
 
 @overload
-def ref(target: Any) -> Tuple[str]: ...
+def ref(target: Any) -> Tuple[str]:
+    ...
 
 
 @overload
-def ref(target: Any, *, context: Optional[Any]) -> Tuple[str]: ...
+def ref(target: Any, *, context: Optional[Any]) -> Tuple[str]:
+    ...
 
 
 @overload
-def ref(target: Any, *, obj: Literal[True]) -> Tuple[str, str]: ...
+def ref(target: Any, *, obj: Literal[True]) -> Tuple[str, str]:
+    ...
 
 
 @overload
-def ref(target: Any, *, obj: Literal[False]) -> Tuple[str]: ...
+def ref(target: Any, *, obj: Literal[False]) -> Tuple[str]:
+    ...
 
 
 @overload
-def ref(target: Any, *, context: Optional[Any], obj: Literal[False]) -> Tuple[str]: ...
+def ref(target: Any, *, context: Optional[Any], obj: Literal[False]) -> Tuple[str]:
+    ...
 
 
 # It's an error to provide `obj=True` and a context, but there was no way to express this overload at the moment.
