@@ -1,9 +1,10 @@
 import importlib
 import inspect
 from dataclasses import dataclass
-from unittest.mock import Mock
+from http.client import HTTPResponse
 from types import ModuleType
-from typing import Any, Tuple, Optional, Union, overload, Literal, Sequence
+from typing import Any, Literal, Optional, Sequence, Tuple, Union, overload
+from unittest.mock import Mock
 
 
 class CannotFindSymbol(AttributeError):
@@ -15,19 +16,50 @@ class DuplicateSymbol(CannotFindSymbol):
 
 
 @dataclass(frozen=True)
-class PythonReference:
-    """A helper class around resolving symbols."""
+class _PythonReference:
+    """A helper class around resolving and importing python symbols."""
 
     module_name: str
     symbol_name: Optional[str] = None
-    attribute_name: Optional[str] = None
+    attribute_name: Optional[str] = None  # may be nested, such as NestedClass.attribute
+
+    @property
+    def fully_qualified_name(self) -> str:
+        """Returns the fully dotted name, such as `tests_testing.mock_module.inner.MockClass.inner_function`"""
+        return ".".join(filter(bool, (self.module_name, self.symbol_name, self.attribute_name)))
+
+    @property
+    def attribute_name_sequence(self) -> Sequence[str]:
+        """Returns the attribute name as a nested sequence"""
+        if not self.attribute_name:
+            return ()
+
+        return self.attribute_name.split(".")
+
+    @property
+    def nested_attribute_sequence(self) -> Sequence[str]:
+        """Returns the nested attributes, if any. Doesn't include the last attribute."""
+        return self.attribute_name_sequence[:-1]
+
+    @property
+    def last_attribute_name(self) -> Optional[str]:
+        """
+        The last attribute name is the last attribute in the nested attributes of a symbol.
+        Not all references have an attribute name.
+
+        e.g.:
+        - `attribute` in module.MyClass.NestedClass.attribute
+        """
+        if attributes := self.attribute_name_sequence:
+            return attributes[-1]
+        return None
 
     def import_module(self) -> ModuleType:
-        """Import and return the module as an object."""
+        """Import and return the module."""
         return importlib.import_module(self.module_name)
 
     def import_symbol(self) -> Any:
-        """Import and return the module and symbol. Note: The symbol of a module is the module!"""
+        """Import and return the symbol. For modules, the module is returned."""
         module = self.import_module()
         try:
             return getattr(module, self.symbol_name) if self.symbol_name else module
@@ -36,58 +68,46 @@ class PythonReference:
 
     def import_nested_symbol(self) -> Any:
         """
-        Imports the main symbol and resolves any nested attributes. If no nested attributes exist, the main symbol
-        is returned.
+        Imports the symbol, walk any nested attributes and return the symbol holding the last attribute.
+        If no nested attributes exist, the main symbol is returned.
+
+        e.g.:
+        - `DoubleNestedClass` in module.MyClass.NestedClass.DoubleNestedClass.attribute
+        - `MyClass` in module.MyClass.attribute
         """
         symbol = self.import_symbol()
-        for nested_attribute in self.nested_attribute_sequence():
+        for nested_attribute in self.nested_attribute_sequence:
             symbol = getattr(symbol, nested_attribute)
         return symbol
 
-    def last_attribute_name(self) -> Optional[str]:
-        if not self.attribute_name:
-            return None
-        return self.attribute_name.split(".")[-1]
-
-    def fully_qualified_name(self) -> str:
-        """Returns the fully dotted name, such as `tests_testing.mock_module.inner.MockClass.inner_function`"""
-        return ".".join(filter(bool, (self.module_name, self.symbol_name, self.attribute_name)))
-
-    def nested_attribute_sequence(self) -> Sequence[str]:
-        """Returns the nested attributes, if any. Doesn't include the last attribute."""
-        if not self.attribute_name:
-            return ()
-
-        return self.attribute_name.split(".")[:-1]
-
-    def with_module(self, module: Union[str, ModuleType]) -> "PythonReference":
-        """Returns a new instance of PythonReference that targets the same symbol in a different module."""
-        return PythonReference(
+    def with_module(self, module: Union[str, ModuleType]) -> "_PythonReference":
+        """Returns a new instance of _PythonReference that targets the same symbol in a different module."""
+        return _PythonReference(
             module_name=module if isinstance(module, str) else module.__name__,
             symbol_name=self.symbol_name,
             attribute_name=self.attribute_name,
         )
 
-    def with_symbol(self, symbol_name: str) -> "PythonReference":
-        """Returns a new instance of PythonReference that targets a different symbol."""
-        return PythonReference(
+    def with_symbol(self, symbol_name: str) -> "_PythonReference":
+        """Returns a new instance of _PythonReference that targets a different symbol."""
+        return _PythonReference(
             module_name=self.module_name,
             symbol_name=symbol_name,
             attribute_name=self.attribute_name,
         )
 
-    def with_attribute(self, attribute_name: str) -> "PythonReference":
-        """Returns a new instance of PythonReference that targets a different symbol."""
-        return PythonReference(
+    def with_attribute(self, attribute_name: str) -> "_PythonReference":
+        """Returns a new instance of _PythonReference that targets a different symbol."""
+        return _PythonReference(
             module_name=self.module_name,
             symbol_name=self.symbol_name,
             attribute_name=attribute_name,
         )
 
     @classmethod
-    def from_any(cls, obj: Any) -> "PythonReference":
+    def from_any(cls, obj: Any) -> "_PythonReference":
         """
-        Returns a PythonReference based on an object.
+        Returns a _PythonReference based on an object.
         If obj is a string, it will be imported as is; therefore, it has to be a fully qualified, importable symbol.
         """
         if isinstance(obj, str):
@@ -98,28 +118,27 @@ class PythonReference:
 
         try:
             qualifiers = obj.__qualname__.split(".")
-        except AttributeError:
+        except AttributeError as exception:
             if isinstance(obj, property):
                 return cls.from_property(obj)
-            raise  # reraise
+            raise NotImplementedError(f"New use case? {obj} cannot be resolved.") from exception
 
-        return cls.from_info(obj.__module__, qualifiers)
+        return cls.from_qualifiers(obj.__module__, *qualifiers)
 
     @classmethod
-    def from_property(cls, prop: property) -> "PythonReference":
-        for fn in filter(bool, (prop.fget, prop.fset, prop.fdel)):
+    def from_property(cls, prop: property) -> "_PythonReference":
+        """Returns a _PythonReference based on a property."""
+        for fn in filter(bool, (prop.fget, prop.fset)):
             qualifiers = fn.__qualname__.split(".")
 
             if len(qualifiers) == 1:
                 continue  # if the function is attached to a module, we can't find the owner
 
-            fn_reference = cls.from_info(fn.__module__, qualifiers)
+            fn_reference = cls.from_qualifiers(fn.__module__, *qualifiers)
             symbol = fn_reference.import_nested_symbol()
 
             # try a direct hit first
-            if (
-                other_property := symbol.__dict__.get(fn_reference.last_attribute_name())
-            ) and other_property is prop:
+            if symbol.__dict__.get(fn_reference.last_attribute_name) is prop:
                 return fn_reference
 
             # fish for identity
@@ -127,10 +146,11 @@ class PythonReference:
                 if obj is prop:
                     return fn_reference.with_attribute(attribute_name)
 
-        raise CannotFindSymbol(prop)
+        raise CannotFindSymbol(f"Cannot find the owner of {prop} by inspecting its getter/setter.")
 
     @classmethod
-    def from_info(cls, module_name: str, qualifiers: Sequence[str]) -> "PythonReference":
+    def from_qualifiers(cls, module_name: str, *qualifiers: str) -> "_PythonReference":
+        """Return a _PythonReference based on the module name and qualifiers."""
         if not any(qualifiers):
             return cls(module_name=module_name)
 
@@ -146,8 +166,11 @@ class PythonReference:
         )
 
 
-def _coerce(reference: PythonReference, module: Union[ModuleType, str]) -> PythonReference:
-    """Find `reference` in module and return a PythonReference that points to it."""
+def _coerce(reference: _PythonReference, module: Union[ModuleType, str]) -> _PythonReference:
+    """
+    Find `reference` in `module` and return a _PythonReference that points to it.
+    Will find renamed symbols such as `from this import that as thing`.
+    """
     new_reference = reference.with_module(module if isinstance(module, str) else module.__name__)
 
     try:
@@ -228,7 +251,7 @@ def ref(target: Any, *, context: Optional[Any], obj: Literal[False]) -> Tuple[st
 
 # It's an error to provide `obj=True` and a context, but there was no way to express this overload at the moment.
 # @overload
-# def ref(target: Any, *, context: Any, obj: Literal[True]) -> Tuple[str]: ...
+# def ref(target: Any, *, context: Any, obj: Literal[True]) -> NoReturn: ...
 
 
 def ref(
@@ -241,8 +264,22 @@ def ref(
     refactorable mocks.
 
     In order to target the module where the mock will be used, use the `context` argument. It can be either:
-        - A module name as a string (e.g.: "coveo_testing.logging", or __name__)
+        - A module name as a string (e.g.: "coveo_testing.logging", but more importantly, __name__)
         - A symbol that belongs to the module to patch (i.e.: any function or class defined in that module)
+
+    The "tl;dr" is to provide the thing to mock as the target, and the thing that is being tested as the context.
+    For instance, pass the `HTTPResponse` class as the target and the `my_module.function_to_test` function
+    as the context, so that `my_module.HTTPResponse` will be mocked.
+
+
+    Note that the import style matters. To mock `HTTPResponse.get_headers`:
+
+    - If `my_module` does `from httplib.client import HTTPResponse`:
+        You must `*ref(HTTPResponse, context=something_defined_in_my_module)`
+
+    - If `my_module` does `from httplib import client` or `import httplib`:
+        You may `*ref(HTTPResponse)` without context, since a dot `.` is involved.
+
 
     In order to unpack into `mock.patch.object`, set `obj=True`. The return value will
     be a tuple(object, attribute_name).
@@ -299,7 +336,7 @@ def ref(
     if isinstance(target, Mock):
         raise Exception("Mocks cannot be resolved as a string.")
 
-    source_reference = PythonReference.from_any(target)
+    source_reference = _PythonReference.from_any(target)
 
     if obj:
         # Not having an attribute name would be an error for `mock.patch.object` anyway.
@@ -311,12 +348,12 @@ def ref(
         else:
             raise Exception("You can patch this with patch(), no need for object.")
 
-    context_reference = PythonReference.from_any(context or target)
+    context_reference = _PythonReference.from_any(context or target)
     target_reference = _coerce(source_reference, context_reference.module_name)
 
     if target_reference.attribute_name:
         # this can only be a method or property, which can be patched globally.
-        return (target_reference.fully_qualified_name(),)
+        return (target_reference.fully_qualified_name,)
 
     # everything else is patched in the context module
-    return (target_reference.fully_qualified_name(),)
+    return (target_reference.fully_qualified_name,)

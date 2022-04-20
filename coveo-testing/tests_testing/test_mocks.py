@@ -1,27 +1,25 @@
-from typing import Final, Any, Tuple, Optional, Callable, Type
+from typing import Any, Callable, Final, Optional, Tuple, Type
 from unittest import mock
 from unittest.mock import PropertyMock
 
 import pytest
-
+from coveo_testing.mocks import _PythonReference, ref
 from coveo_testing.parametrize import parametrize
-from coveo_testing.mocks import PythonReference, ref
-
+from tests_testing.mock_module import MockClass as TransitiveMockClass
+from tests_testing.mock_module import (
+    MockSubClass,
+    RenamedClass,
+    call_inner_function_from_another_module,
+    call_inner_function_wrapper_from_another_module,
+    return_property_from_renamed_mock_class_instance,
+    return_renamed_mock_class_instance,
+)
 from tests_testing.mock_module.inner import (
     MockClass,
+    MockClassToRename,
     inner_function,
     inner_function_wrapper,
     inner_mock_class_factory,
-    MockClassToRename,
-)
-from tests_testing.mock_module import (
-    MockClass as TransitiveMockClass,
-    call_inner_function_from_another_module,
-    call_inner_function_wrapper_from_another_module,
-    MockSubClass,
-    RenamedClass,
-    return_renamed_mock_class_instance,
-    return_property_from_renamed_mock_class_instance,
 )
 
 MOCKED: Final[str] = "mocked"
@@ -57,14 +55,14 @@ MOCKED: Final[str] = "mocked"
     ),
 )
 def test_python_reference(target: Any, expected: Tuple[str, Optional[str], Optional[str]]) -> None:
-    """The PythonReference object references the original module."""
-    assert (reference := PythonReference.from_any(target)) == PythonReference(*expected)
+    """The _PythonReference object references the original module."""
+    assert (reference := _PythonReference.from_any(target)) == _PythonReference(*expected)
     _ = reference.import_symbol()
 
 
 @parametrize(("target", "expected"), _TEST_CASES)
 def test_ref(target: Any, expected: Tuple[str, Optional[str], Optional[str]]) -> None:
-    """`ref` without a context is similar to PythonReference."""
+    """`ref` without a context is similar to _PythonReference."""
     assert ref(target) == (".".join(filter(bool, expected)),)
 
 
