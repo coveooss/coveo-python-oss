@@ -1,16 +1,29 @@
 import importlib
 import inspect
 from dataclasses import dataclass
+from textwrap import dedent
 from types import ModuleType
 from typing import Any, Literal, Optional, Sequence, Tuple, Union, overload
 from unittest.mock import Mock
 
 
-class CannotImportModule(ImportError):
+class RefException(Exception):
+    """Base class for ref exceptions."""
+
+
+class UsageError(RefException):
+    """When ref detects usage errors."""
+
+
+class NoQualifiedName(RefException, NotImplementedError):
+    """When something has apparently no qualified name."""
+
+
+class CannotImportModule(RefException, ImportError):
     """Occurs when an import fails."""
 
 
-class CannotFindSymbol(AttributeError):
+class CannotFindSymbol(RefException, AttributeError):
     """Occurs when a symbol cannot be imported from a module."""
 
 
@@ -138,6 +151,16 @@ class _PythonReference:
         If obj is a string, it will be imported as is; therefore, it has to be a fully qualified, importable symbol,
         and thus cannot contain attributes.
         """
+        try:
+            return cls._from_any(obj)
+        except NoQualifiedName:
+            if hasattr(obj, "__class__") and hasattr(obj.__class__, "__qualname__"):
+                # this is most likely an instance; report the class.
+                return cls.from_any(obj.__class__)
+            raise
+
+    @classmethod
+    def _from_any(cls, obj: Any) -> "_PythonReference":
         if isinstance(obj, str):
             return cls.from_any(importlib.import_module(obj))
 
@@ -150,7 +173,7 @@ class _PythonReference:
         try:
             qualifiers = obj.__qualname__.split(".")
         except AttributeError as exception:
-            raise NotImplementedError(f"New use case? {obj} cannot be resolved.") from exception
+            raise NoQualifiedName(f"New use case? {obj} cannot be resolved.") from exception
 
         return cls.from_qualifiers(obj.__module__, *qualifiers)
 
@@ -295,11 +318,6 @@ def ref(target: Any, *, context: Optional[Any]) -> Tuple[str]:
 
 
 @overload
-def ref(target: Any, *, obj: Literal[True]) -> Tuple[Any, str]:
-    ...
-
-
-@overload
 def ref(target: Any, *, obj: Literal[False]) -> Tuple[str]:
     ...
 
@@ -309,13 +327,22 @@ def ref(target: Any, *, context: Optional[Any], obj: Literal[False]) -> Tuple[st
     ...
 
 
-# It's an error to provide `obj=True` and a context, but there was no way to express this overload at the moment.
-# @overload
-# def ref(target: Any, *, context: Any, obj: Literal[True]) -> NoReturn: ...
+@overload
+def ref(target: Any, *, obj: Literal[True]) -> Tuple[Any, str]:
+    ...
+
+
+@overload
+def ref(target: Any, *, context: Any, obj: Literal[True]) -> Tuple[Any, str]:
+    ...
 
 
 def ref(
-    target: Any, *, context: Optional[Any] = None, obj: bool = False
+    target: Any,
+    *,
+    context: Optional[Any] = None,
+    obj: bool = False,
+    _bypass_context_check: bool = False,
 ) -> Union[Tuple[str], Tuple[Any, str]]:
     """
     Replaces `resolves_mock_target`. Named for brevity.
@@ -342,7 +369,8 @@ def ref(
 
 
     In order to unpack into `mock.patch.object`, set `obj=True`. The return value will
-    be a tuple(object, attribute).
+    be a tuple(object, attribute). If you set the context as well, it should be the target instance, while the target
+    points to the class's attribute. This is useful to mock properties on an instance.
 
     Examples:
 
@@ -393,23 +421,41 @@ def ref(
         - Caveat: If you happen to have the same object defined as multiple names in the same module,
           a DuplicateSymbol exception will be raised because the mock target becomes ambiguous.
     """
-    if isinstance(target, Mock):
-        raise Exception("Mocks cannot be resolved.")
+    if isinstance(target, Mock) or isinstance(context, Mock):
+        raise UsageError("Mocks cannot be resolved.")
 
     source_reference = _PythonReference.from_any(target)
 
     if obj:
         # Not having an attribute name would be an error for `mock.patch.object` anyway.
         if not source_reference.attributes:
-            raise Exception(
+            raise UsageError(
                 f"Patching an object requires at least one attribute: {source_reference}"
             )
 
-        if self := getattr(target, "__self__", None):
-            # how convenient, the instance is given to us!
-            return self, source_reference.attributes
-        else:
-            raise Exception("You can patch this with patch(), no need for object.")
+        if context is None:
+            # normal functions link back to their instance through the __self__ dunder; such convenience!
+            context = getattr(target, "__self__", None)
+
+        if (context is None or isinstance(context, type)) and not _bypass_context_check:
+            raise UsageError(
+                dedent(
+                    f"""
+                Cannot resolve an instance for the context: this is important because {obj=} was specified.
+                Applying this patch would most likely result in a global patch, contradicting the intent of {obj=}.
+                
+                If you are trying to patch a classmethod or staticmethod on a specific instance, you must provide that
+                instance as the `context` argument.
+                
+                If the goal was to patch globally, remove the {obj=} argument, provide a context and use patch().
+                
+                If you believe this is a mistake, you can try to use `_bypass_context_check` and see if it works.
+                If it does, please submit an issue with a quick test that reproduces the issue! <3
+            """
+                )
+            )
+
+        return context, source_reference.attributes
 
     context_reference = _PythonReference.from_any(context or target)
     target_reference = _translate_reference_to_another_module(

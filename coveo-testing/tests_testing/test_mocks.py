@@ -1,9 +1,9 @@
 from typing import Any, Callable, Final, Optional, Tuple, Type
 from unittest import mock
-from unittest.mock import PropertyMock
+from unittest.mock import PropertyMock, Mock, MagicMock
 
 import pytest
-from coveo_testing.mocks import _PythonReference, ref
+from coveo_testing.mocks import _PythonReference, ref, CannotFindSymbol, UsageError
 from coveo_testing.parametrize import parametrize
 from tests_testing.mock_module import MockClass as TransitiveMockClass
 from tests_testing.mock_module import (
@@ -238,8 +238,34 @@ def test_ref_with_mock_patch_object() -> None:
         assert MockClass().instance_function() != MOCKED
 
 
+@pytest.mark.parametrize("method", ("classmethod", "staticmethod"))
+@pytest.mark.parametrize("as_static", ("classmethod", "staticmethod"))
+def test_ref_with_mock_patch_object_classmethod(method: str, as_static: bool) -> None:
+    """
+    Some definitions, such as classmethods and staticmethods, are not attached to an instance. As a result, inspecting
+    them yield no way to retrieve the instance like normal functions do.
+
+    But the mock module do allow patching them on an instance-basis using `patch.object()`. In order to keep things
+    refactorable, the user needs to provide the instance separately, as the context.
+    """
+    instance = MockClass()
+
+    # when specifying the context when `obj=True`, the target may be the static reference (on the class definition)
+    # rather than using the instance directly because it's the same object behind the scenes.
+    to_patch = getattr((MockClass if as_static else instance), method)
+    with mock.patch.object(
+        *ref(to_patch, context=instance, obj=True), return_value=MOCKED
+    ) as mocked_fn:
+        assert getattr(instance, method)() == MOCKED
+        mocked_fn.assert_called_once()
+        # new instances are not impacted, of course
+        assert getattr(MockClass(), method)() != MOCKED
+
+
 @pytest.mark.skip(reason="Annotation test only.")
 def test_ref_overloads() -> None:
+    """This makes sure that the typing / overloads work for mypy."""
+
     def tuple_one_string(arg: Tuple[str]) -> None:
         ...
 
@@ -257,3 +283,41 @@ def test_ref_overloads() -> None:
     tuple_one_string(ref("target", obj=True))  # type: ignore[arg-type]
     tuple_two_strings(ref("target", context="context"))  # type: ignore[arg-type]
     tuple_two_strings(ref("target"))  # type: ignore[arg-type]
+
+
+def test_ref_cannot_resolve_mocks() -> None:
+    with pytest.raises(UsageError, match="Mocks cannot"):
+        ref(Mock())
+
+    with pytest.raises(UsageError, match="Mocks cannot"):
+        ref(MagicMock())
+
+    with pytest.raises(UsageError, match="Mocks cannot"):
+        ref(MockClass.instance_function, context=MagicMock())
+
+    with mock.patch(*ref(MockClass.instance_function)):
+        with pytest.raises(UsageError, match="Mocks cannot"):
+            ref(MockClass.instance_function)
+
+
+@parametrize("thing", (MockClass(), MockClass, inner_function))
+def test_ref_cannot_obj_without_attributes(thing: Any) -> None:
+    """Check the exception raised when trying to patch an obj without an attribute."""
+    with pytest.raises(UsageError, match="at least one attribute"):
+        ref(thing, obj=True)
+
+
+@parametrize(
+    "thing",
+    (
+        MockClass.instance_function,
+        MockClass.staticmethod,
+        MockClass().staticmethod,
+        MockClass.classmethod,
+        MockClass().classmethod,
+    ),
+)
+def test_ref_obj_is_global(thing: Any) -> None:
+    """Check the exception raised when trying to patch an obj that would probably turn out to be global."""
+    with pytest.raises(UsageError, match="Cannot resolve an instance for the context"):
+        ref(thing, obj=True)
