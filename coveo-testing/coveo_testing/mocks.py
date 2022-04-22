@@ -273,7 +273,7 @@ def _translate_reference_to_another_module(
 
         if len(symbols_found) > 1:
             raise DuplicateSymbol(
-                f"Duplicate symbols found for {symbol_to_find} in {module.__name__}: {symbols_found}"
+                f"Duplicate symbols found for {symbol_to_find} in {module.__name__}: {symbols_found=}"
             )
 
         return new_reference.with_symbol(symbols_found[0])
@@ -340,78 +340,27 @@ def ref(
     Returns a tuple meant to be unpacked into the `mock.patch` or `mock.patch.object` functions in order to enable
     refactorable mocks.
 
+    The idea is to provide the thing to mock as the target, and sometimes, the thing that is being tested
+    as the context. Refer to `coveo-testing`'s readme to better understand when a context is necessary.
+
+    For instance, pass the `HTTPResponse` class as the target and the `my_module.function_to_test` function
+    as the context, so that `my_module.HTTPResponse` becomes mocked (and not httplib.client.HTTPResponse).
+
+    The readme in this repository offers a lot of explanations, examples and recipes on how to mock things properly and
+    when we don't need to provide a `context` argument.
+
+    -- param: context
     In order to target the module where the mock will be used, use the `context` argument. It can be either:
         - A module name as a string (e.g.: "coveo_testing.logging", but more importantly, __name__)
         - A symbol that belongs to the module to patch (i.e.: any function or class defined in that module)
         - An instance, when patching special functions with `obj=True`
 
+        e.g.: mock.patch(*ref(boto3, context=function_that_uses_boto3))
 
-    The "tl;dr" is to provide the thing to mock as the target, and the thing that is being tested as the context.
-    For instance, pass the `HTTPResponse` class as the target and the `my_module.function_to_test` function
-    as the context, so that `my_module.HTTPResponse` will be mocked (and not httplib.client.HTTPResponse).
+    -- param: obj
+    In order to patch a single instance with `patch.object`, specify `obj=True`:
 
-
-    Note that the import style in the target module matters. To mock `HTTPResponse.get_headers`:
-
-    - If `my_module` does `from httplib.client import HTTPResponse`:
-        You must `*ref(HTTPResponse.get_headers, context=something_defined_in_my_module)`
-
-    - If `my_module` does `from httplib import client` or `import httplib`:
-        You may `*ref(HTTPResponse.get_headers)` without context, since a dot `.` is involved.
-
-
-    In order to unpack into `mock.patch.object`, set `obj=True`. The return value will
-    be a tuple(object, attribute). Some special objects such as classmethods will require you to
-    pass the instance as a context as well. If it's the case, an exception will let you know.
-
-    Examples:
-
-    How to patch a module-level symbol, such as a function or class, for any given module:
-
-        with mock.patch(*ref(MyClass, context=fn)):
-            ...
-
-        - In this example, we want to test `fn`, which is defined in module A.
-        - Module A imports `MyClass` from module B.
-        - Therefore, MyClass's reference is `B.MyClass`.
-        - `fn` uses MyClass.
-        - If we used `mock.patch("B.MyClass")`, then it would not affect module A's namespace where `fn` resides.
-        - Therefore, `fn` would still have the original B.MyClass symbol in its namespace.
-        - The correct method is to use `mock.patch("A.MyClass")` even though MyClass is defined in B.
-        - This is what `context` achieves. It will return the reference to `MyClass` for the namespace context of `fn`.
-
-    How to patch a module-level symbol, such as a function or class, for the current module:
-
-        with mock.patch(*ref(MyClass, context=__name__)):
-            ...
-
-        - In this example, the unit test imports and use `MyClass` directly, which belongs to another module.
-        - Therefore, it has to provide itself as the context.
-        - Therefore, use the `__name__` shortcut to provide the current module as the context.
-
-    How to patch a function or class on an instance:
-
-        instance = MyClass()
-        with mock.patch.object(*ref(instance.fn, obj=True)):
-            ...
-
-        - In this example, we want to patch `fn` exclusively on this instance of `MyClass`.
-        - To achieve this, we use the `mock.patch.object` function instead.
-        - Usually, we don't need a context when using `obj=True`.
-        - Therefore, the whole A vs B saga doesn't apply!
-        - The `obj=True` switch will cause the return value to be (instance, "fn") in this case.
-        - Therefore, the `mock.patch.object` will target the `fn` function on your instance.
-
-    How to patch a renamed symbol / more info about `context`:
-
-        with mock.patch(*ref(MyClass, context=something_defined_in_module_being_tested)):
-
-        - If you provide the context, we will inspect the context's module and fish for the object.
-        - You can provide either the renamed class or the original class as the target.
-        - You must provide the context where the renamed symbol can be found.
-        - The context CANNOT be the renamed class. It has to be the context module, or a symbol defined within.
-        - Caveat: If you happen to have the same object defined as multiple names in the same module,
-          a DuplicateSymbol exception will be raised because the mock target becomes ambiguous.
+        e.g.: mock.patch.object(*ref(instance.fn, obj=True))
     """
     if isinstance(target, Mock) or isinstance(context, Mock):
         raise UsageError("Mocks cannot be resolved.")
@@ -439,7 +388,8 @@ def ref(
                 If you are trying to patch a classmethod or staticmethod on a specific instance, you must provide that
                 instance as the `context` argument.
                 
-                If the goal was to patch globally, remove the {obj=} argument, provide a context and use patch().
+                If the goal was to patch globally, remove the {obj=} argument, optionally provide a context 
+                and use patch().
                 
                 If you believe this is a mistake, you can try to use `_bypass_context_check` and see if it works.
                 If it does, please submit an issue with a quick test that reproduces the issue! <3
