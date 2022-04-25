@@ -198,11 +198,11 @@ import pytest
 
 
 class StrMe:
-  def __init__(self, var: Any) -> None:
-    self.var = var
+    def __init__(self, var: Any) -> None:
+      self.var = var
       
-  def __str__(self) -> str:
-    return f"Value: {self.var}"
+    def __str__(self) -> str:
+      return f"Value: {self.var}"
 
 
 @parametrize('var', [['list', 'display'], [StrMe('hello')]])
@@ -234,7 +234,7 @@ from unittest.mock import patch, MagicMock
 
 @patch("mymodule.clients.APIClient._do_request")
 def test(api_client_mock: MagicMock) -> None:
-  ...
+    ...
 ```
 
 Because the mock target is a string, it makes it difficult to move things around without breaking the tests. You need a
@@ -247,7 +247,7 @@ from mymodule.clients import APIClient
 
 @patch(*ref(APIClient._do_request))
 def test(api_client_mock: MagicMock) -> None:
-  ...
+    ...
 ```
 
 🚀 This way, you can rename or move `mymodule`, `clients`, `APIClient` or even `_do_request`, and your IDE should find
@@ -257,7 +257,6 @@ Let's examine a more complex example:
 
 ```python
 from unittest.mock import patch, MagicMock
-from coveo_testing.mocks import ref
 from mymodule.tasks import process
 
 @patch("mymodule.tasks.get_api_client")
@@ -273,8 +272,8 @@ from typing import Optional
 from mymodule.clients import get_api_client
 
 def process() -> Optional[bool]:
-  client = get_api_client()
-  return ...
+    client = get_api_client()
+    return ...
 ```
 
 As we can see, `get_api_client` is defined in another module.
@@ -316,8 +315,8 @@ from typing import Optional
 from mymodule.clients import get_api_client as client_factory  # it got renamed! 😱
 
 def process() -> Optional[bool]:
-  client = client_factory()
-  return ...
+    client = client_factory()
+    return ...
 ```
 
 The test:
@@ -346,9 +345,9 @@ from unittest.mock import patch
 from mymodule.clients import APIClient
 
 def test() -> None:
-  client = APIClient()
-  with patch.object(client, "_do_request"):
-    ...
+    client = APIClient()
+    with patch.object(client, "_do_request"):
+        ...
 ```
 
 🚀 By specifying `obj=True` to `ref`, you will obtain a `Tuple[instance, attribute_to_patch_as_a_string]` that you
@@ -360,9 +359,9 @@ from coveo_testing.mocks import ref
 from mymodule.clients import APIClient
 
 def test() -> None:
-  client = APIClient()
-  with patch.object(*ref(client._do_request, obj=True)):
-    ...
+    client = APIClient()
+    with patch.object(*ref(client._do_request, obj=True)):
+        ...
 ```
 
 Please refer to the docstring of `ref` for argument usage information.
@@ -390,7 +389,7 @@ def test(http_response_close_mock: MagicMock) -> None:
 ```
 
 The target is `HTTPResponse.close`, which lives in the `http.client` module.
-The context is the `process` function, which lives in the `mymodule.tasks` module.
+The contextof the test is the `process` function, which lives in the `mymodule.tasks` module.
 Let's take a look at `mymodule.tasks`'s source code:
 
 
@@ -398,8 +397,8 @@ Let's take a look at `mymodule.tasks`'s source code:
 from http import client
 
 def process() -> bool:
-  _ = client.HTTPResponse(...)  # of course this is fake, but serves the example
-  return ...
+    _ = client.HTTPResponse(...)  # of course this is fake, but serves the example
+    return ...
 ```
 
 Since `mymodule.tasks` reaches `HTTPResponse` through a dot (i.e.: `client.HTTPResponse`), we can patch `HTTPResponse`
@@ -411,8 +410,8 @@ However, if `mymodule.tasks` was written like this:
 from http.client import HTTPResponse
 
 def process() -> bool:
-  _ = HTTPResponse(...)
-  return ...
+    _ = HTTPResponse(...)
+    return ...
 ```
 
 Then the patch would not affect the object used by the `process` function anymore. However, it would affect any other 
@@ -475,8 +474,8 @@ was used _in that module_. If the hint was imported into the module, it will not
 from mymodule.clients import get_api_client
 
 def process() -> bool:
-  client = get_api_client()
-  return ...
+    client = get_api_client()
+    return ...
 ```
 
 The test, showing 3 different methods that work:
@@ -534,18 +533,6 @@ def test() -> None:
     ...
 ```
 
-### Mock a function or class at the root level
-
-When mocking at the root level, you need to be careful about the context:
-
-```python
-with patch(*ref(my_function)): ...
-with patch(*ref(my_function, context=...)): ...
-with patch(*ref(MyClass)): ...
-with patch(*ref(MyClass, context=...)): ...
-```
-
-The `context` is a slightly confusing topic that is explained in the `Demo` above.
 
 ### Mock a method on a class
 
@@ -630,7 +617,8 @@ If you try, `mock.patch.object()` will complain that the property is read only.
 
 ### Mock a classmethod or staticmethod on a specific instance
 
-When inspecting these special methods on an instance, `ref` ends up finding the class; the instance is missing.
+When inspecting these special methods on an instance, `ref` ends up finding the class instead of the instance.
+
 Therefore, `ref` is unable to return a `Tuple[instance, function_name]`.
 It would return `Tuple[class, function_name]`, resulting in a global patch. 😱
 

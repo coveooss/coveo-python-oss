@@ -343,7 +343,7 @@ def ref(
     The idea is to provide the thing to mock as the target, and sometimes, the thing that is being tested
     as the context. Refer to `coveo-testing`'s readme to better understand when a context is necessary.
 
-    For instance, pass the `HTTPResponse` class as the target and the `my_module.function_to_test` function
+    For example, pass the `HTTPResponse` class as the target and the `my_module.function_to_test` function
     as the context, so that `my_module.HTTPResponse` becomes mocked (and not httplib.client.HTTPResponse).
 
     The readme in this repository offers a lot of explanations, examples and recipes on how to mock things properly and
