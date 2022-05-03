@@ -11,7 +11,7 @@ import re
 # Since the goal is to remove colors and control codes, the simpler regex works just as well.
 
 ANSI_ESCAPE = re.compile(
-    br"""
+    rb"""
         \x1B  # ESC
         (?:   # 7-bit C1 Fe (except CSI)
             [@-Z\\-_]
