@@ -21,6 +21,7 @@ coveo-functools = { path = "../coveo-functools/", develop = true }
 coveo-settings = { path = "../coveo-settings/", develop = true }
 coveo-systools = { path = "../coveo-systools/", develop = true }
 coveo-testing = { path = "../coveo-testing/", develop = true }
+docker = "*"
 typing_extensions = "*"
 
 
