@@ -14,7 +14,7 @@ packages = [
 
 [tool.poetry.dependencies]
 python = ">=3.8,<4"
-black = { version = "21.6b0", allow-prereleases = true }
+black = "22.3"
 click = ">=8.1"
 coveo-functools = "^2.0.0"
 coveo-itertools = "^2.0.0"
