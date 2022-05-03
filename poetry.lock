@@ -966,7 +966,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.8,<3.10"  # the docker package in coveo-testing-extras can't run on 3.10
-content-hash = "8ed4e9f2f05a8f78f6cd6356dd38205bf85955e796614f00f916484be20426fe"
+content-hash = "758d04527d899170670e31d3c4d9cdfc2541ff59098377d9c8c463bb3ee978e3"
 
 [metadata.files]
 atomicwrites = [
