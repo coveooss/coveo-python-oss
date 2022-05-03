@@ -50,7 +50,7 @@ def test_pyproject_locker(pyproject_mock: PythonProject) -> None:
             pyproject_mock.poetry.locker.locked_repository().packages,
         )
     )
-    assert str(locked_requests.version) == "2.20.0"
+    assert str(locked_requests.version) == "2.26.0"
 
 
 @Integration
