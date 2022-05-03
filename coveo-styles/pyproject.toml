@@ -10,7 +10,7 @@ authors = ["Jonathan Piché <tools@coveo.com>"]
 [tool.poetry.dependencies]
 python = ">=3.8"
 
-click = "*"
+click = ">=8.1"
 emoji = "*"
 typing_extensions = "*"
 

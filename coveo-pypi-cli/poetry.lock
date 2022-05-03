@@ -98,7 +98,7 @@ python-versions = ">=3.8"
 develop = true
 
 [package.dependencies]
-click = "*"
+click = ">=8.1"
 emoji = "*"
 typing_extensions = "*"
 
@@ -312,7 +312,7 @@ socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.8,<4"
-content-hash = "3073bedd4ecd9e8ec662916a6872ed5d97e7fd3b67dbe571372c978332d66b79"
+content-hash = "3e59cda4ca0a5b76ed5f4b4717703eef5365908cc9bea3a6ad0f695bc0d9abcc"
 
 [metadata.files]
 atomicwrites = [
