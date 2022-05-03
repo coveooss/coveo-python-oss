@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "coveo-styles"
-version = "2.0.0"
+version = "2.1.0"
 description = "Styles, colors and emojis for the command line."
 license = "Apache-2.0"
 readme = "README.md"

@@ -90,7 +90,7 @@ url = "../coveo-settings"
 
 [[package]]
 name = "coveo-styles"
-version = "2.0.0"
+version = "2.1.0"
 description = "Styles, colors and emojis for the command line."
 category = "main"
 optional = false
