@@ -76,13 +76,17 @@ def _dev_dependencies_of_dependencies(
     # we only care about local non-dev dependencies from the project.
     for dependency in filter(lambda _: _.is_local, project.package.dependencies.values()):
         assert not dependency.path.is_absolute()
-        project = PythonProject(project.project_path / dependency.path, verbose=project.verbose)
-        new = set(project.package.dev_dependencies).difference(seen)
+        local_project = PythonProject(
+            project.project_path / dependency.path, verbose=project.verbose
+        )
+        new = set(local_project.package.dev_dependencies).difference(seen)
         seen.update(new)
-        for dev_dependency in (project.package.dev_dependencies[_] for _ in new):
+        for dev_dependency in (local_project.package.dev_dependencies[_] for _ in new):
             if dev_dependency.is_local:
                 value: Any = tomlkit.inline_table()
-                value.append("path", str(dev_dependency.path.relative_to(project.project_path)))
+                value.append(
+                    "path", str(dev_dependency.path.relative_to(local_project.project_path))
+                )
             else:
                 value = dev_dependency.version
             yield dev_dependency.name, toml_item(value)
