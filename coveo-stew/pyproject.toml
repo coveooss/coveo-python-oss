@@ -35,6 +35,8 @@ coveo-styles = { path = "../coveo-styles/", develop = true }
 coveo-testing = { path = "../coveo-testing/", develop = true }
 flake8 = "*"
 pytest = "*"
+types-setuptools = "*"
+types-toml = "*"
 
 
 [tool.poetry.scripts]
