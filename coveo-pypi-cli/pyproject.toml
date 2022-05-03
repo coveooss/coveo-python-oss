@@ -26,6 +26,7 @@ coveo-systools = { path = "../coveo-systools/", develop = true }
 coveo-testing = { path = "../coveo-testing/", develop = true }
 pytest = "*"
 requests-mock = "*"
+types-requests = "*"
 
 
 [tool.poetry.scripts]

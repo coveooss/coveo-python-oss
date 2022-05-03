@@ -135,4 +135,4 @@ def flexfactory(cls: Type[T], *, strip_extra: bool = True, **dirty_kwargs: Any) 
 
     return flexfactory(ClassWithArgs, {'Arg1': 10, 'ARG2': 20})
     """
-    return cls(**unflex(cls.__init__, dirty_kwargs, strip_extra=strip_extra))  # type: ignore
+    return cls(**unflex(cls.__init__, dirty_kwargs, strip_extra=strip_extra))

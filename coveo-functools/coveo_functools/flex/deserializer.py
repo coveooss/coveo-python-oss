@@ -41,7 +41,7 @@ def convert_kwargs_for_unpacking(dirty_kwargs: Dict[str, Any], *, hint: MetaHint
         # the additional metadata will be applied on the arguments of `fn` and may contain more specific type info
         additional_metadata = hint.additional_metadata
     elif inspect.isclass(hint):
-        fn = hint.__init__  # type: ignore[misc]
+        fn = hint.__init__
     else:
         fn = hint
 
@@ -216,12 +216,12 @@ def _deserialize_with_metadata(
     value: Any, *, hint: SerializationMetadata, contains: Optional[TypeHint] = None
 ) -> Any:
 
-    if isclass(hint) and issubclass(hint, SerializationMetadata):  # type: ignore[arg-type]
+    if isclass(hint) and issubclass(hint, SerializationMetadata):
         # this is an edge case; the dispatch will end up here when hint is either the SerializationMetadata type,
         # or an instance thereof.
         # Here, we take a shortcut to deserialize `value` into an instance of `SerializationMetadata`.
         # This happens when flex is also used to serialize the metadata headers.
-        return hint(**convert_kwargs_for_unpacking(value, hint=hint))  # type: ignore[operator]
+        return hint(**convert_kwargs_for_unpacking(value, hint=hint))  # type: ignore[misc]
 
     root_type = hint.import_type()
 

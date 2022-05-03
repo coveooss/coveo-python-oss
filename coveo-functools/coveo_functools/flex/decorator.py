@@ -109,7 +109,7 @@ def _generate_wrapper(obj: RealObject) -> WrappedObject:
     """Generates a wrapper over obj."""
     # handle custom objects
     if inspect.isclass(obj):
-        return _generate_class_wrapper(obj)  # type: ignore[arg-type]
+        return _generate_class_wrapper(obj)
 
     # handle custom callables
     return _generate_callable_wrapper(obj)

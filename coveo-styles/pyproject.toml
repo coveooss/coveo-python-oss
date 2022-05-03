@@ -17,6 +17,7 @@ typing_extensions = "*"
 
 [tool.poetry.dev-dependencies]
 coveo-testing = { path = "../coveo-testing/", develop = true }
+types-emoji = "*"
 
 
 [tool.stew.ci]
