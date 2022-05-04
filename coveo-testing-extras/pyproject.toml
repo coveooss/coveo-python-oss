@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "coveo-testing-extras"
-version = "2.0.0"
+version = "2.1.0"
 description = "Dependency-hungry testing helpers"
 license = "Apache-2.0"
 readme = "README.md"
@@ -8,23 +8,21 @@ repository = "https://github.com/coveooss/coveo-python-oss/tree/main/coveo-testi
 authors = ["Jonathan Piché <tools@coveo.com>"]
 
 [tool.poetry.dependencies]
-python = ">=3.8"
+python = ">=3.8,<3.10"  # the docker package doesn't support python 3.10 yet
 
 coveo-functools = "*"
 coveo-settings = "*"
 coveo-systools = "*"
 coveo-testing = "*"
 docker = "*"
-six = "*"  # can be removed when this is fixed: https://github.com/docker/docker-py/issues/2807
 
 
 [tool.poetry.dev-dependencies]
-black = { version = "21.6b0", allow-prereleases = true }
 coveo-functools = { path = "../coveo-functools/", develop = true }
 coveo-settings = { path = "../coveo-settings/", develop = true }
 coveo-systools = { path = "../coveo-systools/", develop = true }
 coveo-testing = { path = "../coveo-testing/", develop = true }
-mypy = "0.812"
+types-requests = "*"
 typing_extensions = "*"
 
 

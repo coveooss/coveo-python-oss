@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "coveo-styles"
-version = "2.0.0"
+version = "2.1.0"
 description = "Styles, colors and emojis for the command line."
 license = "Apache-2.0"
 readme = "README.md"
@@ -10,15 +10,14 @@ authors = ["Jonathan Piché <tools@coveo.com>"]
 [tool.poetry.dependencies]
 python = ">=3.8"
 
-click = "*"
+click = ">=8.1"
 emoji = "*"
 typing_extensions = "*"
 
 
 [tool.poetry.dev-dependencies]
-black = { version = "21.6b0", allow-prereleases = true }
 coveo-testing = { path = "../coveo-testing/", develop = true }
-mypy = "0.812"
+types-emoji = "*"
 
 
 [tool.stew.ci]
