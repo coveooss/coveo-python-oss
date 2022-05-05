@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, InitVar
 from enum import Enum
 from typing import Final, List, Any, Optional, Union, Dict, Type
 
@@ -222,6 +222,54 @@ def test_deserialize_immutable(immutable_type: Type) -> None:
     assert isinstance(value, immutable_type)
     assert isinstance(value, SubclassImmutable)
     assert value.builtin_type is immutable_type
+
+
+@dataclass
+class TestInitVarForwardRef:
+    value: bool = False
+    change: "InitVar[bool]" = False
+
+    def __post_init__(self, change: bool) -> None:
+        if change:
+            self.value = change
+
+
+@dataclass
+class TestInitVarNoTypeForwardRef:
+    value: bool = False
+    change: "InitVar" = False
+
+    def __post_init__(self, change: bool) -> None:
+        if change:
+            self.value = change
+
+
+@dataclass
+class TestInitVarNoType:
+    value: bool = False
+    change: InitVar = False
+
+    def __post_init__(self, change: bool) -> None:
+        if change:
+            self.value = change
+
+
+@dataclass
+class TestInitVar:
+    value: bool = False
+    change: InitVar[bool] = False
+
+    def __post_init__(self, change: bool) -> None:
+        if change:
+            self.value = change
+
+
+@parametrize(
+    "cls", (TestInitVar, TestInitVarNoType, TestInitVarForwardRef, TestInitVarNoTypeForwardRef)
+)
+def test_deserialize_init_var(cls: Any) -> None:
+    """Handle a bug with InitVar vs forward references."""
+    assert deserialize({"change": True}, hint=cls).value is True
 
 
 def test_deserialize_static_typing() -> None:

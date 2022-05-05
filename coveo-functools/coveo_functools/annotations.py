@@ -2,6 +2,7 @@
 
 
 import sys
+from dataclasses import InitVar
 from typing import Type, Dict, get_type_hints, Callable, Union, Any
 
 
@@ -29,7 +30,21 @@ def find_annotations(
 
     # some builtins (such as object.__init__) have no `__module__` even though they exist in the `builtins` module.
     module = getattr(thing, "__module__", "builtins")
-    return get_type_hints(thing, globalns or {}, vars(sys.modules[module]))
+    _globals = globalns or {}
+    _locals = vars(sys.modules[module])
+
+    def __fake_init_var_call(self: Any, *args: Any, **kwargs: Any) -> Any:
+        """Technically, there's no `__call__` on instances."""
+        return self(*args, **kwargs)
+
+    # fix a python bug with InitVar and forward declarations: https://stackoverflow.com/a/70430449
+    for namespace in _globals, _locals:
+        if (
+            init_var_class := namespace.get("InitVar")
+        ) is InitVar and init_var_class.__call__ is not __fake_init_var_call:
+            init_var_class.__call__ = __fake_init_var_call
+
+    return get_type_hints(thing, _globals, _locals)
 
 
 def find_return_annotation(method: Callable, globalns: Dict[str, Any] = None) -> Type:
