@@ -41,7 +41,7 @@ def find_annotations(
     for namespace in _globals, _locals:
         if (
             init_var_class := namespace.get("InitVar")
-        ) is InitVar and InitVar.__call__ is not __fake_init_var_call:
+        ) is InitVar and init_var_class.__call__ is not __fake_init_var_call:
             init_var_class.__call__ = __fake_init_var_call
 
     return get_type_hints(thing, _globals, _locals)
