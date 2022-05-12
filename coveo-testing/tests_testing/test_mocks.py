@@ -3,7 +3,7 @@ from unittest import mock
 from unittest.mock import PropertyMock, Mock, MagicMock
 
 import pytest
-from coveo_testing.mocks import _PythonReference, ref, CannotFindSymbol, UsageError
+from coveo_testing.mocks import _PythonReference, ref, UsageError
 from coveo_testing.parametrize import parametrize
 from tests_testing.mock_module import MockClass as TransitiveMockClass
 from tests_testing.mock_module import (
@@ -21,6 +21,8 @@ from tests_testing.mock_module.inner import (
     inner_function_wrapper,
     inner_mock_class_factory,
 )
+from tests_testing.mock_module import shadow_rename
+
 
 MOCKED: Final[str] = "mocked"
 
@@ -106,6 +108,17 @@ def test_ref(target: Any, expected: Tuple[str, Optional[str], Optional[str]]) ->
             MockClassToRename.property,
             call_inner_function_from_another_module,
             "tests_testing.mock_module.RenamedClass.property",
+        ),
+        # the 2 following cases test an edge case with renames
+        (
+            shadow_rename.inner_function,
+            shadow_rename,
+            "tests_testing.mock_module.shadow_rename.inner_function",
+        ),
+        (
+            inner_function,
+            shadow_rename,
+            "tests_testing.mock_module.shadow_rename.renamed_else_shadowed",
         ),
     ),
 )
