@@ -254,14 +254,18 @@ def _translate_reference_to_another_module(
         - Module C calls `from B import A as RenamedA`
         - Calling with (reference=A, module=C) will return a reference to "C.RenamedA"
     """
+    symbol_to_find = reference.import_symbol()
     new_reference = reference.with_module(module if isinstance(module, str) else module.__name__)
 
     try:
-        _ = new_reference.import_symbol()
+        imported = new_reference.import_symbol()
+        if imported is not symbol_to_find:
+            raise CannotFindSymbol(
+                f"Importing {new_reference} resulted in {imported} but {symbol_to_find} was expected."
+            )
     except CannotFindSymbol:
         # symbol was renamed? fish!
         module = new_reference.import_module()
-        symbol_to_find = reference.import_symbol()
         symbols_found = tuple(
             symbol_name
             for symbol_name, symbol in module.__dict__.items()
