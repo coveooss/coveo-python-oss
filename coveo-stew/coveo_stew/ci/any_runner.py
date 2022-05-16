@@ -71,7 +71,11 @@ class AnyRunner(ContinuousIntegrationRunner):
         return self._name
 
     def _custom_autofix(self, environment: PythonEnvironment) -> None:
-        args = [self._autofix_command] if isinstance(self._autofix_command, str) else self._autofix_command
+        args = (
+            [self._autofix_command]
+            if isinstance(self._autofix_command, str)
+            else self._autofix_command
+        )
         command = environment.build_command(self.name, *args)
 
         working_directory = self._pyproject.project_path
