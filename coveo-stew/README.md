@@ -232,12 +232,13 @@ Runs `stew build` to a temporary folder and ensures that pip is able to reinstal
 
 ## Custom Runners
 
-You can add any tool to `stew ci`:
+You can add any tool to `stew ci`, and you can also include your own autofix routines:
 
 ```
 [tool.stew.ci.custom-runners]
 flake8 = true
 bandit = { args = ["--quiet --recursive ."] }
+isort = { args = ["--check", "."], autofix = ["."] }
 ```
 
 ### Options
@@ -245,10 +246,13 @@ bandit = { args = ["--quiet --recursive ."] }
 The following options are supported for custom runners:
 
 - name: You can specify the CLI executable if it differs from the name of the tool.
-- args: Can be a string or a list of strings.
+- args: The arguments to invoke the check.
+- autofix: The arguments to invoke the autofix. Provide the empty string "" in order to run without arguments.
 - check-failed-exit-codes: A list of ints denoting the exit codes to consider "failed" (anything else will be "error"). 0 is always a success. default is `[1]`.
 - create-generic-report: Whether to create a generic pass/fail JUnit report for this check.
 - working-directory: The default is "project" which corresponds to the project's `pyproject.toml` file. You can change it to "repository" in order to run from the root.
+
+Note: args and autofix support strings and list of strings.
 
 
 # FAQ, Tips and Tricks

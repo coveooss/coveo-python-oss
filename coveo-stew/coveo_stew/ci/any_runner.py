@@ -1,5 +1,5 @@
 from enum import Enum, auto
-from typing import Iterable, Tuple, Union, List
+from typing import Iterable, Tuple, Union, List, Optional
 
 from coveo_stew.ci.runner import ContinuousIntegrationRunner, RunnerStatus
 from coveo_stew.environment import PythonEnvironment
@@ -29,6 +29,7 @@ class AnyRunner(ContinuousIntegrationRunner):
         check_failed_exit_codes: Iterable[int] = (1,),
         create_generic_report: bool = False,
         working_directory: str = "project",
+        autofix: Optional[Union[str, List[str]]] = None,
         _pyproject: PythonProjectAPI,
     ) -> None:
         super().__init__(_pyproject=_pyproject)
@@ -36,6 +37,10 @@ class AnyRunner(ContinuousIntegrationRunner):
         self.args = args or []
         self.check_failed_exit_codes = check_failed_exit_codes
         self.outputs_own_report = not create_generic_report
+        self._autofix_command = autofix
+
+        if self._autofix_command is not None:
+            self._auto_fix_routine = self._custom_autofix
 
         try:
             self.working_directory = WorkingDirectoryKind[working_directory.title()]
@@ -64,3 +69,17 @@ class AnyRunner(ContinuousIntegrationRunner):
     @property
     def name(self) -> str:
         return self._name
+
+    def _custom_autofix(self, environment: PythonEnvironment) -> None:
+        args = [self._autofix_command] if isinstance(self._autofix_command, str) else self._autofix_command
+        command = environment.build_command(self.name, *args)
+
+        working_directory = self._pyproject.project_path
+        if self.working_directory is WorkingDirectoryKind.Repository:
+            working_directory = find_repo_root(working_directory)
+
+        check_output(
+            *command,
+            working_directory=working_directory,
+            verbose=self._pyproject.verbose,
+        )
