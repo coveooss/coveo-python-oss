@@ -1,3 +1,5 @@
+from subprocess import PIPE
+
 from coveo_systools.subprocess import check_output, DetailedCalledProcessError
 
 from coveo_stew.ci.runner import ContinuousIntegrationRunner, RunnerStatus
@@ -37,5 +39,6 @@ class BlackRunner(ContinuousIntegrationRunner):
         check_output(
             *command,
             working_directory=self._pyproject.project_path,
-            verbose=self._pyproject.verbose
+            verbose=self._pyproject.verbose,
+            stderr=PIPE,
         )

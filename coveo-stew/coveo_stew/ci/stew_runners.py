@@ -1,6 +1,7 @@
 from pathlib import Path
 import shutil
 import tempfile
+from subprocess import PIPE
 
 from coveo_systools.filesystem import pushd
 from coveo_systools.subprocess import check_output
@@ -51,7 +52,8 @@ class OfflineInstallRunner(ContinuousIntegrationRunner):
                             for p in self._pyproject.package.dependencies.values()
                         )
                         else "",
-                    )
+                    ),
+                    stderr=PIPE
                 )
         finally:
             shutil.rmtree(temporary_folder)

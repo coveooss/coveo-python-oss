@@ -1,3 +1,5 @@
+from subprocess import PIPE
+
 from coveo_stew.ci.runner import ContinuousIntegrationRunner, RunnerStatus
 from coveo_stew.environment import PythonEnvironment, PythonTool
 from coveo_stew.metadata.pyproject_api import PythonProjectAPI
@@ -42,6 +44,7 @@ class PytestRunner(ContinuousIntegrationRunner):
             *extra_args,
             working_directory=self._pyproject.project_path,
             verbose=self._pyproject.verbose,
+            stderr=PIPE,
         )
 
         return RunnerStatus.Success

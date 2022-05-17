@@ -1,4 +1,5 @@
 from enum import Enum, auto
+from subprocess import PIPE
 from typing import Iterable, Tuple, Union, List, Optional
 
 from coveo_stew.ci.runner import ContinuousIntegrationRunner, RunnerStatus
@@ -57,11 +58,14 @@ class AnyRunner(ContinuousIntegrationRunner):
         if self.working_directory is WorkingDirectoryKind.Repository:
             working_directory = find_repo_root(working_directory)
 
-        check_output(
-            *command,
-            *extra_args,
-            working_directory=working_directory,
-            verbose=self._pyproject.verbose,
+        self._last_output.extend(
+            check_output(
+                *command,
+                *extra_args,
+                working_directory=working_directory,
+                verbose=self._pyproject.verbose,
+                stderr=PIPE,
+            ).split("\n")
         )
 
         return RunnerStatus.Success
@@ -82,8 +86,11 @@ class AnyRunner(ContinuousIntegrationRunner):
         if self.working_directory is WorkingDirectoryKind.Repository:
             working_directory = find_repo_root(working_directory)
 
-        check_output(
-            *command,
-            working_directory=working_directory,
-            verbose=self._pyproject.verbose,
+        self._last_output.extend(
+            check_output(
+                *command,
+                working_directory=working_directory,
+                verbose=self._pyproject.verbose,
+                stderr=PIPE,
+            ).split("\n")
         )
