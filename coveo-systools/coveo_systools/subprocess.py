@@ -106,7 +106,7 @@ class DetailedCalledProcessError(subprocess.CalledProcessError):
 
             if exception is None:
                 log.error(
-                    f"{type(self).__name__} if unable to obtain exception cause or context. Using placebo."
+                    f"{type(self).__name__} is unable to obtain exception cause or context. Using placebo."
                 )
                 exception = subprocess.CalledProcessError(1, "placebo-assert-exception-is-not-none")
 
@@ -128,18 +128,24 @@ class DetailedCalledProcessError(subprocess.CalledProcessError):
 
     def __str__(self) -> str:
         """The main show!"""
-        if isinstance(self._wrapped_exception, subprocess.CalledProcessError):
-            errors: List[str] = [
-                f"command: {self.command_str()}",
-                f"exit code: {self.returncode}",
-                f'stdout:\n{self.decode_stdout() or "stdout was empty."}\n',
-                f'stderr:\n{self.decode_stderr() or "stderr was empty."}\n',
-            ]
-        else:
-            errors = [str(self._wrapped_exception)]
+        errors: List[str] = [f"{self._wrapped_exception}\n"]
 
         # add user-defined metadata to the error message.
         errors.extend(f"{key}: {value}" for key, value in self.__metadata.items())
+
+        if isinstance(self._wrapped_exception, subprocess.CalledProcessError):
+            errors.extend(
+                [
+                    f"command: {self.command_str()}",
+                    f"exit code: {self.returncode}",
+                ]
+            )
+
+            if self.stdout:
+                errors.append(f"\n--<stdout>--\n{self.decode_stdout()}\n--</stdout>--\n")
+            if self.stderr:
+                errors.append(f"\n--<stderr>--\n{self.decode_stderr()}\n--</stderr>--\n")
+
         return "\n".join(errors)
 
 
