@@ -41,7 +41,7 @@ build-backend = "poetry.core.masonry.api"
 """
 
 
-POETRY_LOCK: Final = """\
+POETRY_LOCK: Final = r"""
 [[package]]
 name = "black"
 version = "22.3.0"
@@ -289,13 +289,13 @@ def linter_project(tmp_path_factory: TempPathFactory) -> PythonProject:
     tmpdir = tmp_path_factory.mktemp("linter-project")
     (tmpdir / "pyproject.toml").write_text(BASE_PYPROJECT_TOML)
     (tmpdir / "poetry.toml").write_text(POETRY_CONFIG)
+    (tmpdir / "poetry.lock").write_text(POETRY_LOCK)
     project_folder = tmpdir / PROJECT_NAME
     project_folder.mkdir()
 
     (project_folder / "py.typed").touch()
     (project_folder / "__init__.py").touch()
     project = PythonProject(tmpdir)
-    project.lock_if_needed()
     project.install(remove_untracked=True)
     return project
 
