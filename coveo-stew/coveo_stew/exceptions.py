@@ -27,3 +27,7 @@ class MypyNotFound(PythonProjectException):
 
 class CheckFailed(PythonProjectException):
     ...
+
+
+class UsageError(PythonProjectException):
+    ...
