@@ -134,10 +134,12 @@ class DetailedCalledProcessError(subprocess.CalledProcessError):
         errors.extend(f"{key}: {value}" for key, value in self.__metadata.items())
 
         if isinstance(self._wrapped_exception, subprocess.CalledProcessError):
-            errors.extend([
-                f"command: {self.command_str()}",
-                f"exit code: {self.returncode}",
-            ])
+            errors.extend(
+                [
+                    f"command: {self.command_str()}",
+                    f"exit code: {self.returncode}",
+                ]
+            )
 
             if self.stdout:
                 errors.append(f"\n--<stdout>--\n{self.decode_stdout()}\n--</stdout>--\n")
