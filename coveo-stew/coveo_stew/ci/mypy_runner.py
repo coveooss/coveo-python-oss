@@ -1,4 +1,6 @@
 from pathlib import Path
+from subprocess import PIPE
+
 import pkg_resources
 import re
 from typing import Generator, Union, Optional
@@ -84,6 +86,7 @@ class MypyRunner(ContinuousIntegrationRunner):
             *command,
             working_directory=self._pyproject.project_path,
             verbose=self._pyproject.verbose,
+            stderr=PIPE,
         )
         return RunnerStatus.Success
 
