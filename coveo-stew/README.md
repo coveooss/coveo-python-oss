@@ -267,7 +267,8 @@ In this case, not passing `--junitxml` would mean that we lose the report that u
 
 The following options are supported for custom runners:
 
-- name: You can specify the CLI executable if it differs from the name of the tool.
+- name: You can specify the module name if it differs from the name of the tool.
+  - Important: Runners are called through `python -m <name>`, not through the shell! 
 - check-args: The arguments to invoke the check.
 - autofix-args: The arguments to invoke the autofix. Provide the empty string "" in order to run without arguments.
 - check-failed-exit-codes: A list of ints denoting the exit codes to consider "failed" (anything else will be "error"). 0 is always a success. default is `[1]`.
