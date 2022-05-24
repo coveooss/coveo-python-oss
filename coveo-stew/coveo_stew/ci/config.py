@@ -35,7 +35,6 @@ class ContinuousIntegrationConfig:
         self._pyproject = _pyproject
         self.disabled = disabled  # a master switch used by stew to skip this project.
 
-        # these builtin runners are specialized and cannot be overwritten
         self._runners: Dict[str, Optional[ContinuousIntegrationRunner]] = {
             "check-outdated": self._flexfactory(CheckOutdatedRunner, check_outdated),
             "offline-build": self._flexfactory(OfflineInstallRunner, offline_build),
