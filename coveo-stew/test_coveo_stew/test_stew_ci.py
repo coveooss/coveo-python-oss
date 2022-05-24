@@ -348,7 +348,7 @@ def _check_result(
     failure_text: str,
 ) -> ContinuousIntegrationRunner:
     assert outcome is expected_outcome
-    check_instance = getattr(project.ci, check_name)
+    check_instance = project.ci.get_runner(check_name)
     assert isinstance(check_instance, ContinuousIntegrationRunner)
     if expected_outcome:
         assert failure_text not in check_instance.last_output()

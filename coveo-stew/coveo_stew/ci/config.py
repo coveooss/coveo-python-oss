@@ -46,7 +46,7 @@ class ContinuousIntegrationConfig:
         }
 
         # these builtin runners are specialized and cannot be overwritten.
-        if {"check-outdated", "offline-build"}.intersection(custom_runners):
+        if custom_runners and {"check-outdated", "offline-build"}.intersection(custom_runners):
             raise CannotLoadProject(
                 "Cannot define `check-outdated` and `offline-build` as custom runners."
             )
@@ -75,3 +75,7 @@ class ContinuousIntegrationConfig:
             # be valid.
             key=lambda runner: 0 if runner.supports_auto_fix else 1,
         )
+
+    def get_runner(self, runner_name: str) -> Optional[ContinuousIntegrationRunner]:
+        """Obtain a runner by name."""
+        return self._runners.get(runner_name)
