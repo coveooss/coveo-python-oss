@@ -253,14 +253,14 @@ bandit = { check-args = ["--quiet", "--recursive", "."] }
 # some may prefer this toml syntax:
 [tool.stew.ci.custom-runners.isort]
 check-args = ["--check", ".", "--profile black"]
-autofix-args = ["."]
+autofix-args = [".", "--profile black"]
 
 [tool.stew.ci.custom-runners.pytest] 
 check-args = ["--tb=long", "--junitxml=.ci/pytest-results.xml"]
 ```
 
 When a builtin runner such as pytest is redefined as a custom runner, you must provide all the arguments.
-In this case, not passing `--junitxml` would mean that we lose the report that used to be in `.ci/` folder. 
+In this case, not passing `--junitxml` would mean that we lose the report that used to be in the `.ci/` directory. 
 
 
 ### Options
