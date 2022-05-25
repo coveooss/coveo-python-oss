@@ -34,27 +34,26 @@ class ContinuousIntegrationConfig:
     ):
         self._pyproject = _pyproject
         self.disabled = disabled  # a master switch used by stew to skip this project.
-        self.mypy: Optional[MypyRunner] = self._flexfactory(MypyRunner, mypy)
-        self.check_outdated: Optional[CheckOutdatedRunner] = self._flexfactory(
-            CheckOutdatedRunner, check_outdated
-        )
-        self.pytest: Optional[PytestRunner] = self._flexfactory(PytestRunner, pytest)
-        self.poetry_check: Optional[PoetryCheckRunner] = self._flexfactory(
-            PoetryCheckRunner, poetry_check
-        )
-        self.offline_build: Optional[OfflineInstallRunner] = self._flexfactory(
-            OfflineInstallRunner, offline_build
-        )
-        self.black: Optional[BlackRunner] = self._flexfactory(BlackRunner, black)
 
-        # custom runners are entirely dynamic
+        self._runners: Dict[str, Optional[ContinuousIntegrationRunner]] = {
+            "check-outdated": self._flexfactory(CheckOutdatedRunner, check_outdated),
+            "offline-build": self._flexfactory(OfflineInstallRunner, offline_build),
+            "mypy": self._flexfactory(MypyRunner, mypy),
+            "pytest": self._flexfactory(PytestRunner, pytest),
+            "poetry-check": self._flexfactory(PoetryCheckRunner, poetry_check),
+            "black": self._flexfactory(BlackRunner, black),
+        }
+
+        # these builtin runners are specialized and cannot be overwritten.
+        if custom_runners and {"check-outdated", "offline-build"}.intersection(custom_runners):
+            raise CannotLoadProject(
+                "Cannot define `check-outdated` and `offline-build` as custom runners."
+            )
+
+        # everything else can be redefined as a custom runner
         for runner_name, runner_config in (custom_runners or {}).items():
-            if hasattr(self, runner_name):
-                raise CannotLoadProject(
-                    f"Custom runner {runner_name} conflicts with the builtin version."
-                )
-            setattr(
-                self, runner_name, self._flexfactory(AnyRunner, runner_config, name=runner_name)
+            self._runners[runner_name] = self._flexfactory(
+                AnyRunner, runner_config, name=runner_name
             )
 
     def _flexfactory(self, cls: Type[T], config: Optional[CIConfig], **extra: str) -> Optional[T]:
@@ -67,9 +66,15 @@ class ContinuousIntegrationConfig:
 
     @property
     def runners(self) -> Iterator[ContinuousIntegrationRunner]:
-        runners = filter(
-            lambda runner: isinstance(runner, ContinuousIntegrationRunner), self.__dict__.values()
+        """Iterate the configured runners for this project."""
+        yield from sorted(
+            filter(bool, self._runners.values()),
+            # autofix-enabled runners must run first because they may change the code.
+            # if e.g. mypy finds errors and then black fixes the file, the line numbers from mypy may no longer
+            # be valid.
+            key=lambda runner: 0 if runner.supports_auto_fix else 1,
         )
-        # if e.g. mypy finds errors and then black fixes the file, the line numbers from mypy may no longer
-        # be valid.
-        yield from sorted(runners, key=lambda runner: 0 if runner.supports_auto_fix else 1)
+
+    def get_runner(self, runner_name: str) -> Optional[ContinuousIntegrationRunner]:
+        """Obtain a runner by name."""
+        return self._runners.get(runner_name)

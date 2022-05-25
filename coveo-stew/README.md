@@ -167,6 +167,8 @@ Even though `coveo-stew` provides builtin `mypy` and `black`, we strongly sugges
 
 This way, mypy won't surprise you with new failures when they release new versions! 😎
 
+Note: You can override and customize most runners by [rewriting them as custom runners.](#custom-runners)
+
 ### mypy
 
 A strict mypy configuration is provided. 
@@ -215,6 +217,7 @@ line-length = 100
 
 See https://black.readthedocs.io/en/stable/usage_and_configuration/the_basics.html#configuration-via-a-file
 
+
 ### poetry-check
 
 Runs `poetry check` on each project.
@@ -224,35 +227,64 @@ Runs `poetry check` on each project.
 
 Runs `stew check-outdated`.
 
+Note: This runner cannot be overridden, but it can be disabled.
+
 
 ### offline-build
 
 Runs `stew build` to a temporary folder and ensures that pip is able to reinstall everything from there.
 
+Note: This runner cannot be overridden, but it can be disabled.
+
 
 ## Custom Runners
 
-You can add any tool to `stew ci`, and you can also include your own autofix routines:
+You can add your own runners to `stew ci`. 
+You can also redefine a builtin runner completely.
+
+In this example, we create runners for flake8, bandit and isort. We also redefine the pytest runner:
+
 
 ```
 [tool.stew.ci.custom-runners]
 flake8 = true
-bandit = { args = ["--quiet --recursive ."] }
-isort = { args = ["--check", "."], autofix-args = ["."] }
+bandit = { check-args = ["--quiet", "--recursive", "."] }
+
+# some may prefer this toml syntax:
+[tool.stew.ci.custom-runners.isort]
+check-args = ["--check", ".", "--profile black"]
+autofix-args = [".", "--profile black"]
+
+[tool.stew.ci.custom-runners.pytest] 
+check-args = ["--tb=long", "--junitxml=.ci/pytest-results.xml"]
 ```
+
+When a builtin runner such as pytest is redefined as a custom runner, you must provide all the arguments.
+In this case, not passing `--junitxml` would mean that we lose the report that used to be in the `.ci/` directory. 
+
 
 ### Options
 
 The following options are supported for custom runners:
 
-- name: You can specify the CLI executable if it differs from the name of the tool.
-- args: The arguments to invoke the check.
+- name: You can specify the module name if it differs from the name of the tool.
+  - Important: Runners are called through `python -m <name>`, not through the shell! 
+- check-args: The arguments to invoke the check.
 - autofix-args: The arguments to invoke the autofix. Provide the empty string "" in order to run without arguments.
 - check-failed-exit-codes: A list of ints denoting the exit codes to consider "failed" (anything else will be "error"). 0 is always a success. default is `[1]`.
 - create-generic-report: Whether to create a generic pass/fail JUnit report for this check.
 - working-directory: The default is "project" which corresponds to the project's `pyproject.toml` file. You can change it to "repository" in order to run from the root.
 
-Note: args and autofix support strings and list of strings.
+The `args` and `check-args` can be:
+
+- A string
+  - Such as a single argument "--check"
+  - Such as a path "."
+  - Such as an option "--profile black"
+  - But NOT as a combo of the above: "--check . --profile black" will most likely not work.
+
+- A list of string:
+  - Any combination of the "string" rules explained above.
 
 
 # FAQ, Tips and Tricks
