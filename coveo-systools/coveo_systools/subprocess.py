@@ -1,6 +1,5 @@
 """Adds much needed magic and features over the builtin subprocess machinery."""
-
-
+import asyncio
 import logging
 import shlex
 import subprocess
@@ -233,12 +232,105 @@ def check_run(
         print(f"calling: {command_for_display}")
 
     fn = cast(_CallProtocol, subprocess.check_output if capture_output else subprocess.check_call)
+
     try:
         output = fn(converted_command, cwd=str(working_directory), **kwargs)
     except subprocess.CalledProcessError as exception:
         raise DetailedCalledProcessError(working_folder=working_directory) from exception
 
     if capture_output:
+        encoding: Tuple[str, ...] = tuple()  # emptiness; encoding uses system/OS defaults
+        if isinstance(output, str):
+            encoding = ("utf-8",)  # py3 strings are always utf-8
+            output = output.encode(*encoding)
+        assert isinstance(output, bytes)  # mypy
+        try:
+            return filter_ansi(output).decode(*encoding).strip()
+        except UnicodeDecodeError:
+            log.warning("An error occurred decoding the output stream; retrying in safe mode.")
+            return output.decode(errors="ignore").strip()
+
+    return None
+
+
+async def async_check_run(
+    *command: Any,
+    working_directory: Union[PathLike, str] = ".",
+    capture_output: bool = False,
+    verbose: bool = False,
+    quoted: bool = False,
+    **kwargs: Any,
+) -> Optional[str]:
+    """
+    Proxy for subprocess.check_run and subprocess.check_output.
+
+    Additional features:
+        - command line is a variable args (instead of a list)
+        - automatic conversion of output to a stripped string (instead of raw bytes)
+        - automatic conversion of Path, bytes and number variables in command line
+        - automatic filtering of ansi codes from the output
+        - enhanced DetailedCalledProcessError on error (a subclass of the typical CalledProcessError)
+
+    quoted:
+        - When False, an argument is automatically quoted if it has a space (Popen's behavior):
+            Good: 'exec', '--option', '--also', 'this value' -> exec --option --also "this value"
+            Bad:  'exec', '--option', '--also this value' -> exec --option "--also this value" (quotes are misplaced)
+
+        - With True, the arguments will be split on spaces, unless you quoted them beforehand:
+            Good: 'exec --option', '--also "this value"' -> exec --option --also "this value"
+            Bad:  'exec', '--option', '--also', 'this value' -> exec --option --also this value (quotes are missing)
+
+    With `quoted=True` you can combine arguments together in single strings; this often improves readability.
+    However, you MUST quote the tokens that may contain a space. Example with black formatting:
+
+        without quoted:
+
+            check_run(
+                [
+                    "executable",
+                    "--verbose",
+                    "--target",
+                    filename,
+                    "--dry-run",
+                    "--with-onions"
+                ]
+            )
+
+        with quoted:
+
+            import shlex
+            check_run(
+                [
+                    "executable --verbose",
+                    f"--target {shlex.quote(filename)}",
+                    "--dry-run --with-onions"
+                ],
+                quoted=True,
+            )
+    """
+    if verbose:
+        print(f"input arguments: {command}")
+
+    converted_command = tuple(_build_command(*command, quoted=quoted))
+    command_for_display = " ".join(converted_command) if quoted else shlex.join(converted_command)
+
+    if verbose:
+        print(f"calling: {command_for_display}")
+
+    fn = cast(_CallProtocol, subprocess.check_output if capture_output else subprocess.check_call)
+
+    process = await asyncio.create_subprocess_exec(
+        converted_command[0], *converted_command[1:], cwd=str(working_directory), **kwargs
+    )
+
+    stdout, stderr = await process.communicate()
+    if process.returncode != 0:
+        raise DetailedCalledProcessError(
+            working_folder=working_directory
+        ) from subprocess.CalledProcessError(process.returncode, converted_command, stdout, stderr)
+
+    if capture_output:
+        output = stdout
         encoding: Tuple[str, ...] = tuple()  # emptiness; encoding uses system/OS defaults
         if isinstance(output, str):
             encoding = ("utf-8",)  # py3 strings are always utf-8
@@ -278,6 +370,37 @@ def check_output(
         *command,
         working_directory=working_directory,
         capture_output=True,
+        verbose=verbose,
+        quoted=quoted,
+        **kwargs,
+    )
+
+
+async def async_check_call(
+    *command: Any,
+    working_directory: Union[PathLike, str] = ".",
+    verbose: bool = False,
+    quoted: bool = False,
+    **kwargs: Any,
+) -> Optional[str]:
+    """Async proxy for subprocess.check_call"""
+    return await async_check_run(
+        *command, working_directory=working_directory, verbose=verbose, quoted=quoted, **kwargs
+    )
+
+
+async def async_check_output(
+    *command: Any,
+    working_directory: Union[PathLike, str] = ".",
+    verbose: bool = False,
+    quoted: bool = False,
+    **kwargs: Any,
+) -> Optional[str]:
+    """Async proxy for subprocess.check_output"""
+    return await async_check_run(
+        *command,
+        capture_output=True,
+        working_directory=working_directory,
         verbose=verbose,
         quoted=quoted,
         **kwargs,
