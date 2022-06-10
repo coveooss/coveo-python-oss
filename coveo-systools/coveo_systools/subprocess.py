@@ -1,4 +1,5 @@
 """Adds much needed magic and features over the builtin subprocess machinery."""
+
 import asyncio
 import logging
 import shlex
@@ -222,14 +223,9 @@ def check_run(
                 quoted=True,
             )
     """
-    if verbose:
-        print(f"input arguments: {command}")
-
-    converted_command = tuple(_build_command(*command, quoted=quoted))
-    command_for_display = " ".join(converted_command) if quoted else shlex.join(converted_command)
-
-    if verbose:
-        print(f"calling: {command_for_display}")
+    converted_command, kwargs = _prepare_call(
+        *command, capture_output=capture_output, verbose=verbose, quoted=quoted, **kwargs
+    )
 
     fn = cast(_CallProtocol, subprocess.check_output if capture_output else subprocess.check_call)
 
@@ -238,19 +234,7 @@ def check_run(
     except subprocess.CalledProcessError as exception:
         raise DetailedCalledProcessError(working_folder=working_directory) from exception
 
-    if capture_output:
-        encoding: Tuple[str, ...] = tuple()  # emptiness; encoding uses system/OS defaults
-        if isinstance(output, str):
-            encoding = ("utf-8",)  # py3 strings are always utf-8
-            output = output.encode(*encoding)
-        assert isinstance(output, bytes)  # mypy
-        try:
-            return filter_ansi(output).decode(*encoding).strip()
-        except UnicodeDecodeError:
-            log.warning("An error occurred decoding the output stream; retrying in safe mode.")
-            return output.decode(errors="ignore").strip()
-
-    return None
+    return _process_output(output) if capture_output else None
 
 
 async def async_check_run(
@@ -261,88 +245,62 @@ async def async_check_run(
     quoted: bool = False,
     **kwargs: Any,
 ) -> Optional[str]:
-    """
-    Proxy for subprocess.check_run and subprocess.check_output.
+    """Async version of check_run"""
+    converted_command, kwargs = _prepare_call(
+        *command, capture_output=capture_output, verbose=verbose, quoted=quoted, **kwargs
+    )
 
-    Additional features:
-        - command line is a variable args (instead of a list)
-        - automatic conversion of output to a stripped string (instead of raw bytes)
-        - automatic conversion of Path, bytes and number variables in command line
-        - automatic filtering of ansi codes from the output
-        - enhanced DetailedCalledProcessError on error (a subclass of the typical CalledProcessError)
-
-    quoted:
-        - When False, an argument is automatically quoted if it has a space (Popen's behavior):
-            Good: 'exec', '--option', '--also', 'this value' -> exec --option --also "this value"
-            Bad:  'exec', '--option', '--also this value' -> exec --option "--also this value" (quotes are misplaced)
-
-        - With True, the arguments will be split on spaces, unless you quoted them beforehand:
-            Good: 'exec --option', '--also "this value"' -> exec --option --also "this value"
-            Bad:  'exec', '--option', '--also', 'this value' -> exec --option --also this value (quotes are missing)
-
-    With `quoted=True` you can combine arguments together in single strings; this often improves readability.
-    However, you MUST quote the tokens that may contain a space. Example with black formatting:
-
-        without quoted:
-
-            check_run(
-                [
-                    "executable",
-                    "--verbose",
-                    "--target",
-                    filename,
-                    "--dry-run",
-                    "--with-onions"
-                ]
-            )
-
-        with quoted:
-
-            import shlex
-            check_run(
-                [
-                    "executable --verbose",
-                    f"--target {shlex.quote(filename)}",
-                    "--dry-run --with-onions"
-                ],
-                quoted=True,
-            )
-    """
-    if verbose:
-        print(f"input arguments: {command}")
-
-    converted_command = tuple(_build_command(*command, quoted=quoted))
-    command_for_display = " ".join(converted_command) if quoted else shlex.join(converted_command)
-
-    if verbose:
-        print(f"calling: {command_for_display}")
-
-    fn = cast(_CallProtocol, subprocess.check_output if capture_output else subprocess.check_call)
+    if capture_output:
+        # the subprocess.check_output enforces these, we do the same
+        kwargs["stdout"] = asyncio.subprocess.PIPE
+        kwargs["stderr"] = asyncio.subprocess.PIPE
 
     process = await asyncio.create_subprocess_exec(
         converted_command[0], *converted_command[1:], cwd=str(working_directory), **kwargs
     )
+    result = await process.wait()
+    stdout = await process.stdout.read() if process.stdout else None
+    stderr = await process.stderr.read() if process.stderr else None
 
-    stdout, stderr = await process.communicate()
-    if process.returncode != 0:
+    if result != 0:
         raise DetailedCalledProcessError(
             working_folder=working_directory
-        ) from subprocess.CalledProcessError(process.returncode, converted_command, stdout, stderr)
+        ) from subprocess.CalledProcessError(result, command, stdout, stderr)
 
-    if capture_output:
-        output = stdout
-        encoding: Tuple[str, ...] = tuple()  # emptiness; encoding uses system/OS defaults
-        if isinstance(output, str):
-            encoding = ("utf-8",)  # py3 strings are always utf-8
-            output = output.encode(*encoding)
-        assert isinstance(output, bytes)  # mypy
-        try:
-            return filter_ansi(output).decode(*encoding).strip()
-        except UnicodeDecodeError:
-            log.warning("An error occurred decoding the output stream; retrying in safe mode.")
-            return output.decode(errors="ignore").strip()
+    return _process_output(stdout) if capture_output else None
 
-    return None
+
+def _process_output(output: Union[str, bytes]) -> str:
+    encoding: Tuple[str, ...] = tuple()  # emptiness; encoding uses system/OS defaults
+    if isinstance(output, str):
+        encoding = ("utf-8",)  # py3 strings are always utf-8
+        output = output.encode(*encoding)
+    assert isinstance(output, bytes)  # mypy
+    try:
+        return filter_ansi(output).decode(*encoding).strip()
+    except UnicodeDecodeError:
+        log.warning("An error occurred decoding the output stream; retrying in safe mode.")
+        return output.decode(errors="ignore").strip()
+
+
+def _prepare_call(
+    *command: Any,
+    capture_output: bool = False,
+    verbose: bool = False,
+    quoted: bool = False,
+    **kwargs: Any,
+) -> Tuple[Tuple[str, ...], Dict[str, Any]]:
+    if verbose:
+        print(f"input arguments: {command}")
+
+    converted_command = tuple(_build_command(*command, quoted=quoted))
+
+    if verbose:
+        print(
+            f'calling: {" ".join(converted_command) if quoted else shlex.join(converted_command)}'
+        )
+
+    return converted_command, kwargs
 
 
 def check_call(
