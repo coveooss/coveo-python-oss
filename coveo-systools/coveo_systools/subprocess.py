@@ -223,9 +223,7 @@ def check_run(
                 quoted=True,
             )
     """
-    converted_command, kwargs = _prepare_call(
-        *command, capture_output=capture_output, verbose=verbose, quoted=quoted, **kwargs
-    )
+    converted_command, kwargs = _prepare_call(*command, verbose=verbose, quoted=quoted, **kwargs)
 
     fn = cast(_CallProtocol, subprocess.check_output if capture_output else subprocess.check_call)
 
@@ -246,9 +244,7 @@ async def async_check_run(
     **kwargs: Any,
 ) -> Optional[str]:
     """Async version of check_run"""
-    converted_command, kwargs = _prepare_call(
-        *command, capture_output=capture_output, verbose=verbose, quoted=quoted, **kwargs
-    )
+    converted_command, kwargs = _prepare_call(*command, verbose=verbose, quoted=quoted, **kwargs)
 
     if capture_output:
         # the subprocess.check_output enforces these, we do the same
@@ -285,7 +281,6 @@ def _process_output(output: Union[str, bytes]) -> str:
 
 def _prepare_call(
     *command: Any,
-    capture_output: bool = False,
     verbose: bool = False,
     quoted: bool = False,
     **kwargs: Any,
