@@ -14,7 +14,8 @@ from coveo_systools.subprocess import (
     DetailedCalledProcessError,
     log as called_process_error_logger,
     cast_command_line_argument_to_string,
-    check_run, async_check_run
+    check_run,
+    async_check_run,
 )
 
 
@@ -125,7 +126,7 @@ async def _check_run(*command: Any) -> str:
 
 def test_async_check_run() -> None:
     git = find_application("git", raise_if_not_found=True)
-    assert asyncio.run(_check_run(git, "--version")).startswith('git version')
+    assert asyncio.run(_check_run(git, "--version")).startswith("git version")
 
 
 def test_async_check_run_exception() -> None:
