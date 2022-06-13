@@ -1,6 +1,6 @@
 """Adds much needed magic and features over the builtin subprocess machinery."""
 
-
+import asyncio
 import logging
 import shlex
 import subprocess
@@ -223,34 +223,79 @@ def check_run(
                 quoted=True,
             )
     """
-    if verbose:
-        print(f"input arguments: {command}")
-
-    converted_command = tuple(_build_command(*command, quoted=quoted))
-    command_for_display = " ".join(converted_command) if quoted else shlex.join(converted_command)
-
-    if verbose:
-        print(f"calling: {command_for_display}")
+    converted_command, kwargs = _prepare_call(*command, verbose=verbose, quoted=quoted, **kwargs)
 
     fn = cast(_CallProtocol, subprocess.check_output if capture_output else subprocess.check_call)
+
     try:
         output = fn(converted_command, cwd=str(working_directory), **kwargs)
     except subprocess.CalledProcessError as exception:
         raise DetailedCalledProcessError(working_folder=working_directory) from exception
 
-    if capture_output:
-        encoding: Tuple[str, ...] = tuple()  # emptiness; encoding uses system/OS defaults
-        if isinstance(output, str):
-            encoding = ("utf-8",)  # py3 strings are always utf-8
-            output = output.encode(*encoding)
-        assert isinstance(output, bytes)  # mypy
-        try:
-            return filter_ansi(output).decode(*encoding).strip()
-        except UnicodeDecodeError:
-            log.warning("An error occurred decoding the output stream; retrying in safe mode.")
-            return output.decode(errors="ignore").strip()
+    return _process_output(output) if capture_output else None
 
-    return None
+
+async def async_check_run(
+    *command: Any,
+    working_directory: Union[PathLike, str] = ".",
+    capture_output: bool = False,
+    verbose: bool = False,
+    quoted: bool = False,
+    **kwargs: Any,
+) -> Optional[str]:
+    """Async version of check_run"""
+    converted_command, kwargs = _prepare_call(*command, verbose=verbose, quoted=quoted, **kwargs)
+
+    if capture_output:
+        # the subprocess.check_output enforces these, we do the same
+        kwargs["stdout"] = asyncio.subprocess.PIPE
+        kwargs["stderr"] = asyncio.subprocess.PIPE
+
+    process = await asyncio.create_subprocess_exec(
+        converted_command[0], *converted_command[1:], cwd=str(working_directory), **kwargs
+    )
+    result = await process.wait()
+    stdout = await process.stdout.read() if process.stdout else None
+    stderr = await process.stderr.read() if process.stderr else None
+
+    if result != 0:
+        raise DetailedCalledProcessError(
+            working_folder=working_directory
+        ) from subprocess.CalledProcessError(result, command, stdout, stderr)
+
+    return _process_output(stdout) if capture_output else None
+
+
+def _process_output(output: Union[str, bytes]) -> str:
+    encoding: Tuple[str, ...] = tuple()  # emptiness; encoding uses system/OS defaults
+    if isinstance(output, str):
+        encoding = ("utf-8",)  # py3 strings are always utf-8
+        output = output.encode(*encoding)
+    assert isinstance(output, bytes)  # mypy
+    try:
+        return filter_ansi(output).decode(*encoding).strip()
+    except UnicodeDecodeError:
+        log.warning("An error occurred decoding the output stream; retrying in safe mode.")
+        return output.decode(errors="ignore").strip()
+
+
+def _prepare_call(
+    *command: Any,
+    verbose: bool = False,
+    quoted: bool = False,
+    **kwargs: Any,
+) -> Tuple[Tuple[str, ...], Dict[str, Any]]:
+    if verbose:
+        print(f"input arguments: {command}")
+
+    converted_command = tuple(_build_command(*command, quoted=quoted))
+
+    if verbose:
+        print(
+            f'calling: {" ".join(converted_command) if quoted else shlex.join(converted_command)}'
+        )
+
+    return converted_command, kwargs
 
 
 def check_call(
@@ -278,6 +323,37 @@ def check_output(
         *command,
         working_directory=working_directory,
         capture_output=True,
+        verbose=verbose,
+        quoted=quoted,
+        **kwargs,
+    )
+
+
+async def async_check_call(
+    *command: Any,
+    working_directory: Union[PathLike, str] = ".",
+    verbose: bool = False,
+    quoted: bool = False,
+    **kwargs: Any,
+) -> Optional[str]:
+    """Async proxy for subprocess.check_call"""
+    return await async_check_run(
+        *command, working_directory=working_directory, verbose=verbose, quoted=quoted, **kwargs
+    )
+
+
+async def async_check_output(
+    *command: Any,
+    working_directory: Union[PathLike, str] = ".",
+    verbose: bool = False,
+    quoted: bool = False,
+    **kwargs: Any,
+) -> Optional[str]:
+    """Async proxy for subprocess.check_output"""
+    return await async_check_run(
+        *command,
+        capture_output=True,
+        working_directory=working_directory,
         verbose=verbose,
         quoted=quoted,
         **kwargs,

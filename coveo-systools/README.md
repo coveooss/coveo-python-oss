@@ -6,6 +6,7 @@ Language and OS related utilities.
 Content in a nutshell:
 
 - enhanced subprocess calls
+- asyncio subprocess calls
 - file and app finding made easy
 - safe text write and replace-if-different
 - git-repo-root locator
@@ -34,6 +35,8 @@ list(find_paths('pyproject.toml', search_from=find_repo_root(), in_root=True, in
 # enhanced subprocess calls
 
 An opinionated version of `subprocess.check_call` and `subprocess.check_output`.
+
+_New in 2.0.7_: asyncio support, through `async_check_call` and `async_check_output`.
 
 Adds the following features:
 - command line is a variable args (instead of a list)

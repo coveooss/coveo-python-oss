@@ -1,9 +1,12 @@
+import asyncio
 import logging
 from pathlib import Path
 from subprocess import CalledProcessError
 from typing import Any
 
 import pytest
+
+from coveo_systools.filesystem import find_application
 from coveo_testing.logging import assert_logging
 from coveo_testing.markers import UnitTest
 from coveo_testing.parametrize import parametrize
@@ -11,6 +14,8 @@ from coveo_systools.subprocess import (
     DetailedCalledProcessError,
     log as called_process_error_logger,
     cast_command_line_argument_to_string,
+    check_run,
+    async_check_run,
 )
 
 
@@ -113,3 +118,22 @@ def test_command_line_argument_conversion_unsupported(argument: Any) -> None:
     """unsupported types will raise an exception to prevent mistakes"""
     with pytest.raises(ValueError):
         cast_command_line_argument_to_string(argument)
+
+
+async def _check_run(*command: Any) -> str:
+    return await async_check_run(*command, capture_output=True)
+
+
+def test_async_check_run() -> None:
+    git = find_application("git", raise_if_not_found=True)
+    assert asyncio.run(_check_run(git, "--version")).startswith("git version")
+
+
+def test_async_check_run_exception() -> None:
+    git = find_application("git", raise_if_not_found=True)
+    try:
+        asyncio.run(_check_run(git, "--crash"))
+        assert False, "Did not raise"
+    except DetailedCalledProcessError as exception:
+        assert exception.returncode == 129
+        assert "unknown option: --crash" in exception.decode_stderr()
