@@ -247,9 +247,10 @@ async def async_check_run(
     converted_command, kwargs = _prepare_call(*command, verbose=verbose, quoted=quoted, **kwargs)
 
     if capture_output:
-        # the subprocess.check_output enforces these, we do the same
+        # the subprocess.check_output enforces this
         kwargs["stdout"] = asyncio.subprocess.PIPE
-        kwargs["stderr"] = asyncio.subprocess.PIPE
+        # allow redirection of stderr. e.g.: stderr=STDOUT
+        kwargs.setdefault("stderr", asyncio.subprocess.PIPE)
 
     process = await asyncio.create_subprocess_exec(
         converted_command[0], *converted_command[1:], cwd=str(working_directory), **kwargs
