@@ -15,7 +15,12 @@ pytest = "*"
 
 
 [tool.poetry.dev-dependencies]
+bandit = "*"
+black = "*"
+mypy = "0.950"
+pytest = "*"
 typing_extensions = "*"
+
 
 
 [tool.stew.ci]
