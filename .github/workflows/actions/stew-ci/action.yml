@@ -27,6 +27,7 @@ runs:
 
     - name: Ensure correct python version
       shell: bash
+      working-directory: ${{ inputs.project-name }}
       run: poetry env use ${{ inputs.python-version }}
 
     - name: Run stew ci
