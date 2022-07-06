@@ -26,6 +26,7 @@ runs:
         cache: poetry
 
     - name: Ensure correct python version
+      shell: bash
       run: poetry env use ${{ inputs.python-version }}
 
     - name: Run stew ci
