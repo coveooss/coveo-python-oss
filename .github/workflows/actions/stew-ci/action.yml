@@ -14,21 +14,20 @@ runs:
   using: 'composite'
 
   steps:
+    - uses: actions/setup-python@v3
+      with:
+        python-version: ${{ inputs.python-version }}
+
     - name: Setup/upgrade the python tools
       shell: bash
       run: | 
         pipx install poetry==1.1.13 
         pipx install coveo-stew==3.0.0a5
 
-    - uses: actions/setup-python@v3
-      with:
-        python-version: ${{ inputs.python-version }}
-        cache: poetry
-
     - name: Ensure correct python version
       shell: bash
       working-directory: ${{ inputs.project-name }}
-      run: poetry env use ${{ inputs.python-version }}
+      run: poetry env use python${{ inputs.python-version }}
 
     - name: Run stew ci
       shell: bash
