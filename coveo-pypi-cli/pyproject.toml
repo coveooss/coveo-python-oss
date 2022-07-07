@@ -19,11 +19,14 @@ typing-extensions = "*"
 
 
 [tool.poetry.dev-dependencies]
+bandit = "*"
+black = "*"
 coveo-functools = { path = "../coveo-functools/", develop = true }
 coveo-settings = { path = "../coveo-settings/" , develop = true }
 coveo-styles = { path = "../coveo-styles/", develop = true }
 coveo-systools = { path = "../coveo-systools/", develop = true }
 coveo-testing = { path = "../coveo-testing/", develop = true }
+mypy = "0.950"
 pytest = "*"
 requests-mock = "*"
 types-requests = "*"

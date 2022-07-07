@@ -16,7 +16,11 @@ typing_extensions = "*"
 
 
 [tool.poetry.dev-dependencies]
+bandit = "*"
+black = "*"
 coveo-testing = { path = "../coveo-testing/", develop = true }
+mypy = "0.950"
+pytest = "*"
 types-emoji = "*"
 
 
