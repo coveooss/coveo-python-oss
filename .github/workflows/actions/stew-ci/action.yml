@@ -30,7 +30,7 @@ runs:
       shell: bash
       run: | 
         python -m pipx install poetry==1.1.13
-        python -m pipx install coveo-stew==3.0.0a5
+        python -m pipx install coveo-stew==3.0.0
 
     - name: Ensure correct python version
       shell: bash
