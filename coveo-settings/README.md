@@ -42,6 +42,7 @@ DATABASE_USE_SSL = BoolSetting('project.database.ssl')
 
 # this method will raise an exception if the setting has no value and no fallback
 use_ssl = bool(DATABASE_USE_SSL)
+use_ssl = DATABASE_USE_SSL.get_or_raise()
 assert use_ssl in [True, False]
 
 # this method will not raise an exception
@@ -84,7 +85,7 @@ ENV = StringSetting("environment", fallback="dev", validation=InSequence("prod",
 You can register custom redirection schemes in order to support any data source.
 
 Much like `https://` is a clear scheme, you may register callback functions to trigger when the value of a setting
-starts with the scheme(s) you define. For instance, let's support a custom API and a file storage: 
+starts with the scheme(s) you define. For instance, let's support a custom API and a file storage:
 
 ```python
 from coveo_settings import settings_adapter, StringSetting, ConfigValue
@@ -95,13 +96,13 @@ def internal_api_adapter(key: str) -> ConfigValue:
     # the scheme was automatically removed for convenience; only the resource remains
     assert "internal-api::" not in key
     return "internal api"  # implement logic to obtain value from internal api
-    
+
 
 @settings_adapter("file::", strip_scheme=False)
 def file_adapter(key: str) -> ConfigValue:
     # you can keep the scheme by specifying `strip_scheme=False`
     assert key.startswith("file::")
-    return "file adapter"  # implement logic to parse the key and retrieve the setting value 
+    return "file adapter"  # implement logic to parse the key and retrieve the setting value
 
 
 assert StringSetting('...', fallback="internal-api::settings/user-name").value == "internal api"
@@ -118,13 +119,13 @@ os.environ['test'] = "internal-api::url"
 assert REDIRECT_ME.value == "internal api"
 ```
 
-Keep in mind that there's no restriction on the prefix scheme; it's your responsibility to pick something unique 
+Keep in mind that there's no restriction on the prefix scheme; it's your responsibility to pick something unique
 that can be set as the value of an environment variable.
 
 
 ### Redirection is recursive
 
-The value of a redirection may be another redirection and may juggle between adapters. 
+The value of a redirection may be another redirection and may juggle between adapters.
 A limit of 50 redirections is supported:
 
 ```python
@@ -143,7 +144,7 @@ assert StringSetting("my-setting").value == "final value"
 ### Builtin environment redirection
 
 The builtin redirection scheme `env->` can be used to redirect to a different environment variable.
-The example below demonstrates the deprecation/migration of `my-setting` into `new-setting`: 
+The example below demonstrates the deprecation/migration of `my-setting` into `new-setting`:
 
 ```python
 import os
@@ -164,7 +165,7 @@ This is particularly useful in redirection scenarios to avoid repeating requests
 
 ## Setting the value
 
-You can override the value using `setting.value = "some value"` and clear the override with `setting.value = None`. 
+You can override the value using `setting.value = "some value"` and clear the override with `setting.value = None`.
 Clearing the override resumes the normal behavior of the environment variables and the fallback value, if set.
 
 This is typically used as a way to propagate CLI switches globally.
