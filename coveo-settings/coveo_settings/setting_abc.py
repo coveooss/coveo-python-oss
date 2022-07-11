@@ -169,6 +169,7 @@ class Setting(SupportsInt, SupportsFloat, Generic[T], Container, Iterable):
         return settings_adapter.is_redirect(self._get_value_before_redirections())
 
     def get_or_raise(self) -> T:
+        """Return the value or raise an MandatoryConfigurationError if not set."""
         self.raise_if_missing()
         return self.value
 
