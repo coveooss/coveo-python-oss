@@ -709,6 +709,24 @@ def test_setting_get() -> None:
 
 
 @UnitTest
+def test_setting_get_or_raise_no_fallback() -> None:
+    with pytest.raises(MandatoryConfigurationError):
+        StringSetting("any").get_or_raise()
+
+
+@UnitTest
+def test_setting_get_or_raise_fallback() -> None:
+    assert StringSetting("any", fallback="fallback").get_or_raise() == "fallback"
+
+
+@UnitTest
+def test_setting_get_or_raise_value() -> None:
+    key = "test.setting.get_or_raise"
+    os.environ[key] = "env value"
+    assert StringSetting(key, fallback="fallback").get_or_raise() == "env value"
+
+
+@UnitTest
 def test_setting_cached() -> None:
     env = "test.settings.cached"
     setting = StringSetting(env, cached=True)

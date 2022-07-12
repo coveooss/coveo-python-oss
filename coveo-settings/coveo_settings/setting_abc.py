@@ -168,6 +168,11 @@ class Setting(SupportsInt, SupportsFloat, Generic[T], Container, Iterable):
         """True if the value invokes a custom adapter."""
         return settings_adapter.is_redirect(self._get_value_before_redirections())
 
+    def get_or_raise(self) -> T:
+        """Return the value or raise an MandatoryConfigurationError if not set."""
+        self.raise_if_missing()
+        return self.value
+
     def get_if_set(self, default: T) -> T:
         """Return the value, or a default if not set."""
         return self.value if self.is_set else default
