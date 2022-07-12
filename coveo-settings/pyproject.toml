@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "coveo-settings"
-version = "2.0.8"
+version = "2.1.0"
 description = "Settings driven by environment variables."
 license = "Apache-2.0"
 readme = "README.md"
