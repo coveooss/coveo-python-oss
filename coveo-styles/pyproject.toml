@@ -11,7 +11,7 @@ authors = ["Jonathan Piché <tools@coveo.com>"]
 python = ">=3.8"
 
 click = ">=8.1"
-emoji = "*"
+emoji = "^1.7.0"
 typing_extensions = "*"
 
 
