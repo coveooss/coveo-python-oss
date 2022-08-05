@@ -197,6 +197,41 @@ that can be used to bend the framework if you accept bearing the consequences:
   - The payload `value` received by the adapter is not a copy, modifications will be honored.
 
 
+### Factory Adapters
+
+Some types don't play well with keyword arguments. For instance, using the `datetime` class is much more convenient using strings, isoformat() and fromisoformat() than
+having to parse it into the year/month/etc component.
+
+To serialize such types, you can use a factory adapter, which is expected to return the instance instead of the type.
+
+```python
+from dataclasses import dataclass
+from datetime import datetime
+from coveo_functools import flex
+from coveo_functools.flex.factory_adapter import register_factory_adapter
+
+# Implementation:
+
+def _datetime_factory(value: str) -> datetime:
+  return datetime.fromisoformat(value)
+
+register_factory_adapter(datetime, _datetime_factory)
+
+
+# Demonstration:
+
+@dataclass
+class WithDateTime:
+  timestamp: datetime
+  
+
+timestamp = datetime.utcnow()
+instance = flex.deserialize({"timestamp": timestamp.isoformat()}, hint=WithDateTime)
+assert instance.timestamp == timestamp
+assert isinstance(instance.timestamp, datetime)
+```
+
+
 ### About Abstract classes
 
 There are two ways to deal with abstract classes:

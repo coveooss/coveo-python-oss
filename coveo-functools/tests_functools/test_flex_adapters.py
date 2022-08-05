@@ -2,11 +2,13 @@ from __future__ import annotations
 
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Type, Any, Generator, List, Dict, Optional
 
 import pytest
 from coveo_functools.exceptions import UnsupportedAnnotation
 from coveo_functools.flex import deserialize, TypeHint
+from coveo_functools.flex.factory_adapter import register_factory_adapter
 from coveo_functools.flex.subclass_adapter import register_subclass_adapter, _subclass_adapters
 from coveo_testing.parametrize import parametrize
 
@@ -153,3 +155,21 @@ def test_deserialize_adapter_factory_classmethod() -> None:
 
     payload: Dict[str, Any] = {"raw": {"value": "success"}}
     assert deserialize(payload, hint=TestFactory).value == "success"
+
+
+@dataclass
+class TestDatetimeFactory:
+    value: datetime
+
+
+def test_deserialize_adapter_factory_function() -> None:
+    """Tests the factory feature, which expects the instance to be returned instead of the type."""
+
+    def datetime_factory(value: str) -> datetime:
+        return datetime.fromisoformat(value)
+
+    register_factory_adapter(datetime, datetime_factory)
+    test_datetime = datetime.utcnow()
+
+    payload: Dict[str, Any] = {"value": test_datetime.isoformat()}
+    assert deserialize(payload, hint=TestDatetimeFactory).value == test_datetime

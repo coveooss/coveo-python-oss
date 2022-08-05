@@ -21,6 +21,7 @@ from coveo_functools.annotations import find_annotations
 from coveo_functools.casing import TRANSLATION_TABLE, unflex
 from coveo_functools.dispatch import dispatch
 from coveo_functools.exceptions import UnsupportedAnnotation
+from coveo_functools.flex.factory_adapter import get_factory_adapter
 from coveo_functools.flex.helpers import resolve_hint
 from coveo_functools.flex.serializer import SerializationMetadata
 from coveo_functools.flex.subclass_adapter import get_subclass_adapter
@@ -84,6 +85,10 @@ def deserialize(value: Any, *, hint: Union[T, Type[T]]) -> T:
     if adapter := get_subclass_adapter(hint):
         # ask the adapter what the hint should be for this value
         hint = adapter(value)
+
+    elif factory := get_factory_adapter(hint):
+        # factories are expected to return an instance of the correct type, so we can just bypass everything else.
+        return cast(T, factory(value))
 
     if isabstract(hint):
         raise UnsupportedAnnotation(
