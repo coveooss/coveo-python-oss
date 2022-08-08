@@ -210,12 +210,13 @@ from datetime import datetime
 from coveo_functools import flex
 from coveo_functools.flex.factory_adapter import register_factory_adapter
 
-# Implementation:
+# Implementation of the deserialization:
 
 def _datetime_factory(value: str) -> datetime:
   return datetime.fromisoformat(value)
 
 register_factory_adapter(datetime, _datetime_factory)
+
 
 
 # Demonstration:
