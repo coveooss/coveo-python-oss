@@ -17,9 +17,9 @@ class no_yield:  # noqa: lowercased decorator
         # It's a context manager, and it's not activated yet.
         self.patch_context_manager = patch
 
-    def __call__(self, fn: Callable, *args, **kwargs) -> Callable:
+    def __call__(self, fn: Callable) -> Callable:
         @functools.wraps(fn)
-        def _wrapper(*args, **kwargs) -> Any:
+        def _wrapper(*args: Any, **kwargs: Any) -> Any:
             # activate the mock for the duration of the test function.
             with self.patch_context_manager:
                 return fn(*args, **kwargs)
