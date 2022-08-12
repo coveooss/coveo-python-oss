@@ -244,15 +244,15 @@ def _deserialize_with_metadata(
             for index in sorted(hint.additional_metadata, key=int)
         ]
 
-    if issubclass(root_type, Enum):
-        # special handling for enums.
-        return deserialize(value, hint=root_type)
-
     if isclass(root_type) and isinstance(value, dict):
         # typical case of unpacking value into an instance of the root type.
         return root_type(
             **convert_kwargs_for_unpacking(value, hint=hint)
         )  # it's magic!  # type: ignore[no-any-return]
+
+    if root_type is not SerializationMetadata:
+        # the hint was refined this turn, we can deserialize again
+        return deserialize(value, hint=root_type)
 
     return value
 
