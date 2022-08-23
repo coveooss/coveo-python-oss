@@ -261,7 +261,7 @@ async def async_check_run(
     if result != 0:
         raise DetailedCalledProcessError(
             working_folder=working_directory
-        ) from subprocess.CalledProcessError(result, command, stdout, stderr)
+        ) from subprocess.CalledProcessError(result, converted_command, stdout, stderr)
 
     return _process_output(stdout) if capture_output else None
 
