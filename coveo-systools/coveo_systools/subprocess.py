@@ -94,7 +94,13 @@ class DetailedCalledProcessError(subprocess.CalledProcessError):
         command = self.cmd
         if isinstance(command, str):
             return command
-        return " ".join(command)
+
+        try:
+            return " ".join(str(part) for part in command)
+        except TypeError as exception:
+            if "not iterable" in str(exception):
+                return str(command)
+            raise
 
     @property
     def _wrapped_exception(self) -> BaseException:
@@ -128,25 +134,28 @@ class DetailedCalledProcessError(subprocess.CalledProcessError):
 
     def __str__(self) -> str:
         """The main show!"""
-        errors: List[str] = [f"{self._wrapped_exception}\n"]
+        try:
+            errors: List[str] = [f"{self._wrapped_exception}\n"]
 
-        # add user-defined metadata to the error message.
-        errors.extend(f"{key}: {value}" for key, value in self.__metadata.items())
+            # add user-defined metadata to the error message.
+            errors.extend(f"{key}: {value}" for key, value in self.__metadata.items())
 
-        if isinstance(self._wrapped_exception, subprocess.CalledProcessError):
-            errors.extend(
-                [
-                    f"command: {self.command_str()}",
-                    f"exit code: {self.returncode}",
-                ]
-            )
+            if isinstance(self._wrapped_exception, subprocess.CalledProcessError):
+                errors.extend(
+                    [
+                        f"command: {self.command_str()}",
+                        f"exit code: {self.returncode}",
+                    ]
+                )
 
-            if self.stdout:
-                errors.append(f"\n--<stdout>--\n{self.decode_stdout()}\n--</stdout>--\n")
-            if self.stderr:
-                errors.append(f"\n--<stderr>--\n{self.decode_stderr()}\n--</stderr>--\n")
+                if self.stdout:
+                    errors.append(f"\n--<stdout>--\n{self.decode_stdout()}\n--</stdout>--\n")
+                if self.stderr:
+                    errors.append(f"\n--<stderr>--\n{self.decode_stderr()}\n--</stderr>--\n")
 
-        return "\n".join(errors)
+            return "\n".join(errors)
+        except Exception as exception:
+            return f"An error occurred when rendering the DetailedCalledProcessError: \n\n{exception}\n\n"
 
 
 class _CallProtocol(Protocol):
@@ -261,7 +270,7 @@ async def async_check_run(
     if result != 0:
         raise DetailedCalledProcessError(
             working_folder=working_directory
-        ) from subprocess.CalledProcessError(result, command, stdout, stderr)
+        ) from subprocess.CalledProcessError(result, converted_command, stdout, stderr)
 
     return _process_output(stdout) if capture_output else None
 
