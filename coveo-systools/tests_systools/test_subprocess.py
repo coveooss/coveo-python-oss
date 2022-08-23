@@ -2,8 +2,7 @@ import asyncio
 import logging
 from pathlib import Path
 from subprocess import CalledProcessError
-from typing import Any, Union
-from unittest.mock import Mock
+from typing import Any
 
 import pytest
 
