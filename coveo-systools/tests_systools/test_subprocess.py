@@ -2,7 +2,8 @@ import asyncio
 import logging
 from pathlib import Path
 from subprocess import CalledProcessError
-from typing import Any
+from typing import Any, Union
+from unittest.mock import Mock
 
 import pytest
 
@@ -120,6 +121,32 @@ def test_command_line_argument_conversion_unsupported(argument: Any) -> None:
         cast_command_line_argument_to_string(argument)
 
 
+@UnitTest
+@parametrize("command", (Path('git'), [Path('git')]))
+def test_command_line_arguments_may_contain_non_strings(command: Any) -> None:
+    """
+    We pass in a non-string command then ensure that str() works.
+    related to https://github.com/coveooss/coveo-python-oss/issues/132
+    """
+    exception = _forge_test_exception(CalledProcessError(1, cmd=command))
+    assert 'git' in str(exception)
+
+
+@UnitTest
+def test_detailed_process_error_cannot_render() -> None:
+    """
+    Ensure we never raise an exception in __str__
+    related to https://github.com/coveooss/coveo-python-oss/issues/132
+    """
+    class Dummy:
+        def __str__(self) -> str:
+            raise TypeError('proof')
+
+    exception = _forge_test_exception(CalledProcessError(1, cmd=Dummy()))  # type: ignore
+    assert 'proof' in str(exception)
+    assert 'error occurred when rendering' in str(exception)
+
+
 async def _check_run(*command: Any) -> str:
     return await async_check_run(*command, capture_output=True)
 
@@ -137,3 +164,6 @@ def test_async_check_run_exception() -> None:
     except DetailedCalledProcessError as exception:
         assert exception.returncode == 129
         assert "unknown option: --crash" in exception.decode_stderr()
+        # test for fix https://github.com/coveooss/coveo-python-oss/issues/132
+        # without the fix, str(exception) will raise an exception because the `git` variable was given as a Path
+        assert str(exception)
