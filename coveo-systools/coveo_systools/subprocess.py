@@ -132,8 +132,7 @@ class DetailedCalledProcessError(subprocess.CalledProcessError):
             return None
         return (value.decode(errors=decode_errors) if isinstance(value, bytes) else value).strip()
 
-    def __str__(self) -> str:
-        """The main show!"""
+    def format(self, summary: bool = False) -> str:
         try:
             errors: List[str] = [f"{self._wrapped_exception}\n"]
 
@@ -148,14 +147,19 @@ class DetailedCalledProcessError(subprocess.CalledProcessError):
                     ]
                 )
 
-                if self.stdout:
+                if self.stdout and not summary:
                     errors.append(f"\n--<stdout>--\n{self.decode_stdout()}\n--</stdout>--\n")
-                if self.stderr:
+                if self.stderr and not summary:
                     errors.append(f"\n--<stderr>--\n{self.decode_stderr()}\n--</stderr>--\n")
 
             return "\n".join(errors)
+
         except Exception as exception:
             return f"An error occurred when rendering the DetailedCalledProcessError: \n\n{exception}\n\n"
+
+    def __str__(self) -> str:
+        """The main show!"""
+        return self.format()
 
 
 class _CallProtocol(Protocol):
