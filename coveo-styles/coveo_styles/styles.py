@@ -293,7 +293,7 @@ class Pretty:
         if self.pad_after:
             message += "\n"
         if self._delimiters[0] in message:
-            message = emojize(message, use_aliases=True, delimiters=self._delimiters)
+            message = emojize(message, language="alias", delimiters=self._delimiters)
 
         if self._safe_encode:
             # remove any character that doesn't match stdout's encoding.
