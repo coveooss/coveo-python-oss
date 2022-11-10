@@ -79,6 +79,8 @@ def deserialize(value: Any, *, hint: Union[T, Type[T]], strict: bool = False) ->
     - If hint is a builtin type, we blindly return the value we were given. We don't validate the value.
     - If hint is a custom class, the value must be a dictionary to "flex" into the class.
     - Hint may be a `Union[T, List[T]]`, in which case the value must be a dict or a list of them.
+
+    When "strict" is True, an exception will be raised when flex cannot figure out what to do with the payload.
     """
     if value is None:
         return None  # nope!
