@@ -314,3 +314,16 @@ def test_deserialize_static_typing() -> None:
 
         # mypy sees that fn returns a str, not an int
         _ = deserialize(fn, hint=fn)(value="") / 2  # type: ignore[operator]
+
+
+@parametrize(
+    ("payload", "hint"),
+    (
+        ([{"x": "y"}], MockType),
+        ({"x": "y"}, MockType),
+        ("x", MockType),
+    ),
+)
+def test_deserialize_wrong_type(payload: Any, hint: Any) -> None:
+    with pytest.raises(Exception):
+        _ = deserialize(payload, hint=hint, strict=True)

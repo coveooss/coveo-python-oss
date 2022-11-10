@@ -1,4 +1,5 @@
 import inspect
+import logging
 from collections import abc
 from enum import Enum
 from inspect import isabstract, isclass
@@ -20,7 +21,7 @@ from typing import (
 from coveo_functools.annotations import find_annotations
 from coveo_functools.casing import TRANSLATION_TABLE, unflex
 from coveo_functools.dispatch import dispatch
-from coveo_functools.exceptions import UnsupportedAnnotation
+from coveo_functools.exceptions import UnsupportedAnnotation, PayloadMismatch
 from coveo_functools.flex.factory_adapter import get_factory_adapter
 from coveo_functools.flex.helpers import resolve_hint
 from coveo_functools.flex.serializer import SerializationMetadata
@@ -61,16 +62,16 @@ def convert_kwargs_for_unpacking(dirty_kwargs: Dict[str, Any], *, hint: MetaHint
 
 
 @overload
-def deserialize(value: Any, *, hint: Type[T]) -> T:
+def deserialize(value: Any, *, hint: Type[T], strict: bool = False) -> T:
     ...
 
 
 @overload
-def deserialize(value: Any, *, hint: T) -> T:
+def deserialize(value: Any, *, hint: T, strict: bool = False) -> T:
     """This overload tricks mypy in passing typing annotations as types, such as List[str]."""
 
 
-def deserialize(value: Any, *, hint: Union[T, Type[T]]) -> T:
+def deserialize(value: Any, *, hint: Union[T, Type[T]], strict: bool = False) -> T:
     """
     Deserializes a value based on the provided type hint:
 
@@ -120,23 +121,31 @@ def deserialize(value: Any, *, hint: Union[T, Type[T]]) -> T:
             else:
                 return cast(T, deserialize(value, hint=target_type))
 
-    if origin is list:
-        return cast(T, _deserialize(value, hint=list, contains=target_type))
+    try:
+        if origin is list:
+            return cast(T, _deserialize(value, hint=list, contains=target_type))
 
-    if origin is dict:
-        # json can't have maps or lists as keys, so we can't either. Ditch the key annotation, but convert values.
-        return cast(T, _deserialize(value, hint=dict, contains=args[1] if args else Any))
+        if origin is dict:
+            # json can't have maps or lists as keys, so we can't either. Ditch the key annotation, but convert values.
+            return cast(T, _deserialize(value, hint=dict, contains=args[1] if args else Any))
 
-    if is_passthrough_type(origin):
-        # we always return those without validation
-        return cast(T, value)
+        if is_passthrough_type(origin):
+            # we always return those without validation
+            return cast(T, value)
 
-    if inspect.isclass(origin) and isinstance(value, origin):
-        # it's a custom class and it's already converted
-        return cast(T, value)
+        if inspect.isclass(origin) and isinstance(value, origin):
+            # it's a custom class and it's already converted
+            return cast(T, value)
 
-    # annotation arguments are not supported past this point, so we can omit them.
-    return cast(T, _deserialize(value, hint=origin))
+        # annotation arguments are not supported past this point, so we can omit them.
+        return cast(T, _deserialize(value, hint=origin))
+
+    except PayloadMismatch:
+        if strict:
+            raise
+
+        logging.exception("An error occurred during deserialization.")
+        return value  # type: ignore[no-any-return]
 
 
 @dispatch(switch_pos="hint")
@@ -145,7 +154,7 @@ def _deserialize(value: Any, *, hint: TypeHint, contains: Optional[TypeHint] = N
     if callable(hint) and isinstance(value, dict):
         return hint(**convert_kwargs_for_unpacking(value, hint=hint))
 
-    return value
+    raise PayloadMismatch(value, hint, contains)
 
 
 @_deserialize.register(str)
@@ -169,7 +178,7 @@ def _deserialize_list(value: Any, *, hint: Type[list], contains: Optional[TypeHi
     if _is_array_like(value):
         return [deserialize(item, hint=contains) for item in value]
 
-    return value  # type: ignore[no-any-return]
+    raise PayloadMismatch(value, hint, contains)
 
 
 @_deserialize.register(dict)
@@ -177,7 +186,7 @@ def _deserialize_dict(value: Any, *, hint: Type[dict], contains: Optional[TypeHi
     if isinstance(value, abc.Mapping):
         return {key: deserialize(val, hint=contains or Any) for key, val in value.items()}
 
-    return value  # type: ignore[no-any-return]
+    raise PayloadMismatch(value, hint, contains)
 
 
 def _flex_translate(string: str) -> str:
@@ -213,7 +222,7 @@ def _deserialize_enum(value: Any, *, hint: Type[Enum], contains: Optional[TypeHi
             ):
                 return enum_instance
 
-    return value  # type: ignore[no-any-return]
+    raise PayloadMismatch(value, hint, contains)
 
 
 @_deserialize.register(SerializationMetadata)
@@ -254,7 +263,7 @@ def _deserialize_with_metadata(
         # the hint was refined this turn, we can deserialize again
         return deserialize(value, hint=root_type)
 
-    return value
+    raise PayloadMismatch(value, hint, contains)
 
 
 def _is_array_like(thing: Any) -> bool:
