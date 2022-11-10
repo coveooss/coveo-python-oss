@@ -322,6 +322,10 @@ def test_deserialize_static_typing() -> None:
         ([{"x": "y"}], MockType),
         ({"x": "y"}, MockType),
         ("x", MockType),
+        ({"x": "y"}, List[str]),
+        ({1: 2}, MockEnum),
+        (["a"], MockEnum),
+        (1, dict)
     ),
 )
 def test_deserialize_wrong_type(payload: Any, hint: Any) -> None:
