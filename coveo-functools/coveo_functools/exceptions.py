@@ -17,6 +17,10 @@ class PayloadMismatch(Flexception):
     """When the payload doesn't match the target type."""
 
     def __init__(self, value: Any, hint: Any, contains: Any) -> None:
+        self.value = value
+        self.hint = hint
+        self.contains = contains
+
         super().__init__(
             f"I don't know how to fit {type(value)} "
             f"into {hint}{' of ' + str(contains) if contains else ''}"

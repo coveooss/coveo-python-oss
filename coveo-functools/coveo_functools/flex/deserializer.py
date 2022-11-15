@@ -1,5 +1,6 @@
 import inspect
 import logging
+import warnings
 from collections import abc
 from enum import Enum
 from inspect import isabstract, isclass
@@ -16,6 +17,7 @@ from typing import (
     Iterable,
     Callable,
     Tuple,
+    Literal,
 )
 
 from coveo_functools.annotations import find_annotations
@@ -32,9 +34,12 @@ from coveo_functools.flex.types import TypeHint, is_passthrough_type, PASSTHROUG
 T = TypeVar("T")
 
 MetaHint = Union[Callable[..., T], SerializationMetadata, Type[T]]
+ErrorBehavior = Literal["raise", "ignore", "silent", "deprecated"]
 
 
-def convert_kwargs_for_unpacking(dirty_kwargs: Dict[str, Any], *, hint: MetaHint) -> Dict[str, Any]:
+def convert_kwargs_for_unpacking(
+    dirty_kwargs: Dict[str, Any], *, hint: MetaHint, errors: ErrorBehavior = "deprecated"
+) -> Dict[str, Any]:
     """Return a copy of `dirty_kwargs` that can be `**unpacked` to hint. Values will be deserialized recursively."""
     # start by determining what fn should be based on the hint
     additional_metadata: Dict[str, SerializationMetadata] = {}
@@ -56,22 +61,39 @@ def convert_kwargs_for_unpacking(dirty_kwargs: Dict[str, Any], *, hint: MetaHint
         if arg_name not in mapped_kwargs:
             continue  # this may be ok, for instance if the target argument has a default
 
-        converted_kwargs[arg_name] = deserialize(mapped_kwargs[arg_name], hint=arg_hint)
+        converted_kwargs[arg_name] = deserialize(
+            mapped_kwargs[arg_name], hint=arg_hint, errors=errors
+        )
 
     return converted_kwargs
 
 
 @overload
-def deserialize(value: Any, *, hint: Type[T], strict: bool = False) -> T:
+def deserialize(
+    value: Any,
+    *,
+    hint: Type[T],
+    errors: ErrorBehavior = "deprecated",
+) -> T:
     ...
 
 
 @overload
-def deserialize(value: Any, *, hint: T, strict: bool = False) -> T:
+def deserialize(
+    value: Any,
+    *,
+    hint: T,
+    errors: ErrorBehavior = "deprecated",
+) -> T:
     """This overload tricks mypy in passing typing annotations as types, such as List[str]."""
 
 
-def deserialize(value: Any, *, hint: Union[T, Type[T]], strict: bool = False) -> T:
+def deserialize(
+    value: Any,
+    *,
+    hint: Union[T, Type[T]],
+    errors: ErrorBehavior = "deprecated",
+) -> T:
     """
     Deserializes a value based on the provided type hint:
 
@@ -80,10 +102,50 @@ def deserialize(value: Any, *, hint: Union[T, Type[T]], strict: bool = False) ->
     - If hint is a custom class, the value must be a dictionary to "flex" into the class.
     - Hint may be a `Union[T, List[T]]`, in which case the value must be a dict or a list of them.
 
-    When "strict" is True, an exception will be raised when flex cannot figure out what to do with the payload.
+    The `errors` argument controls the behavior when a value cannot be deserialized into the hint or annotation:
+        - 'ignore': the value is used as-is, without deserialization. errors will be logged.
+        - 'silent': behave like 'ignore' but don't log errors  # yolo
+        - 'raise': raise a PayloadMismatch exception.
+        - 'deprecated': (default) different situations yield different behaviors:
+            - type mismatch between value and hint (e.g.: cannot use a list to create a dict) would behave like 'ignore'
+            - value mismatch (e.g.: dict missing some arguments vs a class's __init__) would raise TypeError
+
+    Note that the `deprecated` option is currently the default, for legacy reasons. It will be removed because
+    it created an inconsistent behavior (see the examples below).
+
+    example #1: `range` requires the `stop` argument, which is missing:
+
+        >>> deserialize({}, hint=range, errors='raise')
+        Traceback (most recent call last):
+        TypeError: range expected 1 argument, got 0
+        >>> deserialize({}, hint=range, errors='deprecated')
+        Traceback (most recent call last):
+        TypeError: range expected 1 argument, got 0
+        >>> deserialize({}, hint=range, errors='ignore')
+        {}
+
+    example #2: the hint is a dict, but a list was provided:
+
+        >>> deserialize([], hint=dict, errors='raise')
+        Traceback (most recent call last):
+        coveo_functools.exceptions.PayloadMismatch: I don't know how to fit <class 'list'> into <class 'dict'> of typing.Any
+        >>> deserialize([], hint=dict, errors='deprecated')
+        []
+        >>> deserialize([], hint=dict, errors='ignore')
+        []
     """
+    valid_error_modes = "raise", "ignore", "silent", "deprecated"
+    if errors not in valid_error_modes:
+        raise ValueError(f"'{errors=}' is not valid, {valid_error_modes=}")
+
+    if errors == "deprecated":
+        warnings.warn(
+            "Please specify the error behavior when calling `flex.deserialize`. "
+            "Recommended fix: specify `errors='raise'` to catch deserialization errors. "
+        )
+
     if value is None:
-        return None  # nope!
+        return value
 
     if adapter := get_subclass_adapter(hint):
         # ask the adapter what the hint should be for this value
@@ -114,22 +176,24 @@ def deserialize(value: Any, *, hint: Union[T, Type[T]], strict: bool = False) ->
 
         if len(args) == 1:
             # launch again with only that type
-            return cast(T, deserialize(value, hint=args[0]))
+            return cast(T, deserialize(value, hint=args[0], errors=errors))
 
         if len(args) == 2:
             # special support for variadic "thing-or-list-of-things" payloads is based on the type of the value.
             if _is_array_like(value):
-                return cast(T, deserialize(value, hint=List[target_type]))
+                return cast(T, deserialize(value, hint=List[target_type], errors=errors))
             else:
-                return cast(T, deserialize(value, hint=target_type))
+                return cast(T, deserialize(value, hint=target_type, errors=errors))
 
     try:
         if origin is list:
-            return cast(T, _deserialize(value, hint=list, contains=target_type))
+            return cast(T, _deserialize(value, hint=list, errors=errors, contains=target_type))
 
         if origin is dict:
             # json can't have maps or lists as keys, so we can't either. Ditch the key annotation, but convert values.
-            return cast(T, _deserialize(value, hint=dict, contains=args[1] if args else Any))
+            return cast(
+                T, _deserialize(value, hint=dict, errors=errors, contains=args[1] if args else Any)
+            )
 
         if is_passthrough_type(origin):
             # we always return those without validation
@@ -140,21 +204,32 @@ def deserialize(value: Any, *, hint: Union[T, Type[T]], strict: bool = False) ->
             return cast(T, value)
 
         # annotation arguments are not supported past this point, so we can omit them.
-        return cast(T, _deserialize(value, hint=origin))
+        return cast(T, _deserialize(value, hint=origin, errors=errors))
 
-    except PayloadMismatch:
-        if strict:
+    except (PayloadMismatch, TypeError) as exception:
+        if errors == "raise":
             raise
 
-        logging.exception("An error occurred during deserialization.")
+        if errors == "deprecated" and not isinstance(exception, PayloadMismatch):
+            # legacy behavior: we did not handle these exceptions, raise it just like before.
+            raise
+
+        if errors != "silent":
+            logging.exception(
+                "An error occurred during deserialization.",
+                extra={"value": value, "origin": origin, "origin_contains": args},
+            )
+
         return value  # type: ignore[no-any-return]
 
 
 @dispatch(switch_pos="hint")
-def _deserialize(value: Any, *, hint: TypeHint, contains: Optional[TypeHint] = None) -> Any:
+def _deserialize(
+    value: Any, *, hint: TypeHint, errors: ErrorBehavior, contains: Optional[TypeHint] = None
+) -> Any:
     """Fallback deserialization; if value is dict and hint is callable, flex it. Else just return value."""
     if callable(hint) and isinstance(value, dict):
-        return hint(**convert_kwargs_for_unpacking(value, hint=hint))
+        return hint(**convert_kwargs_for_unpacking(value, hint=hint, errors=errors))
 
     raise PayloadMismatch(value, hint, contains)
 
@@ -167,6 +242,7 @@ def _deserialize_immutable(
     value: Any,
     *,
     hint: Union[Type[str], Type[int], Type[bytes], Type[float]],
+    errors: ErrorBehavior,
     contains: Optional[TypeHint] = None,
 ) -> Union[str, int, bytes, float]:
     """If the hint is a type that subclasses an immutable builtin, convert it."""
@@ -175,18 +251,24 @@ def _deserialize_immutable(
 
 
 @_deserialize.register(list)
-def _deserialize_list(value: Any, *, hint: Type[list], contains: Optional[TypeHint] = None) -> List:
+def _deserialize_list(
+    value: Any, *, hint: Type[list], errors: ErrorBehavior, contains: Optional[TypeHint] = None
+) -> List:
     """List deserialization into list of things."""
     if _is_array_like(value):
-        return [deserialize(item, hint=contains) for item in value]
+        return [deserialize(item, hint=contains, errors=errors) for item in value]
 
     raise PayloadMismatch(value, hint, contains)
 
 
 @_deserialize.register(dict)
-def _deserialize_dict(value: Any, *, hint: Type[dict], contains: Optional[TypeHint] = None) -> Dict:
+def _deserialize_dict(
+    value: Any, *, hint: Type[dict], errors: ErrorBehavior, contains: Optional[TypeHint] = None
+) -> Dict:
     if isinstance(value, abc.Mapping):
-        return {key: deserialize(val, hint=contains or Any) for key, val in value.items()}
+        return {
+            key: deserialize(val, hint=contains or Any, errors=errors) for key, val in value.items()
+        }
 
     raise PayloadMismatch(value, hint, contains)
 
@@ -196,7 +278,9 @@ def _flex_translate(string: str) -> str:
 
 
 @_deserialize.register(Enum)
-def _deserialize_enum(value: Any, *, hint: Type[Enum], contains: Optional[TypeHint] = None) -> Enum:
+def _deserialize_enum(
+    value: Any, *, hint: Type[Enum], errors: ErrorBehavior, contains: Optional[TypeHint] = None
+) -> Enum:
     try:
         # value match
         return hint(value)
@@ -229,7 +313,11 @@ def _deserialize_enum(value: Any, *, hint: Type[Enum], contains: Optional[TypeHi
 
 @_deserialize.register(SerializationMetadata)
 def _deserialize_with_metadata(
-    value: Any, *, hint: SerializationMetadata, contains: Optional[TypeHint] = None
+    value: Any,
+    *,
+    hint: SerializationMetadata,
+    errors: ErrorBehavior,
+    contains: Optional[TypeHint] = None,
 ) -> Any:
 
     if isclass(hint) and issubclass(hint, SerializationMetadata):
@@ -244,14 +332,14 @@ def _deserialize_with_metadata(
     if root_type is dict:
         # each value is converted to the type provided in the meta
         return {
-            key: deserialize(value, hint=hint.additional_metadata.get(key, value))
+            key: deserialize(value, hint=hint.additional_metadata.get(key, value), errors=errors)
             for key, value in value.items()
         }
 
     if root_type is list:
         # the value in this case is a Dict[str, SerializationMetadata] where they key is the index within the list.
         return [
-            deserialize(value[int(index)], hint=hint.additional_metadata[index])
+            deserialize(value[int(index)], hint=hint.additional_metadata[index], errors=errors)
             for index in sorted(hint.additional_metadata, key=int)
         ]
 
@@ -263,7 +351,7 @@ def _deserialize_with_metadata(
 
     if root_type is not SerializationMetadata:
         # the hint was refined this turn, we can deserialize again
-        return deserialize(value, hint=root_type)
+        return deserialize(value, hint=root_type, errors=errors)
 
     raise PayloadMismatch(value, hint, contains)
 
