@@ -115,10 +115,10 @@ def deserialize(
 
     example #1: `range` requires the `stop` argument, which is missing:
 
-        >>> deserialize({}, hint=range, errors='raise')
+        >>> deserialize({}, hint=range, errors='raise')  # doctest: +IGNORE_EXCEPTION_DETAIL
         Traceback (most recent call last):
         TypeError: range expected 1 argument, got 0
-        >>> deserialize({}, hint=range, errors='deprecated')
+        >>> deserialize({}, hint=range, errors='deprecated')  # doctest: +IGNORE_EXCEPTION_DETAIL
         Traceback (most recent call last):
         TypeError: range expected 1 argument, got 0
         >>> deserialize({}, hint=range, errors='ignore')
@@ -126,7 +126,7 @@ def deserialize(
 
     example #2: the hint is a dict, but a list was provided:
 
-        >>> deserialize([], hint=dict, errors='raise')
+        >>> deserialize([], hint=dict, errors='raise')  # doctest: +IGNORE_EXCEPTION_DETAIL
         Traceback (most recent call last):
         coveo_functools.exceptions.PayloadMismatch: I don't know how to fit <class 'list'> into <class 'dict'> of typing.Any
         >>> deserialize([], hint=dict, errors='deprecated')
