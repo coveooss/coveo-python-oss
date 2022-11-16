@@ -374,5 +374,5 @@ def test_deserialize_errors_deprecated_content_mismatch(
 ) -> None:
     """The legacy behavior would not handle the TypeError that occurs
     when the value's type is correct but its content is wrong."""
-    with caplog.at_level(logging.ERROR), pytest.raises(TypeError):
+    with pytest.raises(TypeError):
         _ = deserialize(payload, hint=hint, errors="deprecated")
