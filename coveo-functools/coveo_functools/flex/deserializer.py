@@ -141,7 +141,8 @@ def deserialize(
     if errors == "deprecated":
         warnings.warn(
             "Please specify the error behavior when calling `flex.deserialize`. "
-            "Recommended fix: specify `errors='raise'` to catch deserialization errors. "
+            "Recommended fix: specify `errors='raise'` to catch deserialization errors. ",
+            category=DeprecationWarning,
         )
 
     if value is None:
