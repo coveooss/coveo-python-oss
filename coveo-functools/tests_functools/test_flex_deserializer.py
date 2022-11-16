@@ -1,8 +1,11 @@
+import logging
 from dataclasses import dataclass, InitVar
 from enum import Enum
-from typing import Final, List, Any, Optional, Union, Dict, Type
+from typing import Final, List, Any, Optional, Union, Dict, Type, Tuple
 
 import pytest
+from _pytest.logging import LogCaptureFixture
+
 from coveo_testing.markers import UnitTest
 from coveo_testing.parametrize import parametrize
 
@@ -314,3 +317,62 @@ def test_deserialize_static_typing() -> None:
 
         # mypy sees that fn returns a str, not an int
         _ = deserialize(fn, hint=fn)(value="") / 2  # type: ignore[operator]
+
+
+# the type of the payload doesn't fit the hint
+_PAYLOAD_TYPE_MISMATCH: Final[Tuple[Any, ...]] = (
+    ([{"x": "y"}], MockType),
+    ("x", MockType),
+    ({"x": "y"}, List[str]),
+    (1, dict),
+)
+
+# the type of the payload is correct but the content is wrong
+_PAYLOAD_CONTENT_MISMATCH: Final[Tuple[Any, ...]] = (
+    ({"x": "y"}, MockType),
+    ({1: 2}, MockEnum),
+    (["a"], MockEnum),
+)
+
+
+@parametrize(("payload", "hint"), _PAYLOAD_TYPE_MISMATCH + _PAYLOAD_CONTENT_MISMATCH)
+def test_deserialize_errors_raise(payload: Any, hint: Any) -> None:
+    with pytest.raises(Exception):
+        _ = deserialize(payload, hint=hint, errors="raise")
+
+
+@parametrize(("payload", "hint"), _PAYLOAD_TYPE_MISMATCH + _PAYLOAD_CONTENT_MISMATCH)
+def test_deserialize_errors_ignore(payload: Any, hint: Any, caplog: LogCaptureFixture) -> None:
+    with caplog.at_level(logging.ERROR):
+        assert deserialize(payload, hint=hint, errors="ignore") == payload
+
+    assert "Traceback" in caplog.text
+
+
+@parametrize(("payload", "hint"), _PAYLOAD_TYPE_MISMATCH + _PAYLOAD_CONTENT_MISMATCH)
+def test_deserialize_errors_silent(payload: Any, hint: Any, caplog: LogCaptureFixture) -> None:
+    with caplog.at_level(logging.ERROR):
+        assert deserialize(payload, hint=hint, errors="silent") == payload
+
+    assert "Traceback" not in caplog.text
+
+
+@parametrize(("payload", "hint"), _PAYLOAD_TYPE_MISMATCH)
+def test_deserialize_errors_deprecated_type_mismatch(
+    payload: Any, hint: Any, caplog: LogCaptureFixture
+) -> None:
+    """The legacy behavior returned the value when the type didn't match."""
+    with caplog.at_level(logging.ERROR):
+        assert deserialize(payload, hint=hint, errors="deprecated") == payload
+
+    assert "Traceback" in caplog.text
+
+
+@parametrize(("payload", "hint"), _PAYLOAD_CONTENT_MISMATCH)
+def test_deserialize_errors_deprecated_content_mismatch(
+    payload: Any, hint: Any, caplog: LogCaptureFixture
+) -> None:
+    """The legacy behavior would not handle the TypeError that occurs
+    when the value's type is correct but its content is wrong."""
+    with pytest.raises(TypeError):
+        _ = deserialize(payload, hint=hint, errors="deprecated")
