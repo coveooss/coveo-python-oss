@@ -187,22 +187,26 @@ def test_deserialize_enum(value: str) -> None:
 @parametrize(
     ["value", "hint", "expected"],
     (
-            (None, Literal[None], None),
-            ("foo", Literal["foo", "bar"], "foo"),
-            (b"foo", Literal[b"foo", "bar"], b"foo"),
-            (True, Literal[True, "vrai", "oui", 1], True),
-            ("oui", Literal[True, "vrai", "oui", 1, MockEnum.TestKey], "oui"),
-            ("test-value", Literal[MockEnum.TestKey], MockEnum.TestKey),
-            ("test-value", Literal[MockEnum.OtherKey, 3, MockEnum.TestKey], MockEnum.TestKey),
-            (3, Literal[MockEnum.OtherKey, 3, MockEnum.TestKey], 3),
-            (MockEnum.OtherKey, Literal[MockEnum.OtherKey, 3, MockEnum.TestKey], MockEnum.OtherKey),
-            (["test-value", 3, None, False], List[Literal[True, False, None, 3, MockEnum.TestKey]], [MockEnum.TestKey, 3, None, False]),
-            (True, Literal[True, 1], True),
-            (1, Literal[True, 1], 1),
-            (0, Literal[False, 0], 0),
-            (False, Literal[False, 0], False),
-    )
- )
+        (None, Literal[None], None),
+        ("foo", Literal["foo", "bar"], "foo"),
+        (b"foo", Literal[b"foo", "bar"], b"foo"),
+        (True, Literal[True, "vrai", "oui", 1], True),
+        ("oui", Literal[True, "vrai", "oui", 1, MockEnum.TestKey], "oui"),
+        ("test-value", Literal[MockEnum.TestKey], MockEnum.TestKey),
+        ("test-value", Literal[MockEnum.OtherKey, 3, MockEnum.TestKey], MockEnum.TestKey),
+        (3, Literal[MockEnum.OtherKey, 3, MockEnum.TestKey], 3),
+        (MockEnum.OtherKey, Literal[MockEnum.OtherKey, 3, MockEnum.TestKey], MockEnum.OtherKey),
+        (
+            ["test-value", 3, None, False],
+            List[Literal[True, False, None, 3, MockEnum.TestKey]],
+            [MockEnum.TestKey, 3, None, False],
+        ),
+        (True, Literal[True, 1], True),
+        (1, Literal[True, 1], 1),
+        (0, Literal[False, 0], 0),
+        (False, Literal[False, 0], False),
+    ),
+)
 @UnitTest
 def test_deserialize_literal(value: Any, hint: Any, expected: Any) -> None:
     assert deserialize(value, hint=hint, errors="raise") == expected

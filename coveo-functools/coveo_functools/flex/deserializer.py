@@ -18,7 +18,9 @@ from typing import (
     Iterable,
     Callable,
     Tuple,
-    Literal, Generator, Sequence,
+    Literal,
+    Generator,
+    Sequence,
 )
 
 from coveo_functools.annotations import find_annotations
@@ -181,7 +183,9 @@ def deserialize(
                     literal = _deserialize(value, hint=enum_types.pop(), errors="silent")
                 else:
                     with _apply_error_behavior(errors, value, origin, args):
-                        raise UnsupportedAnnotation(f"Literal annotations may not contain different enum subclasses: {hint}")
+                        raise UnsupportedAnnotation(
+                            f"Literal annotations may not contain different enum subclasses: {hint}"
+                        )
                     return value
 
         # We want to differentiate e.g. 1 from True but Python's __contains__ uses `==` and not `is`:
@@ -253,11 +257,13 @@ def deserialize(
         # annotation arguments are not supported past this point, so we can omit them.
         return cast(T, _deserialize(value, hint=origin, errors=errors))
 
-    return value  # type: ignore[no-any-return]
+    return value
 
 
 @contextmanager
-def _apply_error_behavior(errors: ErrorBehavior, value: Any, origin: TypeHint, args: Sequence[TypeHint]) -> Generator[None, None, None]:
+def _apply_error_behavior(
+    errors: ErrorBehavior, value: Any, origin: TypeHint, args: Sequence[TypeHint]
+) -> Generator[None, None, None]:
     try:
         yield
     except (PayloadMismatch, TypeError) as exception:

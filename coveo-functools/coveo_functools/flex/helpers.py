@@ -4,7 +4,8 @@ from typing import (
     get_origin,
     Tuple,
     List,
-    Sequence, Literal,
+    Sequence,
+    Literal,
 )
 
 from coveo_functools.exceptions import UnsupportedAnnotation
@@ -42,10 +43,10 @@ def resolve_hint(thing: TypeHint) -> Tuple[TypeHint, Sequence[TypeHint]]:
 
     # special consideration for literals.
     if origin is Literal:
-            # Literal allows int, byte, str, bool, Enum instances, None, and aliases to other Literal types.
-            # All of these except Enum are "passthrough" types. They can be combined e.g.: Literal[1, "one", True].
-            # The caller must look out for Literal as the origin and react accordingly.
-            return origin, args
+        # Literal allows int, byte, str, bool, Enum instances, None, and aliases to other Literal types.
+        # All of these except Enum are "passthrough" types. They can be combined e.g.: Literal[1, "one", True].
+        # The caller must look out for Literal as the origin and react accordingly.
+        return origin, args
 
     if not set(args).difference(PASSTHROUGH_TYPES):
         # If all containing types are passthrough types, everything shall be fine.
