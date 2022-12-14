@@ -4,7 +4,7 @@ from typing import (
     get_origin,
     Tuple,
     List,
-    Sequence,
+    Sequence, Literal,
 )
 
 from coveo_functools.exceptions import UnsupportedAnnotation
@@ -17,6 +17,8 @@ def resolve_hint(thing: TypeHint) -> Tuple[TypeHint, Sequence[TypeHint]]:
     Also validates that the annotation is supported and removes "NoneType" if present.
 
     Some rules are enforced here:
+        - If the returned origin is Literal, it is returned as is. The caller must check for this to not confound
+          with thing-or-list-of-things.
         - It's allowed to have unions of multiple JSON types; we assume they're already converted.
         - A union containing multiple custom types is forbidden (we don't support it... yet?)
         - A union is allowed to contain a Union[List[Thing], Thing] where Thing is any custom class.
@@ -37,6 +39,13 @@ def resolve_hint(thing: TypeHint) -> Tuple[TypeHint, Sequence[TypeHint]]:
     # so we really don't need to keep this information.
     while type(None) in args:
         args.remove(type(None))
+
+    # special consideration for literals.
+    if origin is Literal:
+            # Literal allows int, byte, str, bool, Enum instances, None, and aliases to other Literal types.
+            # All of these except Enum are "passthrough" types. They can be combined e.g.: Literal[1, "one", True].
+            # The caller must look out for Literal as the origin and react accordingly.
+            return origin, args
 
     if not set(args).difference(PASSTHROUGH_TYPES):
         # If all containing types are passthrough types, everything shall be fine.

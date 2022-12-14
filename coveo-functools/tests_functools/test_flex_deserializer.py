@@ -1,7 +1,7 @@
 import logging
 from dataclasses import dataclass, InitVar
 from enum import Enum
-from typing import Final, List, Any, Optional, Union, Dict, Type, Tuple
+from typing import Final, List, Any, Optional, Union, Dict, Type, Tuple, Literal
 
 import pytest
 from _pytest.logging import LogCaptureFixture
@@ -184,6 +184,30 @@ def test_deserialize_enum(value: str) -> None:
     assert deserialize(value, hint=MockEnum) is MockEnum.TestKey
 
 
+@parametrize(
+    ["value", "hint", "expected"],
+    (
+            (None, Literal[None], None),
+            ("foo", Literal["foo", "bar"], "foo"),
+            (b"foo", Literal[b"foo", "bar"], b"foo"),
+            (True, Literal[True, "vrai", "oui", 1], True),
+            ("oui", Literal[True, "vrai", "oui", 1, MockEnum.TestKey], "oui"),
+            ("test-value", Literal[MockEnum.TestKey], MockEnum.TestKey),
+            ("test-value", Literal[MockEnum.OtherKey, 3, MockEnum.TestKey], MockEnum.TestKey),
+            (3, Literal[MockEnum.OtherKey, 3, MockEnum.TestKey], 3),
+            (MockEnum.OtherKey, Literal[MockEnum.OtherKey, 3, MockEnum.TestKey], MockEnum.OtherKey),
+            (["test-value", 3, None, False], List[Literal[True, False, None, 3, MockEnum.TestKey]], [MockEnum.TestKey, 3, None, False]),
+            (True, Literal[True, 1], True),
+            (1, Literal[True, 1], 1),
+            (0, Literal[False, 0], 0),
+            (False, Literal[False, 0], False),
+    )
+ )
+@UnitTest
+def test_deserialize_literal(value: Any, hint: Any, expected: Any) -> None:
+    assert deserialize(value, hint=hint, errors="raise") == expected
+
+
 @UnitTest
 def test_deserialize_enum_nested() -> None:
     @dataclass
@@ -325,6 +349,16 @@ _PAYLOAD_TYPE_MISMATCH: Final[Tuple[Any, ...]] = (
     ("x", MockType),
     ({"x": "y"}, List[str]),
     (1, dict),
+    # literals are special: even if the type fits, the value may not, and we want to support that.
+    # misfit enums are considered like payload mismatches.
+    ("1", Literal[1]),
+    (2, Literal[1]),
+    ("foo", Literal["bar"]),
+    # these 2 literals are even more special because True == 1 and False == 0, but we want to distinguish them.
+    (False, Literal[0]),
+    (True, Literal[1]),
+    (True, Literal[False, 1, 0]),
+    (False, Literal[True, 0, 1]),
 )
 
 # the type of the payload is correct but the content is wrong
