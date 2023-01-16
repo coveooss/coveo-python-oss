@@ -174,47 +174,7 @@ def deserialize(
         # This is a special case that conflicts with other "flex" rules that we must treat first.
         # More specifically, Unions of different types are only allowed here, which is incompatible with
         # the 'thing-or-list-of-things' decision.
-        literal = value
-        if literal not in args:
-            if enum_types := set(arg.__class__ for arg in args if issubclass(arg.__class__, Enum)):
-                if len(enum_types) == 1:
-                    # "silent": in case of failure, value is returned as is.
-                    # It will fail the "literal in args" check later.
-                    literal = _deserialize(value, hint=enum_types.pop(), errors="silent")
-                else:
-                    with _apply_error_behavior(errors, value, origin, args):
-                        raise UnsupportedAnnotation(
-                            f"Literal annotations may not contain different enum subclasses: {hint}"
-                        )
-                    return value
-
-        # We want to differentiate e.g. 1 from True but Python's __contains__ uses `==` and not `is`:
-        # >>> True in [0, 1]
-        # True
-        # >>> False in [0, 1]
-        # True
-        if isinstance(literal, bool):
-            for arg in args:
-                if arg is literal:
-                    return cast(T, literal)
-            with _apply_error_behavior(errors, value, origin, args):
-                raise PayloadMismatch(value, hint, args)
-                # fallthrough on ignore/silent
-
-        if isinstance(literal, int) and literal in (0, 1):
-            if literal in (i for i in args if isinstance(i, int)):
-                return cast(T, literal)
-            with _apply_error_behavior(errors, value, origin, args):
-                raise PayloadMismatch(value, hint, args)
-                # fallthrough on ignore/silent
-
-        # Users using `errors=raise` expect to be notified if the value doesn't fit the annotation.
-        if literal not in args:
-            with _apply_error_behavior(errors, value, origin, args):
-                raise PayloadMismatch(value, hint, args)
-                # fallthrough on ignore/silent
-
-        return cast(T, literal)
+        return _deserialize_literal(value, origin, args, hint, errors)
 
     # implementation detail: in the presence of a custom type in the args, the `_resolve_hint` function
     # always puts the real type first. This is only applicable to the thing-or-list-of-things feature.
@@ -279,6 +239,61 @@ def _apply_error_behavior(
                 "An error occurred during deserialization.",
                 extra={"value": value, "origin": origin, "origin_contains": args},
             )
+
+
+def _deserialize_literal(
+    value: Any,
+    origin: TypeHint,
+    args: Sequence[TypeHint],
+    hint: Union[T, Type[T]],
+    errors: ErrorBehavior,
+) -> T:
+    """
+    This is a special case that conflicts with other "flex" rules, and must be treated outside the @dispatch.
+    More specifically, Unions of different types are only allowed here, which is incompatible with
+    the 'thing-or-list-of-things' decision.
+    """
+    literal = value
+    if literal not in args:
+        if enum_types := set(arg.__class__ for arg in args if issubclass(arg.__class__, Enum)):
+            if len(enum_types) == 1:
+                # "silent": in case of failure, value is returned as is.
+                # It will fail the "literal in args" check later.
+                literal = _deserialize(value, hint=enum_types.pop(), errors="silent")
+            else:
+                with _apply_error_behavior(errors, value, origin, args):
+                    raise UnsupportedAnnotation(
+                        f"Literal annotations may not contain different enum subclasses: {hint}"
+                    )
+                return value
+
+    # We want to differentiate e.g. 1 from True but Python's __contains__ uses `==` and not `is`:
+    # >>> True in [0, 1]
+    # True
+    # >>> False in [0, 1]
+    # True
+    if isinstance(literal, bool):
+        for arg in args:
+            if arg is literal:
+                return cast(T, literal)
+        with _apply_error_behavior(errors, value, origin, args):
+            raise PayloadMismatch(value, hint, args)
+            # fallthrough on ignore/silent
+
+    if isinstance(literal, int) and literal in (0, 1):
+        if literal in (i for i in args if isinstance(i, int)):
+            return cast(T, literal)
+        with _apply_error_behavior(errors, value, origin, args):
+            raise PayloadMismatch(value, hint, args)
+            # fallthrough on ignore/silent
+
+    # Users using `errors=raise` expect to be notified if the value doesn't fit the annotation.
+    if literal not in args:
+        with _apply_error_behavior(errors, value, origin, args):
+            raise PayloadMismatch(value, hint, args)
+            # fallthrough on ignore/silent
+
+    return cast(T, literal)
 
 
 @dispatch(switch_pos="hint")
