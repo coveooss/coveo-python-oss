@@ -89,7 +89,8 @@ This is because `json.load()` already returns these values in the proper type. T
 Flex can be used with:
 - Classes and dataclasses
 - Abstract classes *(new in 2.0.9)* (requires adapter or serialization; explained below)
-- Enums *(new in 2.0.6)* 
+- Enums *(new in 2.0.6)*
+- Literals *(new in 2.0.21)*
 - Functions
 - Methods
 - `Union[str, bool, int, float, list, dict, None]`  (or any combination of these basic **json-compatible types**)
