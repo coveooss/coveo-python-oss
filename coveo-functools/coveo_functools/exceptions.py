@@ -21,7 +21,12 @@ class PayloadMismatch(Flexception):
         self.hint = hint
         self.contains = contains
 
+        try:
+            strvalue = str(value)
+        except Exception as ex:
+            strvalue = f"(error reading value: {ex})"
+
         super().__init__(
-            f"I don't know how to fit {type(value)} "
+            f"I don't know how to fit {type(value)} with value {strvalue} "
             f"into {hint}{' of ' + str(contains) if contains else ''}"
         )
