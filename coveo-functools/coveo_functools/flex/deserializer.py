@@ -396,7 +396,6 @@ def _deserialize_with_metadata(
     errors: ErrorBehavior,
     contains: Optional[TypeHint] = None,
 ) -> Any:
-
     if isclass(hint) and issubclass(hint, SerializationMetadata):
         # this is an edge case; the dispatch will end up here when hint is either the SerializationMetadata type,
         # or an instance thereof.

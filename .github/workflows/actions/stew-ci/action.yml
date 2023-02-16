@@ -29,8 +29,8 @@ runs:
     - name: poetry and stew
       shell: bash
       run: | 
-        python -m pipx install poetry==1.1.13
-        python -m pipx install coveo-stew==3.0.3
+        python -m pipx install "poetry<1.4"
+        python -m pipx install coveo-stew==3.0.16
 
     - name: Ensure correct python version
       shell: bash
