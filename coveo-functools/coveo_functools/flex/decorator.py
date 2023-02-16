@@ -57,7 +57,6 @@ def flex(
 ) -> Union[WrappedObject, Callable[[RealObject], WrappedObject]]:
     """Wraps `obj` into recursive flexcase magic."""
     if obj is not None:
-
         """
         Covers decorator usages without parenthesis:
 
@@ -79,7 +78,6 @@ def flex(
         return _generate_wrapper(obj, errors=errors)
 
     else:
-
         """
         Covers decorator usages with parenthesis:
 

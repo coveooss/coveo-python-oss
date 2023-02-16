@@ -46,7 +46,8 @@ log = logging.getLogger(__name__)
 
 def _find_setting(*keys: str) -> Optional[str]:
     """Attempts to find a variable in the environment variables. The casing, dots (.) and the underline character (_)
-    are not significant. For instance, "ut.test.setting" will match "UTTESTSETTING" and also "UT_teST.._setting"."""
+    are not significant. For instance, "ut.test.setting" will match "UTTESTSETTING" and also "UT_teST.._setting".
+    """
     if not keys:
         return None
     main_key = keys[0]
