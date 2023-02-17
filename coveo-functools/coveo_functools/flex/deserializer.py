@@ -201,7 +201,6 @@ def deserialize(
             return cast(T, _deserialize(value, hint=list, errors=errors, contains=target_type))
 
         if origin is dict:
-            # json can't have maps or lists as keys, so we can't either. Ditch the key annotation, but convert values.
             return cast(T, _deserialize(value, hint=dict, errors=errors, contains=args or None))
 
         if is_passthrough_type(origin):
