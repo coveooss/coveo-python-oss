@@ -157,6 +157,23 @@ def test_deserialize_dict_with_custom_value_type(hint: Any) -> None:
             {"item1": [DEFAULT_PAYLOAD]},
             {"item1": [DEFAULT_MOCK]},
         ),
+        (
+            Dict[MockEnum, str],
+            # matching enum values
+            {"other-value": "other-value", "test-value": "test-value"},
+            {MockEnum.OtherKey: "other-value", MockEnum.TestKey: "test-value"}
+        ),
+        (
+            Dict[MockEnum, str],
+            # matching enum keys, capitals and separators mismatch
+            {"other-key": "other-value", "TESTKEY": "test-value"},
+            {MockEnum.OtherKey: "other-value", MockEnum.TestKey: "test-value"}
+        ),
+        (
+            Dict[int, str],
+            {1: "other-value", 2: "test-value"},
+            {1: "other-value", 2: "test-value"}
+        ),
     ),
 )
 def test_deserialize_dict_complex(hint: Any, payload: Any, expected: Any) -> None:

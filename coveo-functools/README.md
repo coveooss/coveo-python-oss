@@ -96,8 +96,9 @@ Flex can be used with:
 - `Union[str, bool, int, float, list, dict, None]`  (or any combination of these basic **json-compatible types**)
 - These typing constructs, where `T` is your custom class:
   - `List[T]`
-  - `Dict[str, T]`
-  - `Union[T, List[T]]`  (for APIs that may return a thing-or-list-of-things)
+  - `Dict[str, T]` *(in 2.0.23 and below)*
+  - `Dict[K, V]` *(new in v2.0.24; dict keys are no longer limited to strings)*
+  - `Union[T, List[T]]` (for APIs that may return a thing-or-list-of-things)
   - `Optional[T]`
 
 
@@ -110,7 +111,6 @@ Flex can be used with:
 - No support for additional `typing` and `collections` objects other than the ones mentioned in this documentation.
 - You can only `Union` basic json-compatible types, or `List[T], T`.
 - All referenced types must be importable from the module it is defined in. This means that you cannot use inline and dynamic classes.
-
 
 These are subject to change.
 
