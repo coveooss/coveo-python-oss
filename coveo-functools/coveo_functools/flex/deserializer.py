@@ -202,9 +202,7 @@ def deserialize(
 
         if origin is dict:
             # json can't have maps or lists as keys, so we can't either. Ditch the key annotation, but convert values.
-            return cast(
-                T, _deserialize(value, hint=dict, errors=errors, contains=args or None)
-            )
+            return cast(T, _deserialize(value, hint=dict, errors=errors, contains=args or None))
 
         if is_passthrough_type(origin):
             # we always return those without validation
@@ -342,7 +340,9 @@ def _deserialize_dict(
         key_type, value_type = (str, Any) if contains in (None, Any) else contains
 
         return {
-            deserialize(key, hint=key_type, errors=errors): deserialize(val, hint=value_type, errors=errors)
+            deserialize(key, hint=key_type, errors=errors): deserialize(
+                val, hint=value_type, errors=errors
+            )
             for key, val in value.items()
         }
 
