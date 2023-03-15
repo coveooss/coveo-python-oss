@@ -7,7 +7,8 @@ from typing import (
     Tuple,
     List,
     Sequence,
-    Literal, Any,
+    Literal,
+    Any,
 )
 
 from coveo_functools.exceptions import UnsupportedAnnotation

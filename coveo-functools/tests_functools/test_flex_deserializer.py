@@ -1,6 +1,5 @@
 import logging
-from dataclasses import dataclass, InitVar, field
-from datetime import datetime, timedelta
+from dataclasses import dataclass, InitVar
 from enum import Enum
 from typing import Final, List, Any, Optional, Union, Dict, Type, Tuple, Literal
 
@@ -12,7 +11,7 @@ from coveo_testing.markers import UnitTest
 from coveo_testing.parametrize import parametrize
 
 from coveo_functools.exceptions import UnsupportedAnnotation
-from coveo_functools.flex import deserialize, JSON_TYPES, flex
+from coveo_functools.flex import deserialize, JSON_TYPES
 
 
 @dataclass
@@ -334,7 +333,7 @@ def test_resolve_hint_init_var() -> None:
     assert resolve_hint(InitVar[Union[int, str]]) == (Union, [int, str])
     assert resolve_hint(InitVar) == (Any, [])
     with pytest.raises(UnsupportedAnnotation):
-        resolve_hint(InitVar[int, str])
+        resolve_hint(InitVar[int, str])  # type: ignore[misc]  # mypy actually flags this annotation error too! :)
 
 
 def test_deserialize_static_typing() -> None:
