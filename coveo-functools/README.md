@@ -97,9 +97,10 @@ Flex can be used with:
 - These typing constructs, where `T` is your custom class:
   - `List[T]`
   - `Dict[str, T]` *(in 2.0.23 and below)*
-  - `Dict[K, V]` *(new in v2.0.24; dict keys are no longer limited to strings)*
+  - `Dict[K, V]` *(new in 2.0.24; dict keys are no longer limited to strings)*
   - `Union[T, List[T]]` (for APIs that may return a thing-or-list-of-things)
   - `Optional[T]`
+  - `InitVar[T]` *(new in 2.0.25)*
 
 
 ### Limitations
