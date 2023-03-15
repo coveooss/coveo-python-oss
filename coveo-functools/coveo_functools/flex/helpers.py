@@ -30,8 +30,7 @@ def resolve_hint(thing: TypeHint) -> Tuple[TypeHint, Sequence[TypeHint]]:
           i.e.: we may return (Thing, List[Thing]), but never (List[Thing], Thing)
     """
     if isinstance(thing, InitVar):
-        # Edge-case? InitVar is an instance (not a type?) and isn't supported by `get_origin` and `get_args`.
-        # Its source code shows that it doesn't care/use this value, except for display (e.g.: repr()).
+        # Edge-case? InitVar isn't supported by `get_origin` and `get_args`.
         if isinstance(thing.type, tuple):
             # I'm sure InitVar[str, int] is a mistake,
             # it should be InitVar[Union[str, int]]
