@@ -6,6 +6,7 @@ from typing import Final, List, Any, Optional, Union, Dict, Type, Tuple, Literal
 import pytest
 from _pytest.logging import LogCaptureFixture
 
+from coveo_functools.flex.helpers import resolve_hint
 from coveo_testing.markers import UnitTest
 from coveo_testing.parametrize import parametrize
 
@@ -301,7 +302,7 @@ class TestInitVarNoType:
 @dataclass
 class TestInitVar:
     value: bool = False
-    change: InitVar[bool] = False
+    change: InitVar[Optional[bool]] = False
 
     def __post_init__(self, change: bool) -> None:
         if change:
@@ -313,7 +314,28 @@ class TestInitVar:
 )
 def test_deserialize_init_var(cls: Any) -> None:
     """Handle a bug with InitVar vs forward references."""
-    assert deserialize({"change": True}, hint=cls).value is True
+    assert deserialize({"change": True}, hint=cls, errors="raise").value is True
+
+
+def test_resolve_hint_init_var() -> None:
+    """
+    The `InitVar` object was not created in a way that plays well with typing's `get_origin` and `get_args`
+    builtins.
+
+    More specifically:
+        - get_origin returns None instead of the InitVar class
+        - get_args returns nothing instead of the type between brackets (str in InitVar[str])
+
+    As such, special handling must be done when we encounter an InitVar instance.
+    """
+    assert resolve_hint(InitVar[int]) == (int, [])
+    # implementation detail: Optional[int] is treated as Union[int, None].
+    # Also, flex removes None from Unions by design because it doesn't use it.
+    assert resolve_hint(InitVar[Optional[int]]) == (Union, [int])
+    assert resolve_hint(InitVar[Union[int, str]]) == (Union, [int, str])
+    assert resolve_hint(InitVar) == (Any, [])
+    with pytest.raises(UnsupportedAnnotation):
+        resolve_hint(InitVar[int, str])  # type: ignore[misc]  # mypy actually flags this annotation error too! :)
 
 
 def test_deserialize_static_typing() -> None:

@@ -1,3 +1,5 @@
+from dataclasses import InitVar
+from inspect import isclass
 from typing import (
     Optional,
     get_args,
@@ -6,6 +8,7 @@ from typing import (
     List,
     Sequence,
     Literal,
+    Any,
 )
 
 from coveo_functools.exceptions import UnsupportedAnnotation
@@ -26,7 +29,22 @@ def resolve_hint(thing: TypeHint) -> Tuple[TypeHint, Sequence[TypeHint]]:
           In this case, Thing is always the first arg in the list of args.
           i.e.: we may return (Thing, List[Thing]), but never (List[Thing], Thing)
     """
-    origin = get_origin(thing) or thing
+    if isinstance(thing, InitVar):
+        # Edge-case? InitVar isn't supported by `get_origin` and `get_args`.
+        if isinstance(thing.type, tuple):
+            # I'm sure InitVar[str, int] is a mistake,
+            # it should be InitVar[Union[str, int]]
+            # or the shorthand InitVar[str | int]
+            raise UnsupportedAnnotation(thing)
+        # So for an InitVar[int], we just treat it as an int.
+        return resolve_hint(thing.type)
+    elif isclass(thing) and issubclass(thing, InitVar):
+        # This is the non-annotated usage (InitVar without the [int])
+        # which is equivalent to InitVar[Any]
+        origin = Any
+    else:
+        origin = get_origin(thing) or thing
+
     args = list(get_args(thing))
 
     # typing implementation detail -- At runtime, Optional exists as Union[None, ...]
