@@ -329,6 +329,8 @@ def test_resolve_hint_init_var() -> None:
     As such, special handling must be done when we encounter an InitVar instance.
     """
     assert resolve_hint(InitVar[int]) == (int, [])
+    # implementation detail: Optional[int] is treated as Union[int, None].
+    # Also, flex removes None from Unions by design because it doesn't use it.
     assert resolve_hint(InitVar[Optional[int]]) == (Union, [int])
     assert resolve_hint(InitVar[Union[int, str]]) == (Union, [int, str])
     assert resolve_hint(InitVar) == (Any, [])
