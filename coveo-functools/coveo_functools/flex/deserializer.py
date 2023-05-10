@@ -255,7 +255,7 @@ def _apply_error_behavior(
             )
 
 
-def _resolve_enum_data_type(enum_cls: Any) -> TypeHint:
+def _resolve_enum_data_type(enum_cls: Type[Enum]) -> TypeHint:
     """
     Resolves the type of enum values by inspecting its members.
     The documentation states that there can be up to one data type.
