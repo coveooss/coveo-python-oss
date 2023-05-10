@@ -1,3 +1,4 @@
+import enum
 import inspect
 import logging
 import warnings
@@ -197,6 +198,22 @@ def deserialize(
                 return cast(T, deserialize(value, hint=target_type, errors=errors))
 
     with _apply_error_behavior(errors, value, origin, args):
+        if isinstance(origin, enum.EnumMeta):
+            # This is a special case that came up when Enum started accepting this notation:
+            #   class MyEnum(str, Enum): ...
+            # The problem is that when confronted against multiple base classes, the `dispatch` function
+            # will favor the first one, causing the string deserialization function to be launched instead of the
+            # enum one.
+            return cast(
+                T,
+                _deserialize_enum(
+                    value,
+                    hint=hint,
+                    errors=errors,
+                    contains=_resolve_enum_data_type(cast(Type[Enum], hint)),
+                ),
+            )
+
         if origin is list:
             return cast(T, _deserialize(value, hint=list, errors=errors, contains=target_type))
 
@@ -236,6 +253,27 @@ def _apply_error_behavior(
                 "An error occurred during deserialization.",
                 extra={"value": value, "origin": origin, "origin_contains": args},
             )
+
+
+def _resolve_enum_data_type(enum_cls: Any) -> TypeHint:
+    """
+    Resolves the type of enum values by inspecting its members.
+    The documentation states that there can be up to one data type.
+    """
+    if member_type := getattr(enum_cls, "_member_type_", None):
+        # this way is maybe a little hackish; unlike other _sunder_ methods, _member_type_ is not documented.
+        return member_type
+
+    if enum_cls.__members__:
+        # this is a brute force method that will work if the enum has at least 1 value
+        return next(type(e.value) for e in enum_cls.__members__.values())
+
+    # note: another way to achieve this would be to inspect the ABCs in order and use the value before the Enum class.
+    # https://docs.python.org/3/howto/enum.html#restricted-enum-subclassing
+    # this is because Enum allows mix-ins as well but they must appear first. The signature is:
+    #   class EnumName([mix-in, ...,] [data-type,] base-enum): ...
+
+    raise UnsupportedAnnotation(f"Could not determine containing type of enum {enum_cls}.")
 
 
 def _deserialize_literal(
