@@ -24,6 +24,16 @@ class MockEnum(Enum):
     TestKey = "test-value"
 
 
+class MockStrEnum(str, Enum):
+    OtherKey = "other-value"
+    TestKey = "test-value"
+
+
+class MockIntEnum(int, Enum):
+    OtherKey = 1
+    TestKey = 2
+
+
 DEFAULT_VALUE: Final[str] = "yup"
 DEFAULT_PAYLOAD = {"value": DEFAULT_VALUE}
 DEFAULT_MOCK: Final[MockType] = MockType(DEFAULT_VALUE)
@@ -186,16 +196,25 @@ def test_deserialize_dict_invalid_union() -> None:
 
 @UnitTest
 @parametrize(
-    "value",
+    ("value", "hint"),
     (
-        "test-value",  # exact value
-        "TestValue",  # fish for value
-        "test-key",  # fish for name
-        "TestKey",  # exact name
+        ("test-key", MockEnum),  # fish for enum name
+        ("TestKey", MockEnum),  # fish for enum name exact match
+        ("test-value", MockEnum),  # fish for enum value exact match
+        ("testValue", MockEnum),  # fish for enum value
+        ("test-key", MockStrEnum),  # fish for enum name
+        ("TestKey", MockStrEnum),  # fish for enum name exact match
+        ("test-value", MockStrEnum),  # fish for enum value exact match
+        ("testValue", MockStrEnum),  # fish for enum value
+        ("test-key", MockIntEnum),  # fish for enum name
+        ("TestKey", MockIntEnum),  # fish for enum name exact match
+        (2, MockIntEnum),  # exact match
     ),
 )
-def test_deserialize_enum(value: str) -> None:
-    assert deserialize(value, hint=MockEnum) is MockEnum.TestKey
+def test_deserialize_enum_with_data_type(
+    value: str, hint: Union[Type[MockEnum], Type[MockIntEnum], Type[MockStrEnum]]
+) -> None:
+    assert deserialize(value, hint=hint) is hint.TestKey
 
 
 @parametrize(
