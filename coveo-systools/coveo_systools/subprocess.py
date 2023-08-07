@@ -267,14 +267,12 @@ async def async_check_run(
     process = await asyncio.create_subprocess_exec(
         converted_command[0], *converted_command[1:], cwd=str(working_directory), **kwargs
     )
-    result = await process.wait()
-    stdout = await process.stdout.read() if process.stdout else None
-    stderr = await process.stderr.read() if process.stderr else None
+    stdout, stderr = await process.communicate()
 
-    if result != 0:
+    if process.returncode != 0:
         raise DetailedCalledProcessError(
             working_folder=working_directory
-        ) from subprocess.CalledProcessError(result, converted_command, stdout, stderr)
+        ) from subprocess.CalledProcessError(process.returncode, converted_command, stdout, stderr)
 
     return _process_output(stdout) if capture_output else None
 
