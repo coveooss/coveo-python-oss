@@ -11,16 +11,17 @@ authors = ["Jonathan Piché <tools@coveo.com>"]
 python = ">=3.8"
 
 attrs = "*"
+coveo-ref = "*"
 pytest = "*"
 
 
 [tool.poetry.dev-dependencies]
 bandit = "*"
 black = "*"
+coveo-ref = { path = "../coveo-ref/", develop = true }
 mypy = "0.950"
 pytest = "*"
 typing_extensions = "*"
-
 
 
 [tool.stew.ci]
