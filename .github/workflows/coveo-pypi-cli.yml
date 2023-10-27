@@ -11,6 +11,7 @@ on:
     types: [opened, synchronize, reopened]
     paths:
       - 'coveo-pypi-cli/**'
+      - '.github/workflows/coveo-pypi-cli.yml'
 
   workflow_dispatch:
     inputs:
@@ -32,14 +33,12 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
       - name: Run stew ci
-        uses: ./.github/workflows/actions/stew-ci
+        uses: coveo/stew@main
         with:
           project-name: ${{ github.workflow }}
           python-version: ${{ matrix.python-version }}
+          poetry-version: "<2"
 
   publish:
     name: Publish to pypi.org

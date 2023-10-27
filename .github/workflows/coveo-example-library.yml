@@ -6,13 +6,19 @@ on:
       - main
     paths:
       - 'coveo-example-library/**'
-      - '.github/workflows/**'
 
   pull_request:
     types: [opened, synchronize, reopened]
     paths:
       - 'coveo-example-library/**'
-      - '.github/workflows/**'
+      - '.github/workflows/coveo-example-library.yml'
+
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: "Publish to pypi.org?"
+        required: false
+        default: 'false'
 
 jobs:
   pyprojectci:
@@ -26,14 +32,12 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
       - name: Run stew ci
-        uses: ./.github/workflows/actions/stew-ci
+        uses: coveo/stew@main
         with:
           project-name: ${{ github.workflow }}
           python-version: ${{ matrix.python-version }}
+          poetry-version: "<2"
 
   publish:
     name: Publish to pypi.org
