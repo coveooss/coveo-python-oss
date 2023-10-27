@@ -8,7 +8,7 @@ repository = "https://github.com/coveooss/coveo-python-oss/tree/main/coveo-testi
 authors = ["Jonathan Piché <tools@coveo.com>"]
 
 [tool.poetry.dependencies]
-python = ">=3.8,<3.10"  # the docker package doesn't support python 3.10 yet
+python = ">=3.8"
 
 coveo-functools = "*"
 coveo-settings = "*"
