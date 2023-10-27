@@ -12,6 +12,7 @@ coveo-example-library = { path = 'coveo-example-library/', develop = true }
 coveo-functools = { path = 'coveo-functools/', develop = true }
 coveo-itertools = { path = 'coveo-itertools/', develop = true }
 coveo-pypi-cli = { path = 'coveo-pypi-cli/', develop = true }
+coveo-ref = { path = 'coveo-ref/', develop = true }
 coveo-settings = { path = 'coveo-settings/', develop = true }
 coveo-styles = { path = 'coveo-styles/', develop = true }
 coveo-systools = { path = 'coveo-systools/', develop = true }
