@@ -269,22 +269,6 @@ def _translate_reference_to_another_module(
     return new_reference
 
 
-def resolve_mock_target(target: Any) -> str:
-    """
-
-    Deprecated: You are encouraged to use `ref` instead, which can resolve a name in a target module.
-
-    ---
-    Deprecated docs:
-
-    `mock.patch` uses a str-representation of an object to find it, but this doesn't play well with
-    refactors and renames. This method extracts the str-representation of an object.
-
-    This method will not handle _all_ kinds of objects, in which case an AttributeError will most likely be raised.
-    """
-    return f"{target.__module__}.{target.__name__}"
-
-
 @overload
 def ref(target: Any) -> Tuple[str]:
     ...
