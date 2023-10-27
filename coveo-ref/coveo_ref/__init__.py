@@ -329,7 +329,7 @@ def ref(
     refactorable mocks.
 
     The idea is to provide the thing to mock as the target, and sometimes, the thing that is being tested
-    as the context. Refer to `coveo-testing`'s readme to better understand when a context is necessary.
+    as the context. Refer to `coveo-ref`'s readme to better understand when a context is necessary.
 
     For example, pass the `HTTPResponse` class as the target and the `my_module.function_to_test` function
     as the context, so that `my_module.HTTPResponse` becomes mocked (and not httplib.client.HTTPResponse).

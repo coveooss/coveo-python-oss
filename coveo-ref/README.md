@@ -19,7 +19,7 @@ tool that can extract the string representation of a python objet. This is what 
 
 ```python
 from unittest.mock import patch, MagicMock
-from coveo_testing.mocks import ref
+from coveo_ref import ref
 from mymodule.clients import APIClient
 
 @patch(*ref(APIClient._do_request))
@@ -64,7 +64,7 @@ But with `ref`, you specify the context separately:
 
 ```python
 from unittest.mock import patch, MagicMock
-from coveo_testing.mocks import ref
+from coveo_ref import ref
 from mymodule.clients import get_api_client
 from mymodule.tasks import process
 
@@ -100,7 +100,7 @@ The test:
 
 ```python
 from unittest.mock import patch, MagicMock
-from coveo_testing.mocks import ref
+from coveo_ref import ref
 from mymodule.clients import get_api_client
 from mymodule.tasks import process
 
@@ -132,7 +132,7 @@ can unpack to `patch.object()`:
 
 ```python
 from unittest.mock import patch
-from coveo_testing.mocks import ref
+from coveo_ref import ref
 from mymodule.clients import APIClient
 
 def test() -> None:
@@ -155,7 +155,7 @@ For instance, consider this test:
 ```python
 from http.client import HTTPResponse
 from unittest.mock import patch, MagicMock
-from coveo_testing.mocks import ref
+from coveo_ref import ref
 
 from mymodule.tasks import process
 
@@ -226,7 +226,7 @@ So you _know_ this works globally, because no one will (should?) import the priv
 
 ```python
 from unittest.mock import patch, MagicMock
-from coveo_testing.mocks import ref
+from coveo_ref import ref
 
 from mymodule.tasks import process
 from mymodule.clients import _get_api_client
@@ -259,7 +259,7 @@ The test, showing 3 different methods that work:
 
 ```python
 from unittest.mock import patch, MagicMock
-from coveo_testing.mocks import ref
+from coveo_ref import ref
 
 from mymodule.clients import get_api_client
 from mymodule.tasks import process
@@ -296,7 +296,7 @@ Sometimes, the test file _is_ the context. When that happens, just pass `__name_
 
 ```python
 from unittest.mock import patch
-from coveo_testing.mocks import ref
+from coveo_ref import ref
 from mymodule.clients import get_api_client, APIClient
 
 def _prepare_test() -> APIClient:
@@ -377,7 +377,7 @@ class MyClass:
 
 ```python
 from unittest.mock import PropertyMock, patch, MagicMock
-from coveo_testing.mocks import ref
+from coveo_ref import ref
 
 from mymodule import MyClass
 
@@ -406,7 +406,7 @@ For this particular scenario, the workaround is to provide the instance as the c
 
 ```python
 from unittest.mock import patch
-from coveo_testing.mocks import ref
+from coveo_ref import ref
 
 
 class MyClass:
