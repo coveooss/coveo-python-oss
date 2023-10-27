@@ -1,4 +1,4 @@
-name: coveo-testing
+name: coveo-ref
 
 on:
   push:
@@ -11,6 +11,7 @@ on:
     types: [opened, synchronize, reopened]
     paths:
       - 'coveo-ref/**'
+      - '.github/workflows/coveo-ref.yml'
 
   workflow_dispatch:
     inputs:
@@ -35,7 +36,7 @@ jobs:
       - name: Run stew ci
         uses: coveo/stew@main
         with:
-          project-name: coveo-ref
+          project-name: ${{ github.workflow }}
           python-version: ${{ matrix.python-version }}
           poetry-version: "<2"
 
@@ -51,12 +52,12 @@ jobs:
       - name: Setup python 3.10
         uses: actions/setup-python@v4
         with:
-          python-version: 3.10
+          python-version: "3.10"
 
       - name: Publish to pypi
         uses: ./.github/workflows/actions/publish-to-pypi
         with:
-          project-name: coveo-ref
+          project-name: ${{ github.workflow }}
           pypi-token: ${{ secrets.PYPI_TOKEN_COVEO_REF }}
           pre-release: ${{ github.ref != 'refs/heads/main' }}
           dry-run: ${{ github.ref != 'refs/heads/main' && github.event.inputs.publish != 'true' }}
