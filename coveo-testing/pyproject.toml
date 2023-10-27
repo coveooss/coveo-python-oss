@@ -11,7 +11,7 @@ authors = ["Jonathan Piché <tools@coveo.com>"]
 python = ">=3.8"
 
 attrs = "*"
-coveo-ref = { version="*", allow-prereleases = true }
+coveo-ref = "*"
 pytest = "*"
 
 

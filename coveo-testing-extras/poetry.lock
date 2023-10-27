@@ -236,6 +236,17 @@ type = "directory"
 url = "../coveo-functools"
 
 [[package]]
+name = "coveo-ref"
+version = "1.0"
+description = "Allows using unittest.patch() without hardcoding strings."
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "coveo_ref-1.0-py3-none-any.whl", hash = "sha256:95f74ac9e2f3d9d1586d348c2305e20b01bfc425f633bd89e5136f51675a9440"},
+    {file = "coveo_ref-1.0.tar.gz", hash = "sha256:2099a05d0e736683a577227cb59992e8b175ccbe3e5a7e0bc32b6b6279962057"},
+]
+
+[[package]]
 name = "coveo-settings"
 version = "2.1.0"
 description = "Settings driven by environment variables."
@@ -276,6 +287,7 @@ develop = true
 
 [package.dependencies]
 attrs = "*"
+coveo-ref = "*"
 pytest = "*"
 
 [package.source]
