@@ -49,7 +49,7 @@ class Parent:
 
 def test_flex_raise_on_abstract() -> None:
     with pytest.raises(UnsupportedAnnotation):
-        deserialize({}, hint=Abstract)
+        deserialize({}, hint=Abstract, errors="raise")
 
 
 @parametrize("implementation_class", (Implementation, DataclassImplementation))
@@ -58,7 +58,7 @@ def test_deserialize_adapter(implementation_class: Type) -> None:
         return implementation_class
 
     register_subclass_adapter(Abstract, adapter)
-    parent = deserialize({"test": {}}, hint=Parent)
+    parent = deserialize({"test": {}}, hint=Parent, errors="raise")
     assert isinstance(parent.test, implementation_class)
 
 
@@ -71,7 +71,7 @@ def test_deserialize_adapter_nested() -> None:
         nested: Parent
 
     register_subclass_adapter(Abstract, adapter)
-    instance = deserialize({"nested": {"test": {}}}, hint=Nested)
+    instance = deserialize({"nested": {"test": {}}}, hint=Nested, errors="raise")
     assert isinstance(instance.nested.test, Implementation)
 
 
@@ -82,7 +82,11 @@ def test_deserialize_funky_adapter() -> None:
         return List[str]
 
     register_subclass_adapter(Abstract, adapter)
-    assert deserialize({"test": ["a", "b", "c"]}, hint=Parent).test == ["a", "b", "c"]
+    assert deserialize({"test": ["a", "b", "c"]}, hint=Parent, errors="raise").test == [
+        "a",
+        "b",
+        "c",
+    ]
 
 
 def test_deserialize_any_adapter() -> None:
@@ -101,14 +105,14 @@ def test_deserialize_any_adapter() -> None:
     register_subclass_adapter(Any, any_adapter)
     register_subclass_adapter(Abstract, abstract_adapter)
 
-    instance: Any = deserialize([{}, {}, {}], hint=Any)
+    instance: Any = deserialize([{}, {}, {}], hint=Any, errors="raise")
     assert (
         isinstance(instance, list)
         and instance
         and all(isinstance(item, Implementation) for item in instance)
     )
 
-    instance = deserialize({"item1": {}, "item2": {}}, hint=Any)
+    instance = deserialize({"item1": {}, "item2": {}}, hint=Any, errors="raise")
     assert isinstance(instance, dict) and instance
     assert isinstance(instance["item1"], Implementation)
     assert isinstance(instance["item2"], Implementation)
@@ -131,7 +135,7 @@ def test_deserialize_mutate_value_adapter() -> None:
 
     # the payload will be mutated
     payload: Dict[str, Any] = {}
-    instance = deserialize(payload, hint=Parent)
+    instance = deserialize(payload, hint=Parent, errors="raise")
     assert "test" in payload
     assert isinstance(instance.test, Implementation)
     assert instance.test.value == "success"
@@ -143,7 +147,7 @@ class TestFactory:
 
     @classmethod
     def factory(cls, raw: Dict[str, str]) -> TestFactory:
-        return deserialize(raw, hint=TestFactory)
+        return deserialize(raw, hint=TestFactory, errors="raise")
 
 
 def test_deserialize_adapter_factory_classmethod() -> None:
@@ -155,7 +159,7 @@ def test_deserialize_adapter_factory_classmethod() -> None:
     register_subclass_adapter(TestFactory, factory_adapter)
 
     payload: Dict[str, Any] = {"raw": {"value": "success"}}
-    assert deserialize(payload, hint=TestFactory).value == "success"
+    assert deserialize(payload, hint=TestFactory, errors="raise").value == "success"
 
 
 @dataclass
@@ -174,7 +178,7 @@ def test_deserialize_adapter_factory_function() -> None:
     """Tests the factory feature, which expects the instance to be returned instead of the type."""
     test_datetime = datetime.utcnow()
     payload: Dict[str, Any] = {"value": test_datetime.isoformat()}
-    assert deserialize(payload, hint=TestDatetimeFactory).value == test_datetime
+    assert deserialize(payload, hint=TestDatetimeFactory, errors="raise").value == test_datetime
 
 
 def test_deserialize_with_meta_and_factory() -> None:
@@ -183,6 +187,7 @@ def test_deserialize_with_meta_and_factory() -> None:
     instance = TestDatetimeFactory(value=timestamp)
     meta = SerializationMetadata.from_instance(instance)
     deserialized = cast(
-        TestDatetimeFactory, deserialize({"value": timestamp.isoformat()}, hint=meta)
+        TestDatetimeFactory,
+        deserialize({"value": timestamp.isoformat()}, hint=meta, errors="raise"),
     )
     assert deserialized.value == timestamp

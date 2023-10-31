@@ -37,7 +37,7 @@ class Person:
     social_number: Optional[int] = None
 
 # the deserializer is used directly to receive a list of Person instances
-response = flex.deserialize(json.load(), hint=List[Person])
+response = flex.deserialize(json.load(), hint=List[Person], errors='raise')
 ```
 
 Automatic usage example:
@@ -229,7 +229,7 @@ class WithDateTime:
   
 
 timestamp = datetime.utcnow()
-instance = flex.deserialize({"timestamp": timestamp.isoformat()}, hint=WithDateTime)
+instance = flex.deserialize({"timestamp": timestamp.isoformat()}, hint=WithDateTime, errors='raise')
 assert instance.timestamp == timestamp
 assert isinstance(instance.timestamp, datetime)
 ```
@@ -278,7 +278,7 @@ class Parent:
 
 
 meta = SerializationMetadata.from_instance(Parent(Concrete()))
-parent = deserialize({"nested": {}}, hint=meta)
+parent = deserialize({"nested": {}}, hint=meta, errors='raise')
 assert isinstance(parent.nested, Concrete)
 ```
 
@@ -397,8 +397,8 @@ payload = {
     "Id": "GgfhAs89876yh.z"
 }
 
-transaction = flex.deserialize(payload, hint=Transaction)
-all_transactions = flex.deserialize([payload, payload], hint=List[Transaction])
+transaction = flex.deserialize(payload, hint=Transaction, errors='raise')
+all_transactions = flex.deserialize([payload, payload], hint=List[Transaction], errors='raise')
 ```
 
 Interesting details:
