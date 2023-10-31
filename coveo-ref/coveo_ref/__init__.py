@@ -307,13 +307,37 @@ def ref(
     _bypass_context_check: bool = False,
 ) -> Union[Tuple[str], Tuple[Any, str]]:
     """
-    Replaces `resolves_mock_target`. Named for brevity.
+    Docs: https://github.com/coveooss/coveo-python-oss/blob/main/coveo-ref/README.md
+
+    Cheat sheet:
+
+        Mock a property (this is global and will not work on instances):
+            patch(*ref(cls.property, new_callable=PropertyMock, return_value=...))
+
+        Mock a method (no need for a context):
+            patch(*ref(cls.method))
+
+        Mock a method on a single instance:
+            patch.object(*ref(instance.method, obj=True))
+
+        Mock an attribute on a class/instance/module/function/object:
+            You can't use ref to mock an attribute.
+            If patching an instance, try this (sorry about the string):
+                patch.object(instance, "attribute", new="return_value")
+
+        Mock a staticmethod or a classmethod:
+            To patch globally:
+                patch(*ref(cls.staticorclassmethod))
+            To patch on a single instance:
+                patch.object(*ref(cls.staticorclassmethod, context=instance, obj=True))
+
+    Function doc for maintainers:
 
     Returns a tuple meant to be unpacked into the `mock.patch` or `mock.patch.object` functions in order to enable
     refactorable mocks.
 
     The idea is to provide the thing to mock as the target, and sometimes, the thing that is being tested
-    as the context. Refer to `coveo-ref`'s readme to better understand when a context is necessary.
+    as the context.
 
     For example, pass the `HTTPResponse` class as the target and the `my_module.function_to_test` function
     as the context, so that `my_module.HTTPResponse` becomes mocked (and not httplib.client.HTTPResponse).
