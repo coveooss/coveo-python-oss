@@ -78,7 +78,7 @@ DEFAULT_MAP_MOCK: Final[Dict[str, MockType]] = {"item1": DEFAULT_MOCK, "item2": 
     ),
 )
 def test_deserialize_to_list(hint: Any, payload: Any, expected: Any) -> None:
-    assert deserialize(payload, hint=hint) == expected
+    assert deserialize(payload, hint=hint, errors="raise") == expected
 
 
 @UnitTest
@@ -86,7 +86,7 @@ def test_deserialize_unions_passthrough() -> None:
     """Anything from the json types will be given back without checking; this allows unions of base types."""
     union = Union[JSON_TYPES]  # type: ignore[valid-type]
 
-    assert deserialize(DEFAULT_VALUE, hint=union) == DEFAULT_VALUE
+    assert deserialize(DEFAULT_VALUE, hint=union, errors="raise") == DEFAULT_VALUE
 
 
 @UnitTest
@@ -96,7 +96,9 @@ def test_deserialize_unions_limited() -> None:
     This may change in the future.
     """
     with pytest.raises(UnsupportedAnnotation):
-        assert deserialize(DEFAULT_VALUE, hint=Union[str, MockType]) == DEFAULT_VALUE
+        assert (
+            deserialize(DEFAULT_VALUE, hint=Union[str, MockType], errors="raise") == DEFAULT_VALUE
+        )
 
 
 @UnitTest
@@ -116,7 +118,7 @@ def test_deserialize_thing_or_list_of_things(hint: Type, payload: Any, expected:
     Some APIs will return a single map if there's one object, else a list of them.
     Such objects must be annotated with Union[Thing, List[Thing]].
     """
-    assert deserialize(payload, hint=hint) == expected
+    assert deserialize(payload, hint=hint, errors="raise") == expected
 
 
 @UnitTest
@@ -133,7 +135,7 @@ def test_deserialize_thing_or_list_of_things(hint: Type, payload: Any, expected:
 )
 def test_deserialize_dict(hint: Type) -> None:
     """We don't do much with'em, but they gotta work!"""
-    assert deserialize(DEFAULT_PAYLOAD, hint=hint) == DEFAULT_PAYLOAD
+    assert deserialize(DEFAULT_PAYLOAD, hint=hint, errors="raise") == DEFAULT_PAYLOAD
 
 
 @UnitTest
@@ -146,7 +148,7 @@ def test_deserialize_dict(hint: Type) -> None:
     ),
 )
 def test_deserialize_dict_with_custom_value_type(hint: Any) -> None:
-    assert deserialize(DEFAULT_MAP_PAYLOAD, hint=hint) == DEFAULT_MAP_MOCK
+    assert deserialize(DEFAULT_MAP_PAYLOAD, hint=hint, errors="raise") == DEFAULT_MAP_MOCK
 
 
 @UnitTest
@@ -184,14 +186,14 @@ def test_deserialize_dict_with_custom_value_type(hint: Any) -> None:
     ),
 )
 def test_deserialize_dict_complex(hint: Any, payload: Any, expected: Any) -> None:
-    assert deserialize(payload, hint=hint) == expected
+    assert deserialize(payload, hint=hint, errors="raise") == expected
 
 
 @UnitTest
 def test_deserialize_dict_invalid_union() -> None:
     """Make sure the union rules are respected in the dict value annotation."""
     with pytest.raises(UnsupportedAnnotation):
-        _ = deserialize(DEFAULT_PAYLOAD, hint=Dict[str, Union[str, MockType]])
+        _ = deserialize(DEFAULT_PAYLOAD, hint=Dict[str, Union[str, MockType]], errors="raise")
 
 
 @UnitTest
@@ -214,7 +216,7 @@ def test_deserialize_dict_invalid_union() -> None:
 def test_deserialize_enum_with_data_type(
     value: str, hint: Union[Type[MockEnum], Type[MockIntEnum], Type[MockStrEnum]]
 ) -> None:
-    assert deserialize(value, hint=hint) is hint.TestKey
+    assert deserialize(value, hint=hint, errors="raise") is hint.TestKey
 
 
 @parametrize(
@@ -251,12 +253,16 @@ def test_deserialize_enum_nested() -> None:
     class SomeClass:
         test: MockEnum
 
-    assert deserialize({"Test": "test.key"}, hint=SomeClass).test is MockEnum.TestKey
+    assert (
+        deserialize({"Test": "test.key"}, hint=SomeClass, errors="raise").test is MockEnum.TestKey
+    )
 
 
 @UnitTest
 def test_deserialize_enum_list() -> None:
-    assert deserialize(["test-value", "TestKey", "otherkey"], hint=List[MockEnum]) == [
+    assert deserialize(
+        ["test-value", "TestKey", "otherkey"], hint=List[MockEnum], errors="raise"
+    ) == [
         MockEnum.TestKey,
         MockEnum.TestKey,
         MockEnum.OtherKey,
@@ -270,8 +276,8 @@ def test_deserialize_enum_alias() -> None:
         Task = Job
         Status = "status"
 
-    assert deserialize("job", hint=SomeEnum) is SomeEnum.Job
-    assert deserialize("task", hint=SomeEnum) is SomeEnum.Task
+    assert deserialize("job", hint=SomeEnum, errors="raise") is SomeEnum.Job
+    assert deserialize("task", hint=SomeEnum, errors="raise") is SomeEnum.Task
     assert SomeEnum.Job is SomeEnum.Task  # it's the same picture.
 
 
@@ -282,7 +288,7 @@ def test_deserialize_immutable(immutable_type: Type) -> None:
         def builtin_type(self) -> Type:
             return immutable_type
 
-    value = deserialize(1, hint=SubclassImmutable)
+    value = deserialize(1, hint=SubclassImmutable, errors="raise")
     assert isinstance(value, immutable_type)
     assert isinstance(value, SubclassImmutable)
     assert value.builtin_type is immutable_type
@@ -369,36 +375,42 @@ def test_deserialize_static_typing() -> None:
 
     def correct_annotations() -> None:
         """cases that correctly follow annotations"""
-        assert deserialize(DEFAULT_PAYLOAD, hint=MockType).value == DEFAULT_VALUE
-        assert deserialize([DEFAULT_PAYLOAD], hint=List[MockType])[0].value == DEFAULT_VALUE
-        assert deserialize(DEFAULT_PAYLOAD, hint=Dict[str, Any])["value"] == DEFAULT_VALUE
-        assert deserialize(fn, hint=fn)(value=DEFAULT_VALUE) == DEFAULT_VALUE
+        assert deserialize(DEFAULT_PAYLOAD, hint=MockType, errors="raise").value == DEFAULT_VALUE
+        assert (
+            deserialize([DEFAULT_PAYLOAD], hint=List[MockType], errors="raise")[0].value
+            == DEFAULT_VALUE
+        )
+        assert (
+            deserialize(DEFAULT_PAYLOAD, hint=Dict[str, Any], errors="raise")["value"]
+            == DEFAULT_VALUE
+        )
+        assert deserialize(fn, hint=fn, errors="ignore")(value=DEFAULT_VALUE) == DEFAULT_VALUE
 
     correct_annotations()
 
     def broken_annotations() -> None:  # noqa
         """we don't execute this one, because it would fail."""
         # mypy sees that we may not get a list
-        _ = deserialize(DEFAULT_PAYLOAD, hint=Union[List[MockType], MockType])[0].value  # type: ignore[index]
+        _ = deserialize(DEFAULT_PAYLOAD, hint=Union[List[MockType], MockType], errors="raise")[0].value  # type: ignore[index]
 
         # ...same as above, reversed.
-        _ = deserialize(DEFAULT_PAYLOAD, hint=Union[List[MockType], MockType]).value  # type: ignore[attr-defined]
+        _ = deserialize(DEFAULT_PAYLOAD, hint=Union[List[MockType], MockType], errors="raise").value  # type: ignore[attr-defined]
 
         # mypy rightfully complains about None not having a `.value`
-        _ = deserialize(DEFAULT_PAYLOAD, hint=Optional[MockType]).value  # type: ignore[attr-defined]
+        _ = deserialize(DEFAULT_PAYLOAD, hint=Optional[MockType], errors="raise").value  # type: ignore[attr-defined]
 
         # mypy rightfully complains about MockType not having a `.name`
-        _ = deserialize(DEFAULT_PAYLOAD, hint=Optional[MockType]).name  # type: ignore[attr-defined]
+        _ = deserialize(DEFAULT_PAYLOAD, hint=Optional[MockType], errors="raise").name  # type: ignore[attr-defined]
 
         def test_return() -> str:  # noqa
             # mypy rightfully complains about returning `Any` instead of str
-            return deserialize(DEFAULT_PAYLOAD, hint=MockType).name  # type: ignore[attr-defined,no-any-return]
+            return deserialize(DEFAULT_PAYLOAD, hint=MockType, errors="raise").name  # type: ignore[attr-defined,no-any-return]
 
         # mypy sees that fn accepts a str, not an int
-        _ = deserialize(fn, hint=fn)(fn=1)  # type:ignore[call-arg]
+        _ = deserialize(fn, hint=fn, errors="raise")(fn=1)  # type:ignore[call-arg]
 
         # mypy sees that fn returns a str, not an int
-        _ = deserialize(fn, hint=fn)(value="") / 2  # type: ignore[operator]
+        _ = deserialize(fn, hint=fn, errors="raise")(value="") / 2  # type: ignore[operator]
 
 
 # the type of the payload doesn't fit the hint

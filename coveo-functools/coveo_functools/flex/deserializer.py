@@ -441,7 +441,7 @@ def _deserialize_with_metadata(
         # or an instance thereof.
         # Here, we take a shortcut to deserialize `value` into an instance of `SerializationMetadata`.
         # This happens when flex is also used to serialize the metadata headers.
-        return hint(**convert_kwargs_for_unpacking(value, hint=hint))  # type: ignore[misc]
+        return hint(**convert_kwargs_for_unpacking(value, hint=hint, errors=errors))  # type: ignore[misc]
 
     root_type = hint.import_type()
 
@@ -462,7 +462,7 @@ def _deserialize_with_metadata(
     if isclass(root_type) and isinstance(value, dict):
         # typical case of unpacking value into an instance of the root type.
         return root_type(
-            **convert_kwargs_for_unpacking(value, hint=hint)
+            **convert_kwargs_for_unpacking(value, hint=hint, errors=errors)
         )  # it's magic!  # type: ignore[no-any-return]
 
     if root_type is not SerializationMetadata:
