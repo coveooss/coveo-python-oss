@@ -41,21 +41,6 @@ class Arn:
     def resource_type(self) -> str:
         """
         Some services provide 2 components in the resource, split on `:` or `/`.
-        Return the suffix, or an empty string otherwise.
-
-        E.g.:
-         - "arn:aws:ssm:::parameter/some-param-folder/some-param    -> some-param-folder/some-param
-         - "arn:aws:s3:::my-bucket/folder/file.jpg                  -> folder/file.jpg
-         - "arn:aws:cloudwatch:::alarm:some-alarm                   -> some-alarm
-         - "arn:aws:ec2:::vpc/vpc-12345                             -> vpc-12345
-         - 'arn:aws:sns:::my_sns_topic                              -> ""
-        """
-        return _split_resource_type_and_id(self.resource)[0]
-
-    @property
-    def resource_id(self) -> str:
-        """
-        Some services provide 2 components in the resource, split on `:` or `/`.
         Return the prefix, or an empty string otherwise.
 
         E.g.:
@@ -64,6 +49,21 @@ class Arn:
          - arn:aws:cloudwatch:::alarm:some-alarm                   -> alarm
          - arn:aws:ec2:::vpc/vpc-12345                             -> vpc
          - arn:aws:sns:::my_sns_topic                              -> ""
+        """
+        return _split_resource_type_and_id(self.resource)[0]
+
+    @property
+    def resource_id(self) -> str:
+        """
+        Some services provide 2 components in the resource, split on `:` or `/`.
+        Return the suffix, or an empty string otherwise.
+
+        E.g.:
+         - "arn:aws:ssm:::parameter/some-param-folder/some-param    -> some-param-folder/some-param
+         - "arn:aws:s3:::my-bucket/folder/file.jpg                  -> folder/file.jpg
+         - "arn:aws:cloudwatch:::alarm:some-alarm                   -> some-alarm
+         - "arn:aws:ec2:::vpc/vpc-12345                             -> vpc-12345
+         - 'arn:aws:sns:::my_sns_topic                              -> ""
         """
         return _split_resource_type_and_id(self.resource)[1]
 
