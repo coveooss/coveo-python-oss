@@ -25,7 +25,7 @@ coveo-settings = { path = "../coveo-settings/", develop = true }
 coveo-systools = { path = "../coveo-systools/", develop = true }
 coveo-testing = { path = "../coveo-testing/", develop = true }
 flake8 = "*"
-mypy = "0.950"
+mypy = "1.9.0"
 pytest = "*"
 types-requests = "*"
 typing_extensions = "*"

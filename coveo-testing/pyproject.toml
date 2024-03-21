@@ -19,7 +19,7 @@ pytest = "*"
 bandit = "*"
 black = "*"
 coveo-ref = { path = "../coveo-ref/", develop = true }
-mypy = "0.950"
+mypy = "1.9.0"
 pytest = "*"
 typing_extensions = "*"
 

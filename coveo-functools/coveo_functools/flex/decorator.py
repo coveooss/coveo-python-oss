@@ -114,7 +114,7 @@ def _generate_callable_wrapper(fn: RealFunction, errors: ErrorBehavior) -> Wrapp
     """Class decorators"""
 
     @functools.wraps(fn)
-    def wrapper(*args: Any, **kwargs: Any) -> T:
+    def wrapper(*args: Any, **kwargs: Any) -> T:  # type: ignore[type-var]
         value: T = fn(*args, **convert_kwargs_for_unpacking(kwargs, hint=fn, errors=errors))
         if hasattr(value, "__dict__"):
             value.__dict__[RAW_KEY] = kwargs

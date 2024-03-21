@@ -61,7 +61,7 @@ def convert_kwargs_for_unpacking(
 
     # convert the values so they match the additional metadata if available, else fn's annotations.
     converted_kwargs = {}
-    for arg_name, arg_hint in {**find_annotations(fn), **additional_metadata}.items():  # type: ignore[arg-type]
+    for arg_name, arg_hint in {**find_annotations(fn), **additional_metadata}.items():
         if arg_name not in mapped_kwargs:
             continue  # this may be ok, for instance if the target argument has a default
 

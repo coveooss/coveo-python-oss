@@ -283,7 +283,7 @@ def test_deserialize_enum_alias() -> None:
 
 @parametrize("immutable_type", (str, int, bytes, float))
 def test_deserialize_immutable(immutable_type: Type) -> None:
-    class SubclassImmutable(immutable_type):  # type: ignore[valid-type,misc]
+    class SubclassImmutable(immutable_type):
         @property
         def builtin_type(self) -> Type:
             return immutable_type
