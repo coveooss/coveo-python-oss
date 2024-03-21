@@ -167,8 +167,7 @@ class _CallProtocol(Protocol):
 
     def __call__(
         self, command: Iterable[str], shell: bool = False, cwd: str = None, **kwargs: Any
-    ) -> Optional[Union[str, bytes]]:
-        ...
+    ) -> Optional[Union[str, bytes]]: ...
 
 
 def _build_command(*command: Any, quoted: bool) -> Generator[str, None, None]:
@@ -176,9 +175,9 @@ def _build_command(*command: Any, quoted: bool) -> Generator[str, None, None]:
     converted_command = (
         arg for arg in map(cast_command_line_argument_to_string, command) if arg and arg.strip()
     )
-    yield from shlex.split(
-        " ".join(converted_command), posix=False
-    ) if quoted else converted_command
+    yield from (
+        shlex.split(" ".join(converted_command), posix=False) if quoted else converted_command
+    )
 
 
 def check_run(

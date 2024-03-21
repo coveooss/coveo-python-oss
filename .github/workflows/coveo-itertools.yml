@@ -6,12 +6,15 @@ on:
       - main
     paths:
       - 'coveo-itertools/**'
+      - '!**.lock'
+      - '!**.md'
 
   pull_request:
     types: [opened, synchronize, reopened]
     paths:
       - 'coveo-itertools/**'
       - '.github/workflows/coveo-itertools.yml'
+      - '!**.md'
 
   workflow_dispatch:
     inputs:

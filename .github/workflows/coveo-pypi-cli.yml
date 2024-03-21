@@ -6,12 +6,15 @@ on:
       - main
     paths:
       - 'coveo-pypi-cli/**'
+      - '!**.lock'
+      - '!**.md'
 
   pull_request:
     types: [opened, synchronize, reopened]
     paths:
       - 'coveo-pypi-cli/**'
       - '.github/workflows/coveo-pypi-cli.yml'
+      - '!**.md'
 
   workflow_dispatch:
     inputs:

@@ -10,6 +10,7 @@ Summary:
 
 Scroll to the bottom of this file for more info.
 """
+
 import sys
 from pathlib import Path
 from pprint import pformat
@@ -66,8 +67,7 @@ _Reset = "reset"  # reset the color code only
 class _CallHook(Protocol):
     """Defines the interface we require from the call hook, for correctness."""
 
-    def __call__(self, message: str, *, err: bool) -> None:
-        ...
+    def __call__(self, message: str, *, err: bool) -> None: ...
 
 
 def _convert_to_strings(*objects: Any) -> Generator[str, None, None]:

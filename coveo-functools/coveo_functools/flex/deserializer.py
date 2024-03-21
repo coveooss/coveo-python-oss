@@ -78,8 +78,7 @@ def deserialize(
     *,
     hint: Type[T],
     errors: ErrorBehavior = "deprecated",
-) -> T:
-    ...
+) -> T: ...
 
 
 @overload

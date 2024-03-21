@@ -104,8 +104,7 @@ class MockInterface(Protocol):
 
     value: str
 
-    def __init__(self, value: str) -> None:
-        ...
+    def __init__(self, value: str) -> None: ...
 
 
 def _class_decorator_styles() -> Generator[Type[MockInterface], None, None]:

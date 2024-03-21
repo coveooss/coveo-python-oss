@@ -6,12 +6,15 @@ on:
       - main
     paths:
       - 'coveo-arnparse/**'
+      - '!**.lock'
+      - '!**.md'
 
   pull_request:
     types: [opened, synchronize, reopened]
     paths:
       - 'coveo-arnparse/**'
       - '.github/workflows/coveo-arnparse.yml'
+      - '!**.md'
 
   workflow_dispatch:
     inputs:

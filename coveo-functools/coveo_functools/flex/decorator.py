@@ -29,25 +29,21 @@ RAW_KEY: Final[str] = "_coveo_functools_flexed_from_"
 
 
 @overload
-def flex(*, errors: ErrorBehavior = "deprecated") -> Callable[[RealObject], WrappedObject]:
-    ...
+def flex(*, errors: ErrorBehavior = "deprecated") -> Callable[[RealObject], WrappedObject]: ...
 
 
 @overload
 def flex(
     obj: None, *, errors: ErrorBehavior = "deprecated"
-) -> Callable[[RealObject], WrappedObject]:
-    ...
+) -> Callable[[RealObject], WrappedObject]: ...
 
 
 @overload
-def flex(obj: RealClass, *, errors: ErrorBehavior = "deprecated") -> WrappedClass:
-    ...
+def flex(obj: RealClass, *, errors: ErrorBehavior = "deprecated") -> WrappedClass: ...
 
 
 @overload
-def flex(obj: RealFunction, *, errors: ErrorBehavior = "deprecated") -> WrappedFunction:
-    ...
+def flex(obj: RealFunction, *, errors: ErrorBehavior = "deprecated") -> WrappedFunction: ...
 
 
 def flex(
@@ -97,13 +93,11 @@ def flex(
 
 
 @overload
-def _generate_wrapper(obj: RealClass, *, errors: ErrorBehavior) -> WrappedClass:
-    ...
+def _generate_wrapper(obj: RealClass, *, errors: ErrorBehavior) -> WrappedClass: ...
 
 
 @overload
-def _generate_wrapper(obj: RealFunction, *, errors: ErrorBehavior) -> WrappedFunction:
-    ...
+def _generate_wrapper(obj: RealFunction, *, errors: ErrorBehavior) -> WrappedFunction: ...
 
 
 def _generate_wrapper(obj: RealObject, *, errors: ErrorBehavior) -> WrappedObject:

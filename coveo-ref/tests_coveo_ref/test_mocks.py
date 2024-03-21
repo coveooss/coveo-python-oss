@@ -284,11 +284,9 @@ def test_ref_with_mock_patch_object_classmethod(method: str, as_static: bool) ->
 def test_ref_overloads() -> None:
     """This makes sure that the typing / overloads work for mypy."""
 
-    def tuple_one_string(arg: Tuple[str]) -> None:
-        ...
+    def tuple_one_string(arg: Tuple[str]) -> None: ...
 
-    def tuple_two_strings(arg: Tuple[str, str]) -> None:
-        ...
+    def tuple_two_strings(arg: Tuple[str, str]) -> None: ...
 
     # noinspection PyUnreachableCode
     # these are the correct usages

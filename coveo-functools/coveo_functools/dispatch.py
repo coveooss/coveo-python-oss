@@ -1,6 +1,5 @@
 """singledispatch is too young and needs a little help..."""
 
-
 from functools import singledispatch as _singledispatch, update_wrapper
 import inspect
 from typing import Any, Type, cast, Union, Callable, TypeVar
@@ -10,11 +9,9 @@ T = TypeVar("T")
 
 
 class SingleDispatch(Protocol[T]):
-    def register(*args: Any, **kwargs: Any) -> "SingleDispatch[T]":
-        ...
+    def register(*args: Any, **kwargs: Any) -> "SingleDispatch[T]": ...
 
-    def __call__(*args: Any, **kwargs: Any) -> T:
-        ...
+    def __call__(*args: Any, **kwargs: Any) -> T: ...
 
 
 class _Dispatch:

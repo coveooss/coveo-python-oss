@@ -13,8 +13,7 @@ PYPI_CLI_INDEX = StringSetting("pypi.cli.index", fallback="https://pypi.org")
 T = TypeVar("T", bound=Version)
 
 
-class VersionExists(Exception):
-    ...
+class VersionExists(Exception): ...
 
 
 def obtain_versions_from_pypi(
