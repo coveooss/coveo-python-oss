@@ -1,6 +1,5 @@
 """Annotation-related utilities."""
 
-
 import sys
 from dataclasses import InitVar
 from typing import Type, Dict, get_type_hints, Callable, Union, Any

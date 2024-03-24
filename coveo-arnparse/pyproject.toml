@@ -17,7 +17,7 @@ bandit = "*"
 black = "*"
 coveo-testing = { path = "../coveo-testing", develop = true }
 flake8 = "*"
-mypy = "0.950"
+mypy = "1.9.0"
 pytest = "*"
 
 

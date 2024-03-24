@@ -6,12 +6,15 @@ on:
       - main
     paths:
       - 'coveo-settings/**'
+      - '!**.lock'
+      - '!**.md'
 
   pull_request:
     types: [opened, synchronize, reopened]
     paths:
       - 'coveo-settings/**'
       - '.github/workflows/coveo-settings.yml'
+      - '!**.md'
 
   workflow_dispatch:
     inputs:

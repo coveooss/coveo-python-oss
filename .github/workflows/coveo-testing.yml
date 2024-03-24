@@ -6,12 +6,15 @@ on:
       - main
     paths:
       - 'coveo-testing/**'
+      - '!**.lock'
+      - '!**.md'
 
   pull_request:
     types: [opened, synchronize, reopened]
     paths:
       - 'coveo-testing/**'
       - '.github/workflows/coveo-testing.yml'
+      - '!**.md'
 
   workflow_dispatch:
     inputs:

@@ -40,8 +40,7 @@ class MockClassToRename:
     def instance_function(self) -> str:
         return "Bon àprochainaaaaage!"
 
-    def hidden_property_setter(self, value: str) -> None:
-        ...
+    def hidden_property_setter(self, value: str) -> None: ...
 
     # this is the custom form of the @property decorator
     property = property(_hidden_getter, hidden_property_setter)

@@ -270,33 +270,27 @@ def _translate_reference_to_another_module(
 
 
 @overload
-def ref(target: Any) -> Tuple[str]:
-    ...
+def ref(target: Any) -> Tuple[str]: ...
 
 
 @overload
-def ref(target: Any, *, context: Optional[Any]) -> Tuple[str]:
-    ...
+def ref(target: Any, *, context: Optional[Any]) -> Tuple[str]: ...
 
 
 @overload
-def ref(target: Any, *, obj: Literal[False]) -> Tuple[str]:
-    ...
+def ref(target: Any, *, obj: Literal[False]) -> Tuple[str]: ...
 
 
 @overload
-def ref(target: Any, *, context: Optional[Any], obj: Literal[False]) -> Tuple[str]:
-    ...
+def ref(target: Any, *, context: Optional[Any], obj: Literal[False]) -> Tuple[str]: ...
 
 
 @overload
-def ref(target: Any, *, obj: Literal[True]) -> Tuple[Any, str]:
-    ...
+def ref(target: Any, *, obj: Literal[True]) -> Tuple[Any, str]: ...
 
 
 @overload
-def ref(target: Any, *, context: Any, obj: Literal[True]) -> Tuple[Any, str]:
-    ...
+def ref(target: Any, *, context: Any, obj: Literal[True]) -> Tuple[Any, str]: ...
 
 
 def ref(

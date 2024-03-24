@@ -50,8 +50,7 @@ def test_duplicate_scheme(scheme: str) -> None:
     with pytest.raises(DuplicatedScheme):
 
         @settings_adapter(scheme)
-        def dummy(_: str) -> ConfigValue:
-            ...
+        def dummy(_: str) -> ConfigValue: ...
 
 
 @UnitTest

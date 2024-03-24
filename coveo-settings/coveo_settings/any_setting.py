@@ -8,6 +8,6 @@ class AnySetting(Setting[Any]):
     """Setting class that performs no conversion."""
 
     @staticmethod
-    def _cast(value: ConfigValue) -> T:
+    def _cast(value: ConfigValue) -> T:  # type: ignore[type-var]
         """Always use the provided value with no conversion."""
         return value  # type: ignore

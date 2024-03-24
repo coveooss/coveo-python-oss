@@ -1,4 +1,5 @@
 """Utils that deal with the filesystem."""
+
 import subprocess
 from contextlib import contextmanager
 from filecmp import cmp
@@ -12,8 +13,7 @@ from typing import Union, Iterator, Generator, Optional
 from .subprocess import check_output, DetailedCalledProcessError
 
 
-class CannotFindRepoRoot(Exception):
-    ...
+class CannotFindRepoRoot(Exception): ...
 
 
 @contextmanager

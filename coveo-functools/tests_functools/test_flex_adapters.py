@@ -24,22 +24,19 @@ def _clear_adapters_between_tests() -> Generator[None, None, None]:
 
 class Abstract(metaclass=ABCMeta):
     @abstractmethod
-    def api(self) -> None:
-        ...
+    def api(self) -> None: ...
 
 
 @dataclass
 class Implementation(Abstract):
     value: Optional[str] = None
 
-    def api(self) -> None:
-        ...
+    def api(self) -> None: ...
 
 
 @dataclass
 class DataclassImplementation(Abstract):
-    def api(self) -> None:
-        ...
+    def api(self) -> None: ...
 
 
 @dataclass

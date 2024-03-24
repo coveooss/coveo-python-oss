@@ -40,8 +40,7 @@ def test_dispatch_decorate_method() -> None:
 
 @UnitTest
 def test_dispatch_detect_function() -> None:
-    def i_am_a_function() -> None:
-        ...
+    def i_am_a_function() -> None: ...
 
     assert dispatch_test(i_am_a_function) is FunctionType
 
@@ -49,8 +48,7 @@ def test_dispatch_detect_function() -> None:
 @UnitTest
 def test_dispatch_detect_method() -> None:
     class Mock:
-        def i_am_a_method(self) -> None:
-            ...
+        def i_am_a_method(self) -> None: ...
 
     assert dispatch_test(Mock().i_am_a_method) is MethodType
 
@@ -61,8 +59,7 @@ def test_dispatch_register_warning() -> None:
     with pytest.raises(Exception):
         # noinspection PyUnresolvedReferences
         @dispatch  # type: ignore
-        def boom(_: Any) -> None:
-            ...
+        def boom(_: Any) -> None: ...
 
 
 @UnitTest

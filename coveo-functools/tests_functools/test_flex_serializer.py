@@ -12,8 +12,7 @@ from coveo_functools.flex.serializer import SerializationMetadata
 
 class AbstractClass(metaclass=ABCMeta):
     @abstractmethod
-    def api(self) -> None:
-        ...
+    def api(self) -> None: ...
 
 
 class MockEnum(Enum):
@@ -26,8 +25,7 @@ class MockSubClass(AbstractClass):
     value: str
     enum_test: MockEnum = MockEnum.Default
 
-    def api(self) -> None:
-        ...
+    def api(self) -> None: ...
 
 
 @dataclass
@@ -35,8 +33,7 @@ class MockSubClass2(AbstractClass):
     value: str
     enum_test: MockEnum = MockEnum.Default
 
-    def api(self) -> None:
-        ...
+    def api(self) -> None: ...
 
 
 @dataclass
