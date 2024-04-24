@@ -10,13 +10,13 @@ class BoolSetting(Setting[bool]):
     For instance, empty objects (strings, lists, dicts) or None will raise an exception.
     """
 
-    TRUE_VALUES = ("true", "yes", "1", "y")
-    FALSE_VALUES = ("false", "no", "0", "n")
+    TRUE_VALUES = ("true", "yes", "1", "y", "on")
+    FALSE_VALUES = ("false", "no", "0", "n", "off")
 
     @staticmethod
     def _cast(value: ConfigValue) -> bool:
         """Converts any supported value to a bool."""
-        value = str(value).lower()
+        value = str(value).casefold()
         if value not in BoolSetting.TRUE_VALUES + BoolSetting.FALSE_VALUES:
             raise ValueError(f"Cannot determine boolean from {value}")
 
