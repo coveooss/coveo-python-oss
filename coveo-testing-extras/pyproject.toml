@@ -33,7 +33,6 @@ typing_extensions = "*"
 
 [tool.stew.ci]
 pytest = true
-offline-build = true
 black = true
 
 
