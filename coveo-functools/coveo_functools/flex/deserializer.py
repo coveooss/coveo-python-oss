@@ -1,6 +1,7 @@
 import enum
 import inspect
 import logging
+import sys
 import warnings
 from collections import abc
 from contextlib import contextmanager
@@ -33,6 +34,11 @@ from coveo_functools.flex.helpers import resolve_hint
 from coveo_functools.flex.serializer import SerializationMetadata
 from coveo_functools.flex.subclass_adapter import get_subclass_adapter
 from coveo_functools.flex.types import TypeHint, is_passthrough_type, PASSTHROUGH_TYPES
+
+if sys.version_info >= (3, 10):  # pragma: no cover
+    from types import UnionType
+else:
+    from typing import Union as UnionType  # :shrug:
 
 
 T = TypeVar("T")
@@ -180,7 +186,10 @@ def deserialize(
     # always puts the real type first. This is only applicable to the thing-or-list-of-things feature.
     target_type: TypeHint = args[0] if args else Any
 
-    if origin is Union:
+    if origin in (
+        Union,  # Union[str, int]
+        UnionType,  # str | int (py3.10)
+    ):
         if not {*args}.difference(PASSTHROUGH_TYPES):
             # Unions of PASSTHROUGH_TYPES are allowed and assumed to be in the proper type already
             return cast(T, value)
