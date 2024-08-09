@@ -1,4 +1,5 @@
 import logging
+import sys
 from dataclasses import dataclass, InitVar
 from enum import Enum
 from typing import Final, List, Any, Optional, Union, Dict, Type, Tuple, Literal
@@ -99,6 +100,48 @@ def test_deserialize_unions_limited() -> None:
         assert (
             deserialize(DEFAULT_VALUE, hint=Union[str, MockType], errors="raise") == DEFAULT_VALUE
         )
+
+
+@UnitTest
+@pytest.mark.skipif(sys.version_info < (3, 10), reason="requires python 3.10")
+def test_deserialize_unions_3_10() -> None:
+    # we don't parametrize because we'd have to put the whole test in an if block.
+    assert deserialize(DEFAULT_VALUE, hint=str | int, errors="raise") == DEFAULT_VALUE
+
+    assert deserialize([DEFAULT_VALUE, None], hint=list[str | int | None], errors="raise") == [
+        DEFAULT_VALUE,
+        None,
+    ]
+
+    assert deserialize(None, hint=list | None, errors="raise") is None
+
+    # thing-or-list-of-things
+    assert deserialize(DEFAULT_VALUE, hint=list[str] | str, errors="raise") == DEFAULT_VALUE
+    assert deserialize([DEFAULT_VALUE], hint=list[str] | str | None, errors="raise") == [
+        DEFAULT_VALUE
+    ]
+    assert deserialize(None, hint=list[str] | str | None, errors="raise") is None
+
+
+@UnitTest
+@pytest.mark.skipif(sys.version_info < (3, 9), reason="requires python 3.9")
+def test_deserialize_list_3_9() -> None:
+    """The list[str] syntax is only available in python 3.9+"""
+    assert deserialize([DEFAULT_VALUE], hint=list[str], errors="raise") == [DEFAULT_VALUE]
+
+    assert deserialize([DEFAULT_VALUE, 1], hint=list[Union[int, str]], errors="raise") == [
+        DEFAULT_VALUE,
+        1,
+    ]
+
+
+@UnitTest
+@pytest.mark.skipif(sys.version_info < (3, 9), reason="requires python 3.9")
+def test_deserialize_dict_3_9() -> None:
+    """The dict[str] syntax is only available in python 3.9+"""
+    assert deserialize({DEFAULT_VALUE: 1}, hint=dict[str, int], errors="raise") == {
+        DEFAULT_VALUE: 1
+    }
 
 
 @UnitTest
