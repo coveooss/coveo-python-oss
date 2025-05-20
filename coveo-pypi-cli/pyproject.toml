@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "coveo-pypi-cli"
-version = "2.1.0"
+version = "3.0.0"
 description = "Query and compute pypi versions from command line."
 license = "Apache-2.0"
 readme = "README.md"
@@ -8,18 +8,18 @@ repository = "https://github.com/coveooss/coveo-python-oss/tree/main/coveo-pypi-
 authors = ["Jonathan Piché <tools@coveo.com>"]
 
 [tool.poetry.dependencies]
-python = ">=3.8,<4"
+python = ">=3.9,<4"
 
 click = ">=8.1"
-coveo-settings = { version = "^2.0.0" }
-coveo-styles = { version = "^2.0.0" }
-coveo-systools = { version = "^2.0.0" }
+coveo-settings = { version = ">=2.0.0" }
+coveo-styles = { version = ">=2.0.0" }
+coveo-systools = { version = ">=2.0.0" }
 requests = "*"
-setuptools = "*"
+setuptools = ">=78.1.1"
 typing-extensions = "*"
 
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.test.dependencies]
 bandit = "*"
 black = "*"
 coveo-functools = { path = "../coveo-functools/", develop = true }
