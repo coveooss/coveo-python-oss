@@ -1,4 +1,4 @@
-""" Tests the settings classes. """
+"""Tests the settings classes."""
 
 import json
 import os

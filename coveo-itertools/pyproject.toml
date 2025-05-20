@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "coveo-itertools"
-version = "2.0.0"
+version = "3.0.0"
 description = "Collection-related helpers."
 license = "Apache-2.0"
 readme = "README.md"
@@ -8,10 +8,10 @@ repository = "https://github.com/coveooss/coveo-python-oss/tree/main/coveo-itert
 authors = ["Jonathan Piché <tools@coveo.com>"]
 
 [tool.poetry.dependencies]
-python = ">=3.8"
+python = ">=3.9,<4"
 
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 bandit = "*"
 black = "*"
 coveo-testing = { path = "../coveo-testing/", develop = true }
@@ -26,6 +26,7 @@ black = true
 
 [tool.black]
 line-length = 100
+target-version = ["py39"]
 
 
 [build-system]

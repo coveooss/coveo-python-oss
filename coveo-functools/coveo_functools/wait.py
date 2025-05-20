@@ -1,4 +1,4 @@
-""" The friendly wait-for-it helper """
+"""The friendly wait-for-it helper"""
 
 from collections.abc import Iterator
 from datetime import timedelta, datetime

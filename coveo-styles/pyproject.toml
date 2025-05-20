@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "coveo-styles"
-version = "2.1.0"
+version = "3.0.0"
 description = "Styles, colors and emojis for the command line."
 license = "Apache-2.0"
 readme = "README.md"
@@ -8,14 +8,14 @@ repository = "https://github.com/coveooss/coveo-python-oss/tree/main/coveo-style
 authors = ["Jonathan Piché <tools@coveo.com>"]
 
 [tool.poetry.dependencies]
-python = ">=3.8"
+python = ">=3.9,<4"
 
 click = ">=8.1"
 emoji = ">=2"
 typing_extensions = "*"
 
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 bandit = "*"
 black = "*"
 coveo-testing = { path = "../coveo-testing/", develop = true }
@@ -32,6 +32,7 @@ black = true
 
 [tool.black]
 line-length = 100
+target-version = ["py39"]
 
 
 [build-system]
