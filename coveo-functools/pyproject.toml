@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "coveo-functools"
-version = "2.0.0"
+version = "3.0.0"
 description = "Generic function tooling helpers"
 license = "Apache-2.0"
 readme = "README.md"
@@ -8,13 +8,13 @@ repository = "https://github.com/coveooss/coveo-python-oss/tree/main/coveo-funct
 authors = ["Jonathan Piché <tools@coveo.com>"]
 
 [tool.poetry.dependencies]
-python = ">=3.8"
+python = ">=3.9,<4"
 
 inflection = "*"
 typing_extensions = "*"
 
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 attrs = "*"
 bandit = "*"
 black = "*"
@@ -36,6 +36,7 @@ flake8 = { args = ["--ignore=E501,W503,E704"]}
 
 [tool.black]
 line-length = 100
+target-version = ["py39"]
 
 
 [build-system]

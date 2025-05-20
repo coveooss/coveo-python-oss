@@ -1,4 +1,4 @@
-""" Tests the wait method features """
+"""Tests the wait method features"""
 
 import datetime
 from typing import List, Type, Tuple, TypedDict
@@ -159,7 +159,7 @@ def test_until_suppress_exception_tuple() -> None:
         wait.until(
             lambda: _raise(NotImplementedError),
             handle_exceptions=(NotImplementedError,),
-            **_timeout
+            **_timeout,
         )
 
 

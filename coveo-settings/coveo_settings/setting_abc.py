@@ -1,4 +1,4 @@
-""" Create application settings that can be overridden through environment variables or custom adapters. """
+"""Create application settings that can be overridden through environment variables or custom adapters."""
 
 from __future__ import annotations
 

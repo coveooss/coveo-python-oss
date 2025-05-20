@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "coveo-arnparse"
-version = "1.0.0"
+version = "2.0.0"
 description = "Parse an arn in multiple components."
 license = "Apache-2.0"
 readme = "README.md"
@@ -9,10 +9,10 @@ authors = ["Jonathan Piché <tools@coveo.com>"]
 
 
 [tool.poetry.dependencies]
-python = ">=3.8"
+python = ">=3.9,<4"
 
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 bandit = "*"
 black = "*"
 coveo-testing = { path = "../coveo-testing", develop = true }
@@ -34,6 +34,7 @@ bandit = { args = ["--quiet --recursive ."] }
 
 [tool.black]
 line-length = 100
+target-version = ["py39"]
 
 
 [build-system]
