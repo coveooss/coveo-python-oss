@@ -1,4 +1,4 @@
-""" Various testing tools involving loggers. """
+"""Various testing tools involving loggers."""
 
 from contextlib import contextmanager
 import logging

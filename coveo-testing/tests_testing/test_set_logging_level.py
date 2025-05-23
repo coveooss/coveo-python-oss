@@ -1,4 +1,4 @@
-""" Test SetLoggingLevel. """
+"""Test SetLoggingLevel."""
 
 import logging
 
