@@ -41,27 +41,12 @@ jobs:
         with:
           egress-policy: audit
 
-      - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2.11.1
-        with:
-          egress-policy: audit
-
-      - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2.11.1
-        with:
-          egress-policy: audit
-
-      - name: Harden Runner
-        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2.11.1
-        with:
-          egress-policy: audit
-
       - name: Run stew ci
         uses: coveo/stew@main
         with:
           project-name: ${{ github.workflow }}
           python-version: ${{ matrix.python-version }}
-          poetry-version: "<2"
+          poetry-version: "<3"
 
   publish:
     name: Publish to pypi.org

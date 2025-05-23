@@ -1,5 +1,5 @@
 from collections import defaultdict
-from distutils.version import LooseVersion
+from coveo_pypi_cli._distutils import LooseVersion
 from typing import List, Dict
 
 import click

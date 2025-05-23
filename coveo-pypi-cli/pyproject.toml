@@ -8,18 +8,18 @@ repository = "https://github.com/coveooss/coveo-python-oss/tree/main/coveo-pypi-
 authors = ["Jonathan Piché <tools@coveo.com>"]
 
 [tool.poetry.dependencies]
-python = ">=3.8,<4"
+python = ">=3.9,<4"
 
 click = ">=8.1"
-coveo-settings = { version = "^2.0.0" }
-coveo-styles = { version = "^2.0.0" }
-coveo-systools = { version = "^2.0.0" }
+coveo-settings = "*"
+coveo-styles = "*"
+coveo-systools = "*"
 requests = "*"
 setuptools = "*"
 typing-extensions = "*"
 
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 bandit = "*"
 black = "*"
 coveo-functools = { path = "../coveo-functools/", develop = true }
@@ -48,5 +48,5 @@ line-length = 100
 
 
 [build-system]
-requires = ["poetry_core>=1.0.0"]
+requires = ["poetry_core>=2.0.0"]
 build-backend = "poetry.core.masonry.api"

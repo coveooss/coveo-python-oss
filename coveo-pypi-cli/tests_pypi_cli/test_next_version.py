@@ -1,4 +1,4 @@
-from distutils.version import StrictVersion
+from coveo_pypi_cli._distutils import StrictVersion
 import re
 from typing import Pattern, Sequence
 from unittest import mock

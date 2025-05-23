@@ -1,5 +1,5 @@
 from copy import copy
-from distutils.version import StrictVersion
+from coveo_pypi_cli._distutils import StrictVersion
 
 import pytest
 from coveo_testing.markers import UnitTest
