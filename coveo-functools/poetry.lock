@@ -122,22 +122,22 @@ files = [
 
 [[package]]
 name = "coveo-ref"
-version = "1.0.4"
+version = "2.0"
 description = "Allows using unittest.patch() without hardcoding strings."
 optional = false
-python-versions = ">=3.8"
+python-versions = "<4,>=3.9"
 groups = ["dev"]
 files = [
-    {file = "coveo_ref-1.0.4-py3-none-any.whl", hash = "sha256:b5d5dd7e47ebfcf702c79cf2647e9b32695057f1745d49dae32aa96f1adf5115"},
-    {file = "coveo_ref-1.0.4.tar.gz", hash = "sha256:b822bfb0c309b0f6b9e3b54e6303b90a01f50312a860ddf64322569cf6274bef"},
+    {file = "coveo_ref-2.0-py3-none-any.whl", hash = "sha256:bd43601b9cfcd1ecb6078e5c44934307ce9f96ac928fda64f91fec191ede1d9c"},
+    {file = "coveo_ref-2.0.tar.gz", hash = "sha256:9697c9e388a914df75b684b82602a7e2f89c50c08863f3ea4d739f6d334964c0"},
 ]
 
 [[package]]
 name = "coveo-testing"
-version = "2.0.0"
+version = "3.0.0"
 description = "Lightweight testing helpers"
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.9,<4"
 groups = ["dev"]
 files = []
 develop = true
