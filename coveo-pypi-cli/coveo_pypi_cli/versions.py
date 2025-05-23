@@ -1,6 +1,6 @@
 """version-related helpers"""
 
-from distutils.version import StrictVersion, Version
+from coveo_pypi_cli._distutils import StrictVersion, Version
 from typing import Union, Optional
 
 

@@ -1,4 +1,4 @@
-from distutils.version import Version, StrictVersion
+from coveo_pypi_cli._distutils import Version, StrictVersion
 from typing import List, Type, TypeVar, Optional
 
 from coveo_settings.settings import StringSetting
