@@ -186,6 +186,7 @@ def check_run(
     capture_output: bool = False,
     verbose: bool = False,
     quoted: bool = False,
+    remove_ansi: bool = True,
     **kwargs: Any,
 ) -> Optional[str]:
     """
@@ -244,7 +245,7 @@ def check_run(
     except subprocess.CalledProcessError as exception:
         raise DetailedCalledProcessError(working_folder=working_directory) from exception
 
-    return _process_output(output) if capture_output else None
+    return _process_output(output, remove_ansi) if capture_output else None
 
 
 async def async_check_run(
@@ -253,6 +254,7 @@ async def async_check_run(
     capture_output: bool = False,
     verbose: bool = False,
     quoted: bool = False,
+    remove_ansi: bool = True,
     **kwargs: Any,
 ) -> Optional[str]:
     """Async version of check_run"""
@@ -273,17 +275,21 @@ async def async_check_run(
             working_folder=working_directory
         ) from subprocess.CalledProcessError(process.returncode, converted_command, stdout, stderr)
 
-    return _process_output(stdout) if capture_output else None
+    return _process_output(stdout, remove_ansi) if capture_output else None
 
 
-def _process_output(output: Union[str, bytes]) -> str:
+def _process_output(output: Union[str, bytes], remove_ansi: bool = True) -> str:
     encoding: Tuple[str, ...] = tuple()  # emptiness; encoding uses system/OS defaults
     if isinstance(output, str):
         encoding = ("utf-8",)  # py3 strings are always utf-8
         output = output.encode(*encoding)
     assert isinstance(output, bytes)  # mypy
+
+    if remove_ansi:
+        output = filter_ansi(output)
+
     try:
-        return filter_ansi(output).decode(*encoding).strip()
+        return output.decode(*encoding).strip()
     except UnicodeDecodeError:
         log.warning("An error occurred decoding the output stream; retrying in safe mode.")
         return output.decode(errors="ignore").strip()
@@ -326,6 +332,7 @@ def check_output(
     working_directory: Union[PathLike, str] = ".",
     verbose: bool = False,
     quoted: bool = False,
+    remove_ansi: bool = True,
     **kwargs: Any,
 ) -> Optional[str]:
     """Proxy for subprocess.check_output"""
@@ -335,6 +342,7 @@ def check_output(
         capture_output=True,
         verbose=verbose,
         quoted=quoted,
+        remove_ansi=remove_ansi,
         **kwargs,
     )
 
@@ -357,6 +365,7 @@ async def async_check_output(
     working_directory: Union[PathLike, str] = ".",
     verbose: bool = False,
     quoted: bool = False,
+    remove_ansi: bool = True,
     **kwargs: Any,
 ) -> Optional[str]:
     """Async proxy for subprocess.check_output"""
@@ -366,6 +375,7 @@ async def async_check_output(
         working_directory=working_directory,
         verbose=verbose,
         quoted=quoted,
+        remove_ansi=remove_ansi,
         **kwargs,
     )
 
