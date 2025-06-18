@@ -16,6 +16,8 @@ from coveo_systools.subprocess import (
     cast_command_line_argument_to_string,
     check_run,
     async_check_run,
+    check_output,
+    async_check_output,
 )
 
 
@@ -167,3 +169,78 @@ def test_async_check_run_exception() -> None:
         # test for fix https://github.com/coveooss/coveo-python-oss/issues/132
         # without the fix, str(exception) will raise an exception because the `git` variable was given as a Path
         assert str(exception)
+
+
+def test_check_run_remove_ansi(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test that ANSI codes can be optionally preserved in the output."""
+    ansi_text = "\033[31mred text\033[0m"
+
+    def mock_run(*args: Any, **kwargs: Any) -> Any:
+        class MockProcess:
+            returncode = 0
+            stdout = ansi_text.encode()
+            stderr = b""
+
+        return MockProcess()
+
+    # Patch subprocess.run
+    monkeypatch.setattr("subprocess.run", mock_run)
+
+    # When remove_ansi is True (default), ANSI codes should be removed
+    # with check_run
+    result_filtered = check_run("dummy-command", capture_output=True)
+    assert result_filtered == "red text"
+    # with check_output
+    result_filtered = check_output("dummy-command")
+    assert result_filtered == "red text"
+
+    # When remove_ansi is False, ANSI codes should be preserved
+    # with check_run
+    result_preserved = check_run("dummy-command", capture_output=True, remove_ansi=False)
+    assert result_preserved == ansi_text
+    # with check_output
+    result_preserved = check_output("dummy-command", remove_ansi=False)
+    assert result_preserved == ansi_text
+
+
+async def _check_run_ansi(*command: Any, remove_ansi: bool = True) -> str:
+    return await async_check_run(*command, capture_output=True, remove_ansi=remove_ansi)
+
+
+async def _check_output_ansi(*command: Any, remove_ansi: bool = True) -> str:
+    return await async_check_output(*command, remove_ansi=remove_ansi)
+
+
+def test_async_check_output_remove_ansi(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test that ANSI codes can be optionally preserved in async output."""
+    ansi_text = "\033[31mred text\033[0m"
+
+    class MockProcess:
+        async def communicate(self) -> tuple[bytes, bytes]:
+            return ansi_text.encode(), b""
+
+        @property
+        def returncode(self) -> int:
+            return 0
+
+    async def mock_create_subprocess_exec(*args: Any, **kwargs: Any) -> MockProcess:
+        return MockProcess()
+
+    # Patch asyncio.create_subprocess_exec
+    monkeypatch.setattr("asyncio.create_subprocess_exec", mock_create_subprocess_exec)
+
+    # When remove_ansi is True (default), ANSI codes should be removed
+    # with check_run
+    result_filtered = asyncio.run(_check_run_ansi("dummy-command"))
+    assert result_filtered == "red text"
+    # with check_output
+    result_filtered = asyncio.run(_check_output_ansi("dummy-command"))
+    assert result_filtered == "red text"
+
+    # When remove_ansi is False, ANSI codes should be preserved
+    # with check_run
+    result_preserved = asyncio.run(_check_run_ansi("dummy-command", remove_ansi=False))
+    assert result_preserved == ansi_text
+    # with check_output
+    result_preserved = asyncio.run(_check_output_ansi("dummy-command", remove_ansi=False))
+    assert result_preserved == ansi_text
