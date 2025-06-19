@@ -1,4 +1,5 @@
 import re
+from typing import TypeVar
 
 # 7-bit and 8-bit C1 ANSI sequences  (note: this is a bytes regex, not str)
 # We use this to filter out ANSI codes from console outputs
@@ -25,7 +26,27 @@ ANSI_ESCAPE = re.compile(
     re.VERBOSE,
 )
 
+# Convert the bytes pattern to a string pattern
+ANSI_ESCAPE_STR = re.compile(ANSI_ESCAPE.pattern.decode(), re.VERBOSE)
 
-def filter_ansi(stream: bytes) -> bytes:
+T = TypeVar("T", str, bytes)
+
+
+def filter_ansi(stream: T) -> T:
     """Removes ANSI sequences from a stream."""
+    if isinstance(stream, str):
+        return _filter_ansi_str(stream)
+    elif isinstance(stream, bytes):
+        return _filter_ansi_bytes(stream)
+    else:
+        raise TypeError("stream must be of type str or bytes")
+
+
+def _filter_ansi_bytes(stream: bytes) -> bytes:
+    """Removes ANSI sequences from a bytes stream."""
     return bytes(ANSI_ESCAPE.sub(b"", stream))
+
+
+def _filter_ansi_str(string: str) -> str:
+    """Removes ANSI sequences from a string."""
+    return ANSI_ESCAPE_STR.sub("", string)

@@ -279,20 +279,22 @@ async def async_check_run(
 
 
 def _process_output(output: Union[str, bytes], remove_ansi: bool = True) -> str:
-    encoding: Tuple[str, ...] = tuple()  # emptiness; encoding uses system/OS defaults
+    # Skip unnecessary encoding/decoding if already a string
     if isinstance(output, str):
-        encoding = ("utf-8",)  # py3 strings are always utf-8
-        output = output.encode(*encoding)
-    assert isinstance(output, bytes)  # mypy
+        decoded = output
+    else:
+        # For bytes, decode properly
+        try:
+            decoded = output.decode("utf-8")
+        except UnicodeDecodeError:
+            log.warning("An error occurred decoding the output stream; retrying in safe mode.")
+            decoded = output.decode(errors="replace")
 
+    # Filter ANSI if needed
     if remove_ansi:
-        output = filter_ansi(output)
+        decoded = filter_ansi(decoded)
 
-    try:
-        return output.decode(*encoding).strip()
-    except UnicodeDecodeError:
-        log.warning("An error occurred decoding the output stream; retrying in safe mode.")
-        return output.decode(errors="ignore").strip()
+    return decoded.strip()
 
 
 def _prepare_call(
