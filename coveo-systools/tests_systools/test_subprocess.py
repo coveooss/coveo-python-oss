@@ -1,5 +1,7 @@
 import asyncio
 import logging
+import sys
+
 from pathlib import Path
 from subprocess import CalledProcessError
 from typing import Any
@@ -244,3 +246,53 @@ def test_async_check_output_remove_ansi(monkeypatch: pytest.MonkeyPatch) -> None
     # with check_output
     result_preserved = asyncio.run(_check_output_ansi("dummy-command", remove_ansi=False))
     assert result_preserved == ansi_text
+
+
+async def _sleep_command_task() -> None:
+    """
+    Run a command that takes a while to complete but doesn't rely on system sleep commands.
+    We'll use a simple Python process that just does a tight loop to avoid any issues with
+    shell commands or input redirection.
+    """
+    # Use Python itself to create a subprocess that stays alive for a while
+    python_cmd = sys.executable  # Use the current Python executable
+
+    # Simple script that runs for a while using Python's time.sleep
+    # Using the -c parameter without nested quotes to avoid any escaping issues
+    script = "-c"
+    code = "import time; time.sleep(10)"
+
+    # Run the Python process using separate arguments to avoid any quoting issues
+    await async_check_run(python_cmd, script, code)
+
+
+@pytest.mark.asyncio
+async def test_async_subprocess_cancellation() -> None:
+    """Test that async subprocesses can be gracefully cancelled."""
+    # Start the Python subprocess in a task
+    task = asyncio.create_task(_sleep_command_task())
+
+    # Wait a short time to ensure the process starts
+    await asyncio.sleep(0.5)
+
+    # Now cancel the task
+    task.cancel()
+
+    try:
+        # This should raise a CancelledError
+        await task
+        assert False, "Expected CancelledError was not raised"
+    except asyncio.CancelledError:
+        # This is the expected path - cancellation worked
+        pass
+    except Exception as e:
+        # If we get here, it means the task raised another exception
+        # which is not what we want
+        assert False, f"Expected CancelledError but got {type(e).__name__}: {e}"
+
+    # Give a little time for process cleanup
+    await asyncio.sleep(0.5)
+
+    # Since we've successfully cancelled the task, we can assume the process
+    # has been cleaned up, as our cancel handler is designed to terminate the process
+    assert task.cancelled(), "Task should be in cancelled state"

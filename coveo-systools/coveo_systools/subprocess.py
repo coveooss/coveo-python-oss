@@ -268,7 +268,21 @@ async def async_check_run(
     process = await asyncio.create_subprocess_exec(
         converted_command[0], *converted_command[1:], cwd=str(working_directory), **kwargs
     )
-    stdout, stderr = await process.communicate()
+
+    try:
+        stdout, stderr = await process.communicate()
+    except asyncio.CancelledError as cancel_exception:
+        try:
+            process.terminate()
+            try:
+                await asyncio.wait_for(process.wait(), timeout=2.0)
+            except asyncio.TimeoutError:
+                process.kill()
+                await process.wait()
+        except:
+            log.exception("unhandled exception during cancel (ignored)")
+
+        raise cancel_exception
 
     if process.returncode != 0:
         raise DetailedCalledProcessError(

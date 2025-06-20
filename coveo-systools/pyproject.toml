@@ -21,6 +21,7 @@ coveo-functools = { path = "../coveo-functools/", develop = true }
 coveo-testing = { path = "../coveo-testing/", develop = true }
 mypy = "1.9.0"
 pytest = "*"
+pytest-asyncio = "*"
 
 
 [tool.stew.ci]
