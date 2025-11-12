@@ -2,7 +2,7 @@ from contextlib import suppress
 from distutils.version import LooseVersion
 import logging
 import re
-from typing import Tuple, Optional, Dict, Any, List
+from typing import cast, Tuple, Optional, Dict, Any, List
 from urllib.parse import urlsplit
 
 from coveo_functools import wait
@@ -193,10 +193,8 @@ class TemporaryDockerContainerResource(TemporaryResource):
             ip_address = str(DOCKER_STATIC_IP)
         else:
             self.container.reload()
-            docker_info = self.container.attrs
-            if docker_info and "NetworkSettings" in docker_info:
-                ip_address = docker_info["NetworkSettings"]["IPAddress"]
-            else:
+            ip_address = find_ip_in_docker_inspect_info(self.container.attrs)
+            if not ip_address:
                 ip_address = urlsplit(self.client.api.base_url).hostname
         assert isinstance(ip_address, str) and ip_address
         return ip_address
@@ -271,3 +269,31 @@ class TemporaryDockerContainerResource(TemporaryResource):
         with suppress(Exception):
             return f"{self.uri} [{self.image_name}]"
         return super().__str__()
+
+
+def find_ip_in_docker_inspect_info(docker_info: Dict[str, Any]) -> Optional[str]:
+    if (
+        docker_info
+        and "NetworkSettings" in docker_info
+        and "IPAddress" in docker_info["NetworkSettings"]
+    ):
+        return cast(str, docker_info["NetworkSettings"]["IPAddress"])
+    elif (
+        docker_info
+        and "NetworkSettings" in docker_info
+        and "Networks" in docker_info["NetworkSettings"]
+        and "bridge" in docker_info["NetworkSettings"]["Networks"]
+    ):
+        # This is the exact legacy behavior
+        # https://github.com/moby/moby/blob/27cefe6c43b74d429bbfa01dfd106ca8837e8bfe/daemon/server/router/container/inspect.go#L40-L59
+        return cast(str, docker_info["NetworkSettings"]["Networks"]["bridge"]["IPAddress"])
+    elif (
+        docker_info
+        and "NetworkSettings" in docker_info
+        and "Networks" in docker_info["NetworkSettings"]
+        and "HostConfig" in docker_info
+        and "NetworkMode" in docker_info["HostConfig"]
+    ):
+        network_mode = docker_info["HostConfig"]["NetworkMode"]
+        return cast(str, docker_info["NetworkSettings"]["Networks"][network_mode]["IPAddress"])
+    return None
