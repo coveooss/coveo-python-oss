@@ -63,6 +63,7 @@ jobs:
           poetry-version: "<2"
 
   publish:
+    if: github.ref == 'refs/heads/main'
     name: Publish to pypi.org
     runs-on: ubuntu-22.04
     needs: stew
@@ -95,12 +96,7 @@ jobs:
           dry-run: ${{ github.ref != 'refs/heads/main' && github.event.inputs.publish != 'true' }}
 
       - name: Publish to pypi
-        if: ${{ github.ref == 'refs/heads/main' }}
         uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # v1.13.0
-
-      - name: Publish to pypi (dry-run)
-        if: ${{ github.ref != 'refs/heads/main' }}
-        run: echo 'Would publish to pypi'
 
       - name: Create tag
         uses: ./.github/workflows/actions/post-publish
