@@ -69,7 +69,7 @@ jobs:
     needs: stew
     environment:
       name: pypi
-      url: https://pypi.org/project/coveo-stew/
+      url: https://pypi.org/project/coveo-arnparse/
     permissions:
       contents: write
       id-token: write
