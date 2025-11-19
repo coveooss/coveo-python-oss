@@ -15,6 +15,7 @@ coveo-settings = "*"
 coveo-systools = "*"
 coveo-testing = "*"
 docker = "*"
+packaging = "*"
 
 
 [tool.poetry.group.dev.dependencies]
