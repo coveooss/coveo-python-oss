@@ -1,5 +1,5 @@
 from contextlib import suppress
-from distutils.version import LooseVersion
+from packaging.version import Version
 import logging
 import re
 from typing import cast, Tuple, Optional, Dict, Any, List
@@ -21,7 +21,7 @@ from coveo_testing.temporary_resource.base import TemporaryResource
 log = logging.getLogger(__name__)
 
 DOCKER_TIMEOUT = 30  # note: urllib timeout is not supported by the docker client.
-REQUIRED_DOCKER_VERSION = LooseVersion("1.18")
+REQUIRED_DOCKER_VERSION = Version("1.18")
 
 DOCKER_STATIC_IP = StringSetting(
     "tests.docker.static.ip", fallback="localhost" if (WINDOWS or WSL) else None
@@ -53,8 +53,8 @@ class NoSuchContainer(Exception):
     """Occurs when a request is made for a container that no longer exists."""
 
 
-def _get_docker_host_version(client: DockerClient) -> LooseVersion:
-    return LooseVersion(client.version()["ApiVersion"])
+def _get_docker_host_version(client: DockerClient) -> Version:
+    return Version(client.version()["ApiVersion"])
 
 
 def get_docker_client() -> DockerClient:
