@@ -63,9 +63,16 @@ jobs:
           poetry-version: "<2"
 
   publish:
+    if: github.ref == 'refs/heads/main'
     name: Publish to pypi.org
     runs-on: ubuntu-22.04
     needs: stew
+    environment:
+      name: pypi
+      url: https://pypi.org/project/coveo-arnparse/
+    permissions:
+      contents: write
+      id-token: write
 
     steps:
       - name: Harden the runner (Audit all outbound calls)
@@ -81,10 +88,19 @@ jobs:
         with:
           python-version: 3.9
 
-      - name: Publish to pypi
-        uses: ./.github/workflows/actions/publish-to-pypi
+      - name: Build
+        uses: ./.github/workflows/actions/build
         with:
           project-name: ${{ github.workflow }}
-          pypi-token: ${{ secrets.PYPI_TOKEN_COVEO_ARNPARSE }}
+          pre-release: ${{ github.ref != 'refs/heads/main' }}
+          dry-run: ${{ github.ref != 'refs/heads/main' && github.event.inputs.publish != 'true' }}
+
+      - name: Publish to pypi
+        uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # v1.13.0
+
+      - name: Create tag
+        uses: ./.github/workflows/actions/post-publish
+        with:
+          project-name: ${{ github.workflow }}
           pre-release: ${{ github.ref != 'refs/heads/main' }}
           dry-run: ${{ github.ref != 'refs/heads/main' && github.event.inputs.publish != 'true' }}
