@@ -27,6 +27,8 @@ jobs:
   pyprojectci:
     name: pyproject ci
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
 
     strategy:
       fail-fast: false
