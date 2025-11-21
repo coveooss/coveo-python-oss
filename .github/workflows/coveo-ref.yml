@@ -83,6 +83,8 @@ jobs:
 
       - name: Publish to pypi
         uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # v1.13.0
+        with:
+          packages-dir: ${{ github.workflow }}/dist
 
       - name: Create tag
         uses: ./.github/workflows/actions/post-publish
