@@ -23,6 +23,9 @@ on:
         required: false
         default: 'false'
 
+permissions:
+  contents: read
+
 jobs:
   pyprojectci:
     name: pyproject ci
