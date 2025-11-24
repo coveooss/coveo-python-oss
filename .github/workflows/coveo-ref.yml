@@ -76,6 +76,7 @@ jobs:
 
       - name: Build
         uses: ./.github/workflows/actions/build
+        id: build
         with:
           project-name: ${{ github.workflow }}
           pre-release: ${{ github.ref != 'refs/heads/main' }}
@@ -90,6 +91,6 @@ jobs:
         uses: ./.github/workflows/actions/post-publish
         with:
           project-name: ${{ github.workflow }}
-          pre-release: ${{ github.ref != 'refs/heads/main' }}
+          next-version: ${{ steps.build.outputs.next-version }}
           dry-run: ${{ github.ref != 'refs/heads/main' && github.event.inputs.publish != 'true' }}
 
