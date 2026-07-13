@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "coveo-testing"
-version = "3.0.0"
+version = "4.0.0"
 description = "Lightweight testing helpers"
 license = "Apache-2.0"
 readme = "README.md"
@@ -8,7 +8,7 @@ repository = "https://github.com/coveooss/coveo-python-oss/tree/main/coveo-testi
 authors = ["Jonathan Piché <tools@coveo.com>"]
 
 [tool.poetry.dependencies]
-python = ">=3.9,<4"
+python = ">=3.10,<4"
 
 attrs = "*"
 coveo-ref = "*"
