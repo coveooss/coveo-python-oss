@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "coveo-settings"
-version = "3.0.0"
+version = "4.0.0"
 description = "Settings driven by environment variables."
 license = "Apache-2.0"
 readme = "README.md"
@@ -9,7 +9,7 @@ authors = ["Jonathan Piché <tools@coveo.com>"]
 
 
 [tool.poetry.dependencies]
-python = ">=3.9,<4"
+python = ">=3.10,<4"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -27,7 +27,7 @@ black = true
 
 [tool.black]
 line-length = 100
-target-version = ["py39"]
+target-version = ["py310"]
 
 
 [build-system]

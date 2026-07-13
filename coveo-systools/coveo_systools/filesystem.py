@@ -112,9 +112,7 @@ def _find_repo_root(path: Path) -> Path:
     if git:
         try:
             with pushd(path):
-                return Path(
-                    check_output(git, "rev-parse", "--show-toplevel", stderr=subprocess.STDOUT)
-                )
+                return Path(check_output(git, "rev-parse", "--show-toplevel"))
         except DetailedCalledProcessError as exception:
             git_error = exception
 
